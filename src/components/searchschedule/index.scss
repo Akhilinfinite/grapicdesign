@@ -1,0 +1,23 @@
+.mainPage {
+  margin: 0em;
+  overflow-x: hidden;
+  .navBar {
+    width: 100%;
+    border-bottom: 5px solid #fa783c;
+  }
+  .dashBoard {
+    overflow-x: hidden;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    .leftDashboard {
+      width: 17%;
+      min-height: 100vh;
+      padding: 0rem 0.5rem;
+      background-color: #F4F6F8;
+    }
+    .rightDashboard {
+      width: 83%;
+    }
+  }
+}

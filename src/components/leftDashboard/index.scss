@@ -1,0 +1,45 @@
+.mainLeftdashboard {
+  padding: 0.5rem 1rem;
+  min-height: 100vh !important;
+  .navbar {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    padding-left: 0;
+    width: 100%;
+    margin: auto;
+    .navList {
+      color: #fff;
+      padding: 0.75em;
+      display: flex;
+      flex-direction: row;
+
+      &.p {
+        margin-top: 0.25em;
+      }
+      .icon {
+        box-sizing: border-box;
+      }
+      .iconText {
+        color: #000;
+        font-family: Lato;
+        font-size: 15px;
+        font-style: normal;
+        font-weight: 600;
+        line-height: 20px;
+        letter-spacing: 0.3px;
+        margin-left: 0.5em;
+      }
+      @media only screen and (max-width: 720px){
+        .iconText{
+          display: none;
+        }
+        .icon{
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+      }
+    }
+  }
+}

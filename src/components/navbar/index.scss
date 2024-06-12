@@ -1,0 +1,61 @@
+.mainNav {
+  width: 100%;
+  margin: 0px 0.5em;
+  padding: 0.8em 0em;
+  display: flex;
+  flex-direction: row;
+  .leftNav {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    .logo {
+      padding: 0em 0.75em;
+    }
+    .logoText {
+      display: flex;
+      align-items: center;
+      padding: 0em 0.75em;
+      color: #000;
+      font-family: Lato;
+      font-size: 14px !important;
+      font-style: normal;
+      font-weight: 500 !important;
+      line-height: 20px;
+      letter-spacing: 0.28px;
+    }
+  }
+  .rightNav {
+    position: absolute;
+    right: 1em;
+    .menu {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      .submenu {
+        display: grid;
+        margin-right: 20px;
+        color: #000;
+        font-family: Lato;
+        font-size: 12px;
+        font-style: normal;
+        font-weight: 600;
+        line-height: 20px;
+        letter-spacing: 0.24px;
+        text-align: center;
+      }
+    }
+  }
+}
+@media only screen and (max-width: 720px) {
+  .mainNav {
+    display: flex;
+    flex-direction: column;
+    .leftNav {
+      display: flex;
+      justify-content: center;
+    }
+    .rightNav {
+      position: relative;
+    }
+  }
+}
