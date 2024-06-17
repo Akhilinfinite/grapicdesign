@@ -5,6 +5,7 @@ import "./LocationStyles.scss";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Row, Col } from "react-bootstrap";
 import { Modal, Button } from "react-bootstrap";
+import SearchIcon from "../../asserts/images/Icons/search.svg";
 
 import Calender from "../../asserts/images/Icons/calendar-blank.svg";
 import Profile from "../../asserts/images/Icons/profile.svg";
@@ -28,8 +29,11 @@ export default function RightDashboard() {
   const [isOpen3, setIsOpen3] = useState(false);
   const [Owners, setOwners] = useState([]);
   const [Scheduler, setScheduler] = useState([]);
+  const [SelectedScheduler, setSelectedScheduler] = useState([]);
   const [Customer, setCustomer] = useState([]);
+  const [SelectedCustomer, setSelectedCustomer] = useState([]);
   const [Contact, setContact] = useState([]);
+  const [SelectedContact, setSelectedContact] = useState([]);
   const [District, setDistrict] = useState([]);
   const [School, setSchool] = useState([]);
   const [Floor, setFloor] = useState([]);
@@ -92,7 +96,10 @@ export default function RightDashboard() {
           value: e[0],
           lable: e[1],
         }));
-        setScheduler(data);
+        const selected = data.filter((e) => e.id === 2);
+        setSelectedScheduler(selected);
+        const updatedData = data.filter((e) => e.id !== 2);
+        setScheduler(updatedData);
       })
       .catch(function (error) {
         console.log(error);
@@ -107,7 +114,11 @@ export default function RightDashboard() {
           value: e[0],
           lable: e[1],
         }));
-        setCustomer(data);
+        console.log(response.data);
+        const selected = data.filter((e) => e.id === 22);
+        setSelectedCustomer(selected);
+        const updatedData = data.filter((e) => e.id !== 22);
+        setCustomer(updatedData);
       })
       .catch(function (error) {
         console.log(error);
@@ -115,7 +126,38 @@ export default function RightDashboard() {
   };
   const getContact = () => {
     axios
-      .post("http://192.168.0.65:8500/rest/gvRestApi/schedule/getContacts/")
+      .post("http://192.168.0.65:8500/rest/gvRestApi/schedule/getContacts/", {
+        customer_id: 22,
+        CUSTOMER_STATUS: 1,
+      })
+      .then(function (response) {
+        const data = response.data.DATA.map((e) => ({
+          id: e[0],
+          value: e[0],
+          lable: e[1],
+        }));
+        setContact(data);
+        const selected = data.filter((e) => e.id === 22);
+        setSelectedContact(selected);
+        const updatedData = data.filter((e) => e.id !== 22);
+        setContact(updatedData);
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  };
+  const handleCustomerClick = (e) => {
+    const variable = e.target.value;
+    var data1 = Customer.filter((e) => e.value === Number(variable));
+    if (!data1.length) {
+      data1 = SelectedCustomer.filter((e) => e.value === Number(variable));
+    }
+    setSelectedContact([]);
+    axios
+      .post("http://192.168.0.65:8500/rest/gvRestApi/schedule/getContacts/", {
+        customer_id: data1[0].value,
+        CUSTOMER_STATUS: 1,
+      })
       .then(function (response) {
         const data = response.data.DATA.map((e) => ({
           id: e[0],
@@ -128,6 +170,17 @@ export default function RightDashboard() {
         console.log(error);
       });
   };
+  const handleClickPeopleSearch = () => {
+    const option = document.getElementById("people_input_Select").value;
+    const data = document.getElementById("people_input_Search").value;
+    console.log(data , option);
+  };
+  const handleClickLocationSearch = () => {
+    const option = document.getElementById("location_input_Select").value;
+    const data = document.getElementById("location_input_Search").value;
+    console.log(data , option);
+  };
+
   const getDistrict = () => {
     axios
       .post("http://192.168.0.65:8500/rest/gvRestApi/master/getLocation/", {
@@ -293,9 +346,9 @@ export default function RightDashboard() {
                               onChange={handleIntervalTypeChange}
                             >
                               <option value="">select value</option>
-                              <option value="Weekly">Every Wednesday</option>
-                              <option value="Daily">Daily</option>
-                              <option value="Weekly">Weekly</option>
+                              <option value="Weekly">Daily</option>
+                              <option value="Daily">weekly</option>
+                              <option value="Weekly">recurring</option>
                             </select>
                           </div>
                           <Modal
@@ -328,11 +381,9 @@ export default function RightDashboard() {
                                       className="custom-select"
                                     >
                                       <option value="">select value</option>
-                                      <option value="Weekly">
-                                        Every Wednesday
-                                      </option>
-                                      <option value="Daily">Daily</option>
-                                      <option value="Weekly">Weekly</option>
+                                      <option value="Weekly">Daily</option>
+                                      <option value="Daily">weekly</option>
+                                      <option value="Weekly">recurring</option>
                                     </select>
                                   </div>
                                 </div>
@@ -379,11 +430,9 @@ export default function RightDashboard() {
                                       className="custom-select"
                                     >
                                       <option value="">select value</option>
-                                      <option value="Weekly">
-                                        Every Wednesday
-                                      </option>
-                                      <option value="Daily">Daily</option>
-                                      <option value="Weekly">Weekly</option>
+                                      <option value="Weekly">Daily</option>
+                                      <option value="Daily">weekly</option>
+                                      <option value="Weekly">recurring</option>
                                     </select>
                                   </div>
                                 </div>
@@ -394,11 +443,9 @@ export default function RightDashboard() {
                                       className="custom-select"
                                     >
                                       <option value="">select value</option>
-                                      <option value="Weekly">
-                                        Every Wednesday
-                                      </option>
-                                      <option value="Daily">Daily</option>
-                                      <option value="Weekly">Weekly</option>
+                                      <option value="Weekly">Daily</option>
+                                      <option value="Daily">weekly</option>
+                                      <option value="Weekly">recurring</option>
                                     </select>
                                   </div>
                                 </div>
@@ -510,7 +557,11 @@ export default function RightDashboard() {
                         <div className="content">
                           <div className="title">Choose field to Search</div>
                           <div className="dropdown-wrapper">
-                            <select name="days" className="custom-select">
+                            <select
+                              name="days"
+                              id="people_input_Select"
+                              className="custom-select"
+                            >
                               <option value="">select value</option>
                               <option value="1">Owner</option>
                               <option value="2">Scheduler</option>
@@ -520,38 +571,45 @@ export default function RightDashboard() {
                           </div>
                         </div>
                       </Col>
-                      <Col md={3} sm={6} xs={12} className="col-3">
+                      <Col md={4} sm={6} xs={12} className="col-3">
                         <div className="seletedFeild">
                           <label>Selected Field</label>
-                          <input
-                            type="text"
-                            placeholder="search key word"
-                            className="form-control"
-                          />
+                          <div className="selectedSearchField">
+                            <input
+                              type="text"
+                              id="people_input_Search"
+                              placeholder="search key word"
+                              className="form-control"
+                            />
+                            <img
+                              src={SearchIcon}
+                              alt="Search Icon"
+                              className="search-icon"
+                              onClick={handleClickPeopleSearch}
+                            />
+                          </div>
                         </div>
                       </Col>
-                      <Col md={3} sm={6} xs={12} className="col-3">
+                      <Col md={2} sm={6} xs={12} className="col-2">
                         <div className="edit pt-4 text-center">
                           <img
                             src={Edit}
                             alt="edit"
                             style={{
                               marginRight: "10px",
-                              verticalAlign: "middle",
                             }}
                           />
                           <p
                             style={{
                               display: "inline-block",
-                              verticalAlign: "middle",
                             }}
                           >
                             Edit
                           </p>
                         </div>
                       </Col>
-                      <Col md={3} sm={6} xs={12} className="col-3">
-                        <div className="add pt-4 text-center">
+                      <Col md={2} sm={6} xs={12} className="col-2">
+                        <div className="add pt-4 ">
                           <img
                             src={Add}
                             alt="Add"
@@ -574,7 +632,6 @@ export default function RightDashboard() {
                             <div className="title">Owner</div>
                             <div className="dropdown">
                               <select name="owner" className="custom-select">
-                                <option value="">Select value</option>
                                 {Owners.map((e, id) => (
                                   <option value={e.value} key={id}>
                                     {e.lable}
@@ -592,12 +649,17 @@ export default function RightDashboard() {
                                 name="scheduler"
                                 className="custom-select"
                               >
-                                <option value="">Select value</option>
+                                {SelectedScheduler.map((e, id) => (
+                                  <option value={e.value} key={id}>
+                                    {e.lable}
+                                  </option>
+                                ))}
                                 {Scheduler.map((e, id) => (
                                   <option value={e.value} key={id}>
                                     {e.lable}
                                   </option>
                                 ))}
+                                SelectedCustomer
                               </select>
                             </div>
                           </div>
@@ -606,8 +668,16 @@ export default function RightDashboard() {
                           <div className="selectedField-value">
                             <div className="title">Customer</div>
                             <div className="dropdown">
-                              <select name="customer" className="custom-select">
-                                <option value="">Select value</option>
+                              <select
+                                name="customer"
+                                className="custom-select"
+                                onChange={(e) => handleCustomerClick(e)}
+                              >
+                                {SelectedCustomer.map((e, id) => (
+                                  <option value={e.value} key={id}>
+                                    {e.lable}
+                                  </option>
+                                ))}
                                 {Customer.map((e, id) => (
                                   <option value={e.value} key={id}>
                                     {e.lable}
@@ -622,7 +692,14 @@ export default function RightDashboard() {
                             <div className="title">Contact</div>
                             <div className="dropdown">
                               <select name="contact" className="custom-select">
-                                <option value="">Select value</option>
+                                {!SelectedContact.length && (
+                                  <option value=""></option>
+                                )}
+                                {SelectedContact.map((e, id) => (
+                                  <option value={e.value} key={id}>
+                                    {e.lable}
+                                  </option>
+                                ))}
                                 {Contact.map((e, id) => (
                                   <option value={e.value} key={id}>
                                     {e.lable}
@@ -683,9 +760,9 @@ export default function RightDashboard() {
                   <div className="calender-setup">
                     <Row>
                       <Col xs={12} className="mb-3 mr-3">
-                        <p>Location Type :</p>
                         <div className="location-radio-btn d-flex flex-wrap">
-                          <div className="list mr-3 mb-2">
+                          <p className="list mr-3 mb-2">Location Type :</p>
+                          <div className="list mr-3 mb-2 mt-1">
                             <input
                               type="radio"
                               id="Indoor"
@@ -700,7 +777,7 @@ export default function RightDashboard() {
                               Indoor
                             </label>
                           </div>
-                          <div className="list mr-3 mb-2">
+                          <div className="list mr-3 mb-2 mt-1">
                             <input
                               type="radio"
                               id="Outdoor"
@@ -714,34 +791,6 @@ export default function RightDashboard() {
                               Outdoor
                             </label>
                           </div>
-                          <div className="list mr-3 mb-2">
-                            <input
-                              type="radio"
-                              id="Equip"
-                              name="age"
-                              value="Equip"
-                            />
-                            <label
-                              htmlFor="Equip"
-                              style={{ marginLeft: "8px" }}
-                            >
-                              Equip
-                            </label>
-                          </div>
-                          <div className="list mb-2">
-                            <input
-                              type="radio"
-                              id="People"
-                              name="age"
-                              value="People"
-                            />
-                            <label
-                              htmlFor="People"
-                              style={{ marginLeft: "8px" }}
-                            >
-                              People
-                            </label>
-                          </div>
                         </div>
                       </Col>
                     </Row>
@@ -750,12 +799,16 @@ export default function RightDashboard() {
                         <div className="content">
                           <div className="title">Choose field to Search</div>
                           <div className="dropdown">
-                            <select name="days" className="custom-select">
+                            <select
+                              name="days"
+                              className="custom-select"
+                              id="location_input_Select"
+                            >
                               <option value="">select value</option>
-                              <option value="">District</option>
-                              <option value="">School</option>
-                              <option value="">Floor</option>
-                              <option value="">Room</option>
+                              <option value="1">District</option>
+                              <option value="2">School</option>
+                              <option value="3">Floor</option>
+                              <option value="4">Room</option>
                             </select>
                           </div>
                         </div>
@@ -763,11 +816,20 @@ export default function RightDashboard() {
                       <Col xs={12} sm={4} className="col-4 mb-3">
                         <div className="seletedFeild">
                           <label>Selected Field</label>
-                          <input
-                            type="text"
-                            placeholder="search key word"
-                            className="form-control" // Added Bootstrap class for input
-                          />
+                          <div className="selectedSearchField">
+                            <input
+                              type="text"
+                              id="location_input_Search"
+                              placeholder="search key word"
+                              className="form-control"
+                            />
+                            <img
+                              src={SearchIcon}
+                              alt="Search Icon"
+                              className="search-icon"
+                              onClick={handleClickLocationSearch}
+                            />
+                          </div>
                         </div>
                       </Col>
                       <Col xs={12} sm={4} className="col-4">
@@ -843,12 +905,14 @@ export default function RightDashboard() {
                                       name="school"
                                       className="custom-select"
                                     >
-                                      <option value="">select value</option>
-                                      <option value="Weekly">
-                                        Every Wednesday
-                                      </option>
-                                      <option value="Daily">Daily</option>
-                                      <option value="Weekly">Weekly</option>
+                                      <option value=""></option>
+                                      {School.map((e, id) => {
+                                        return (
+                                          <option value={e.value} key={id}>
+                                            {e.lable}
+                                          </option>
+                                        );
+                                      })}
                                     </select>
                                   </div>
                                 </div>
@@ -865,12 +929,14 @@ export default function RightDashboard() {
                                       name="floor"
                                       className="custom-select"
                                     >
-                                      <option value="">select value</option>
-                                      <option value="Weekly">
-                                        Every Wednesday
-                                      </option>
-                                      <option value="Daily">Daily</option>
-                                      <option value="Weekly">Weekly</option>
+                                      <option value=""></option>
+                                      {Floor.map((e, id) => {
+                                        return (
+                                          <option value={e.value} key={id}>
+                                            {e.lable}
+                                          </option>
+                                        );
+                                      })}
                                     </select>
                                   </div>
                                 </div>
