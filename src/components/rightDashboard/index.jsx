@@ -26,9 +26,9 @@ import Down from "../../asserts/images/Icons/down_arrow.png";
 import Up from "../../asserts/images/Icons/up_arrow.png";
 
 export default function RightDashboard() {
-  const [isOpen1, setIsOpen1] = useState(false);
-  const [isOpen2, setIsOpen2] = useState(false);
-  const [isOpen3, setIsOpen3] = useState(false);
+  const [isOpen1, setIsOpen1] = useState(true);
+  const [isOpen2, setIsOpen2] = useState(true);
+  const [isOpen3, setIsOpen3] = useState(true);
   const [Owners, setOwners] = useState([]);
   const [Scheduler, setScheduler] = useState([]);
   const [SelectedScheduler, setSelectedScheduler] = useState([]);
@@ -84,83 +84,81 @@ export default function RightDashboard() {
     setLocationFilterModalVisibility(false);
   };
 
+  //API calls
   useEffect(() => {
+    const getOwner = () => {
+      axios
+        .post("http://192.168.0.65:8500/rest/gvRestApi/schedule/getOwners/")
+        .then(function (response) {
+          const data = response.data.DATA.map((e) => ({
+            id: e[33],
+            value: e[33],
+            lable: e[16],
+            end: e[19],
+            start: e[24],
+          }));
+          setOwners(data);
+          const startdate = data[0].start.split(" ")[3];
+          const enddate = data[0].end.split(" ")[3];
+          const date = new Date().toISOString().split("T")[0];
+          const Start = `${date}T${startdate}`;
+          const End = `${date}T${enddate}`;
+          setStartTime(Start);
+          setEndTime(End);
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+    };
     getOwner();
+  }, []);
+  useEffect(() => {
+    const getScheduler = () => {
+      axios
+        .post("http://192.168.0.65:8500/rest/gvRestApi/schedule/getRequestors/")
+        .then(function (response) {
+          const data = response.data.DATA.map((e) => ({
+            id: e[0],
+            value: e[0],
+            lable: e[1],
+          }));
+          const selected = data.filter((e) => e.id === 2);
+          setSelectedScheduler(selected);
+          const updatedData = data.filter((e) => e.id !== 2);
+          setScheduler(updatedData);
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+    };
     getScheduler();
-    getCustomer();
-    getContact();
-    getDistrict();
-    getSchool();
-    getLFDistrict();
-    getLFSchool();
-    getLFFloor();
-    getLFRoom();
   }, []);
 
-  //API calls
-  const getOwner = () => {
-    axios
-      .post("http://192.168.0.65:8500/rest/gvRestApi/schedule/getOwners/")
-      .then(function (response) {
-        const data = response.data.DATA.map((e) => ({
-          id: e[33],
-          value: e[33],
-          lable: e[16],
-          end: e[19],
-          start: e[24],
-        }));
-        setOwners(data);
-        const startdate = data[0].start.split(" ")[3];
-        const enddate = data[0].end.split(" ")[3];
-        const date = new Date().toISOString().split("T")[0];
-        const Start = `${date}T${startdate}`;
-        const End = `${date}T${enddate}`;
-        setStartTime(Start);
-        setEndTime(End);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
-  };
-  const getScheduler = () => {
-    axios
-      .post("http://192.168.0.65:8500/rest/gvRestApi/schedule/getRequestors/")
-      .then(function (response) {
-        const data = response.data.DATA.map((e) => ({
-          id: e[0],
-          value: e[0],
-          lable: e[1],
-        }));
-        const selected = data.filter((e) => e.id === 2);
-        setSelectedScheduler(selected);
-        const updatedData = data.filter((e) => e.id !== 2);
-        setScheduler(updatedData);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
-  };
   //customer API Implementation
-  const getCustomer = () => {
-    axios
-      .post("http://192.168.0.65:8500/rest/gvRestApi/schedule/getCustomers/")
-      .then(function (response) {
-        const data = response.data.DATA.map((e) => ({
-          id: e[0],
-          value: e[0],
-          label: e[1],
-        }));
-        const selected = data.filter((e) => e.id === 22);
-        setSelectedCustomer(selected);
-        const updatedData = data.filter((e) => e.id !== 22);
-        setCustomer(updatedData);
-        setVisibleData(data.slice(0, BATCH_SIZE));
-        setOffset(BATCH_SIZE);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
-  };
+  useEffect(() => {
+    const getCustomer = () => {
+      axios
+        .post("http://192.168.0.65:8500/rest/gvRestApi/schedule/getCustomers/")
+        .then(function (response) {
+          const data = response.data.DATA.map((e) => ({
+            id: e[0],
+            value: e[0],
+            label: e[1],
+          }));
+          const selected = data.filter((e) => e.id === 22);
+          setSelectedCustomer(selected);
+          const updatedData = data.filter((e) => e.id !== 22);
+          setCustomer(updatedData);
+          setVisibleData(data.slice(0, BATCH_SIZE));
+          setOffset(BATCH_SIZE);
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+    };
+    getCustomer();
+  }, []);
+
   const handleCustomerClick = (selectedOption) => {
     const variable = selectedOption.value;
     let data1 = Customer.filter((e) => e.value === variable);
@@ -196,7 +194,7 @@ export default function RightDashboard() {
       setOffset(newOffset);
     }
   };
-
+  
   const customStyles = {
     menuList: (provided) => ({
       ...provided,
@@ -204,7 +202,7 @@ export default function RightDashboard() {
       overflowY: "auto",
     }),
   };
-
+  
   const handleMenuScroll = (event) => {
     const bottom =
       event.target.scrollHeight - event.target.scrollTop ===
@@ -213,28 +211,227 @@ export default function RightDashboard() {
       loadMoreData();
     }
   };
+  //API Contact
+  useEffect(() => {
+    const getContact = () => {
+      axios
+        .post("http://192.168.0.65:8500/rest/gvRestApi/schedule/getContacts/", {
+          customer_id: 22,
+          CUSTOMER_STATUS: 1,
+        })
+        .then(function (response) {
+          const data = response.data.DATA.map((e) => ({
+            id: e[0],
+            value: e[0],
+            lable: e[1],
+          }));
+          setContact(data);
+          const selected = data.filter((e) => e.id === 22);
+          setSelectedContact(selected);
+          const updatedData = data.filter((e) => e.id !== 22);
+          setContact(updatedData);
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+    };
+    getContact();
+  }, []);
+  //API District
+  useEffect(() => {
+    const getDistrict = () => {
+      axios
+        .post("http://192.168.0.65:8500/rest/gvRestApi/master/getLocation/", {
+          loc_id: "10000000",
+          loc_parentid: "00000000",
+        })
+        .then(function (response) {
+          const data = response.data.DATA.map((e) => ({
+            id: e[0],
+            value: e[0],
+            lable: e[16],
+          }));
+          setDistrict(data);
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+    };
+    getDistrict();
+  }, []);
+  //API School
+  useEffect(() => {
+    const getSchool = () => {
+      axios
+        .post("http://192.168.0.65:8500/rest/gvRestApi/master/getLocation/", {
+          label_id: "2",
+          loc_parentid: "10000000",
+        })
+        .then(function (response) {
+          const data = response.data.DATA.map((e) => ({
+            id: e[0],
+            value: e[14],
+            lable: e[16],
+          }));
+          setSchool(data);
+          setFloor([]);
+          setRoom([]);
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+    };
+    getSchool();
+  }, []);
 
-  const getContact = () => {
+  const handleSchoolClick = (e) => {
+    const variable = e.target.value;
+    const data1 = School.filter((e) => e.value === variable);
+    setFloor([]);
     axios
-      .post("http://192.168.0.65:8500/rest/gvRestApi/schedule/getContacts/", {
-        customer_id: 22,
-        CUSTOMER_STATUS: 1,
+      .post("http://192.168.0.65:8500/rest/gvRestApi/master/getLocation/", {
+        label_id: "3",
+        loc_parentid: data1[0].value,
       })
       .then(function (response) {
         const data = response.data.DATA.map((e) => ({
           id: e[0],
-          value: e[0],
-          lable: e[1],
+          value: e[14],
+          lable: e[16],
         }));
-        setContact(data);
-        const selected = data.filter((e) => e.id === 22);
-        setSelectedContact(selected);
-        const updatedData = data.filter((e) => e.id !== 22);
-        setContact(updatedData);
+        setFloor(data);
+        setRoom([]);
       })
       .catch(function (error) {
         console.log(error);
       });
+  };
+  const handleFloorClick = (e) => {
+    const variable = e.target.value;
+    const data1 = Floor.filter((e) => e.value === variable);
+    setRoom([]);
+    axios
+      .post("http://192.168.0.65:8500/rest/gvRestApi/master/getLocation/", {
+        label_id: "4",
+        loc_parentid: data1[0].value,
+      })
+      .then(function (response) {
+        const data = response.data.DATA.map((e) => ({
+          id: e[0],
+          value: e[14],
+          lable: e[16],
+        }));
+        setRoom(data);
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  };
+  //API Location filter District
+  useEffect(() => {
+    const getLFDistrict = () => {
+      axios
+        .get(
+          "http://192.168.0.65:8500/rest/gvRestApi/schedule/getLevelType/1",
+          {
+            label_id: 1,
+          }
+        )
+        .then(function (response) {
+          const data = response.data.DATA.map((e) => ({
+            id: e[0],
+            value: e[0],
+            lable: e[1],
+          }));
+          setLFDistrict(data);
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+    };
+    getLFDistrict();
+  }, []);
+  //API Location filter School
+  useEffect(() => {
+    const getLFSchool = () => {
+      axios
+        .get(
+          "http://192.168.0.65:8500/rest/gvRestApi/schedule/getLevelType/2",
+          {
+            label_id: 1,
+          }
+        )
+        .then(function (response) {
+          const data = response.data.DATA.map((e) => ({
+            id: e[0],
+            value: e[0],
+            lable: e[1],
+          }));
+          setLFSchool(data);
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+    };
+    getLFSchool();
+  }, []);
+  //API Location filter Floor
+  useEffect(() => {
+    const getLFFloor = () => {
+      axios
+        .get(
+          "http://192.168.0.65:8500/rest/gvRestApi/schedule/getLevelType/3",
+          {
+            label_id: 1,
+          }
+        )
+        .then(function (response) {
+          const data = response.data.DATA.map((e) => ({
+            id: e[0],
+            value: e[0],
+            lable: e[1],
+          }));
+          setLFFloor(data);
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+    };
+    getLFFloor();
+  }, []);
+  //API Location filter Room
+  useEffect(() => {
+    const getLFRoom = () => {
+      axios
+        .get(
+          "http://192.168.0.65:8500/rest/gvRestApi/schedule/getLevelType/4",
+          {
+            label_id: 1,
+          }
+        )
+        .then(function (response) {
+          const data = response.data.DATA.map((e) => ({
+            id: e[0],
+            value: e[0],
+            lable: e[1],
+          }));
+          setLFRoom(data);
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+    };
+    getLFRoom();
+  }, []);
+
+  const handleClick1 = () => {
+    setIsOpen1(!isOpen1);
+  };
+  const handleClick2 = () => {
+    setIsOpen2(!isOpen2);
+  };
+  const handleClick3 = () => {
+    setIsOpen3(!isOpen3);
   };
 
   const handleClickPeopleSearch = () => {
@@ -281,166 +478,6 @@ export default function RightDashboard() {
     console.log(data, option);
   };
 
-  const getDistrict = () => {
-    axios
-      .post("http://192.168.0.65:8500/rest/gvRestApi/master/getLocation/", {
-        loc_id: "10000000",
-        loc_parentid: "00000000",
-      })
-      .then(function (response) {
-        const data = response.data.DATA.map((e) => ({
-          id: e[0],
-          value: e[0],
-          lable: e[16],
-        }));
-        setDistrict(data);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
-  };
-  const getSchool = () => {
-    axios
-      .post("http://192.168.0.65:8500/rest/gvRestApi/master/getLocation/", {
-        label_id: "2",
-        loc_parentid: "10000000",
-      })
-      .then(function (response) {
-        const data = response.data.DATA.map((e) => ({
-          id: e[0],
-          value: e[14],
-          lable: e[16],
-        }));
-        setSchool(data);
-        setFloor([]);
-        setRoom([]);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
-  };
-  const handleSchoolClick = (e) => {
-    const variable = e.target.value;
-    const data1 = School.filter((e) => e.value === variable);
-    setFloor([]);
-    axios
-      .post("http://192.168.0.65:8500/rest/gvRestApi/master/getLocation/", {
-        label_id: "3",
-        loc_parentid: data1[0].value,
-      })
-      .then(function (response) {
-        const data = response.data.DATA.map((e) => ({
-          id: e[0],
-          value: e[14],
-          lable: e[16],
-        }));
-        setFloor(data);
-        setRoom([]);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
-  };
-  const handleFloorClick = (e) => {
-    const variable = e.target.value;
-    const data1 = Floor.filter((e) => e.value === variable);
-    setRoom([]);
-    axios
-      .post("http://192.168.0.65:8500/rest/gvRestApi/master/getLocation/", {
-        label_id: "4",
-        loc_parentid: data1[0].value,
-      })
-      .then(function (response) {
-        const data = response.data.DATA.map((e) => ({
-          id: e[0],
-          value: e[14],
-          lable: e[16],
-        }));
-        setRoom(data);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
-  };
-
-  const getLFDistrict = () => {
-    axios
-      .get("http://192.168.0.65:8500/rest/gvRestApi/schedule/getLevelType/1", {
-        label_id: 1,
-      })
-      .then(function (response) {
-        const data = response.data.DATA.map((e) => ({
-          id: e[0],
-          value: e[0],
-          lable: e[1],
-        }));
-        setLFDistrict(data);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
-  };
-  const getLFSchool = () => {
-    axios
-      .get("http://192.168.0.65:8500/rest/gvRestApi/schedule/getLevelType/2", {
-        label_id: 1,
-      })
-      .then(function (response) {
-        const data = response.data.DATA.map((e) => ({
-          id: e[0],
-          value: e[0],
-          lable: e[1],
-        }));
-        setLFSchool(data);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
-  };
-  const getLFFloor = () => {
-    axios
-      .get("http://192.168.0.65:8500/rest/gvRestApi/schedule/getLevelType/3", {
-        label_id: 1,
-      })
-      .then(function (response) {
-        const data = response.data.DATA.map((e) => ({
-          id: e[0],
-          value: e[0],
-          lable: e[1],
-        }));
-        setLFFloor(data);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
-  };
-  const getLFRoom = () => {
-    axios
-      .get("http://192.168.0.65:8500/rest/gvRestApi/schedule/getLevelType/4", {
-        label_id: 1,
-      })
-      .then(function (response) {
-        const data = response.data.DATA.map((e) => ({
-          id: e[0],
-          value: e[0],
-          lable: e[1],
-        }));
-        setLFRoom(data);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
-  };
-
-  const handleClick1 = () => {
-    setIsOpen1(!isOpen1);
-  };
-  const handleClick2 = () => {
-    setIsOpen2(!isOpen2);
-  };
-  const handleClick3 = () => {
-    setIsOpen3(!isOpen3);
-  };
   return (
     <div className="mainRightDashboard">
       <div className="topRightdashboard">
