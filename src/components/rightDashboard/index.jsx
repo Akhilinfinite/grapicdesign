@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import Select from "react-select";
 import "./index.scss";
 import "./LocationStyles.scss";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -23,9 +24,6 @@ import Filter from "../../asserts/images/Icons/filter.svg";
 import Add from "../../asserts/images/Icons/add.svg";
 import Down from "../../asserts/images/Icons/down_arrow.png";
 import Up from "../../asserts/images/Icons/up_arrow.png";
-import InfiniteDropdown from "./components/InfiniteDropdown";
-
-
 
 export default function RightDashboard() {
   const [isOpen1, setIsOpen1] = useState(false);
@@ -34,8 +32,13 @@ export default function RightDashboard() {
   const [Owners, setOwners] = useState([]);
   const [Scheduler, setScheduler] = useState([]);
   const [SelectedScheduler, setSelectedScheduler] = useState([]);
+
   const [Customer, setCustomer] = useState([]);
   const [SelectedCustomer, setSelectedCustomer] = useState([]);
+  const [visibleData, setVisibleData] = useState([]);
+  const [offset, setOffset] = useState(0);
+  const BATCH_SIZE = 900;
+
   const [Contact, setContact] = useState([]);
   const [SelectedContact, setSelectedContact] = useState([]);
   const [District, setDistrict] = useState([]);
@@ -137,6 +140,7 @@ export default function RightDashboard() {
         console.log(error);
       });
   };
+  //customer API Implementation
   const getCustomer = () => {
     axios
       .post("http://192.168.0.65:8500/rest/gvRestApi/schedule/getCustomers/")
@@ -144,17 +148,72 @@ export default function RightDashboard() {
         const data = response.data.DATA.map((e) => ({
           id: e[0],
           value: e[0],
-          lable: e[1],
+          label: e[1],
         }));
         const selected = data.filter((e) => e.id === 22);
         setSelectedCustomer(selected);
         const updatedData = data.filter((e) => e.id !== 22);
         setCustomer(updatedData);
+        setVisibleData(data.slice(0, BATCH_SIZE));
+        setOffset(BATCH_SIZE);
       })
       .catch(function (error) {
         console.log(error);
       });
   };
+  const handleCustomerClick = (selectedOption) => {
+    const variable = selectedOption.value;
+    let data1 = Customer.filter((e) => e.value === variable);
+    if (!data1.length) {
+      data1 = SelectedCustomer.filter((e) => e.value === variable);
+    }
+    setSelectedCustomer([selectedOption]);
+    setSelectedContact([]);
+    axios
+      .post("http://192.168.0.65:8500/rest/gvRestApi/schedule/getContacts/", {
+        customer_id: data1[0].value,
+        CUSTOMER_STATUS: 1,
+      })
+      .then(function (response) {
+        const data = response.data.DATA.map((e) => ({
+          id: e[0],
+          value: e[0],
+          lable: e[1],
+        }));
+        setContact(data);
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  };
+  const loadMoreData = () => {
+    if (offset < Customer.length) {
+      const newOffset = offset + BATCH_SIZE;
+      setVisibleData((prevData) => [
+        ...prevData,
+        ...Customer.slice(offset, newOffset),
+      ]);
+      setOffset(newOffset);
+    }
+  };
+
+  const customStyles = {
+    menuList: (provided) => ({
+      ...provided,
+      height: "400px",
+      overflowY: "auto",
+    }),
+  };
+
+  const handleMenuScroll = (event) => {
+    const bottom =
+      event.target.scrollHeight - event.target.scrollTop ===
+      event.target.clientHeight;
+    if (bottom) {
+      loadMoreData();
+    }
+  };
+
   const getContact = () => {
     axios
       .post("http://192.168.0.65:8500/rest/gvRestApi/schedule/getContacts/", {
@@ -177,30 +236,7 @@ export default function RightDashboard() {
         console.log(error);
       });
   };
-  const handleCustomerClick = (e) => {
-    const variable = e.target.value;
-    var data1 = Customer.filter((e) => e.value === Number(variable));
-    if (!data1.length) {
-      data1 = SelectedCustomer.filter((e) => e.value === Number(variable));
-    }
-    setSelectedContact([]);
-    axios
-      .post("http://192.168.0.65:8500/rest/gvRestApi/schedule/getContacts/", {
-        customer_id: data1[0].value,
-        CUSTOMER_STATUS: 1,
-      })
-      .then(function (response) {
-        const data = response.data.DATA.map((e) => ({
-          id: e[0],
-          value: e[0],
-          lable: e[1],
-        }));
-        setContact(data);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
-  };
+
   const handleClickPeopleSearch = () => {
     const option = document.getElementById("people_input_Select").value;
     const data1 = document.getElementById("people_input_Search").value;
@@ -813,24 +849,12 @@ export default function RightDashboard() {
                           <div className="selectedField-value">
                             <div className="title">Customer</div>
                             <div className="dropdown">
-                              {/* <select
-                                name="customer"
-                                className="custom-select"
-                                onChange={(e) => handleCustomerClick(e)}
-                              >
-                                {SelectedCustomer.map((e, id) => (
-                                  <option value={e.value} key={id}>
-                                    {e.lable}
-                                  </option>
-                                ))}
-                                {Customer.map((e, id) => (
-                                  <option value={e.value} key={id}>
-                                    {e.lable}
-                                  </option>
-                                ))}
-                              </select> */}
-                              <InfiniteDropdown
-                                handleClick={handleCustomerClick}
+                              <Select
+                                options={visibleData}
+                                value={SelectedCustomer}
+                                onChange={handleCustomerClick}
+                                styles={customStyles}
+                                onMenuScrollToBottom={handleMenuScroll}
                               />
                             </div>
                           </div>
