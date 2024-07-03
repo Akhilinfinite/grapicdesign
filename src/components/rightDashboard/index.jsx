@@ -23,6 +23,10 @@ import Filter from "../../asserts/images/Icons/filter.svg";
 import Add from "../../asserts/images/Icons/add.svg";
 import Down from "../../asserts/images/Icons/down_arrow.png";
 import Up from "../../asserts/images/Icons/up_arrow.png";
+import InfiniteDropdown from "./components/InfiniteDropdown";
+
+
+
 export default function RightDashboard() {
   const [isOpen1, setIsOpen1] = useState(false);
   const [isOpen2, setIsOpen2] = useState(false);
@@ -38,6 +42,21 @@ export default function RightDashboard() {
   const [School, setSchool] = useState([]);
   const [Floor, setFloor] = useState([]);
   const [Room, setRoom] = useState([]);
+
+  const [LFDistrict, setLFDistrict] = useState([]);
+  const [LFSchool, setLFSchool] = useState([]);
+  const [LFFloor, setLFFloor] = useState([]);
+  const [LFRoom, setLFRoom] = useState([]);
+
+  const [StartTime, setStartTime] = useState("");
+  const [EndTime, setEndTime] = useState("");
+
+  const handleEndTime = (e) => {
+    setEndTime(e.target.value);
+  };
+  const handleStartTime = (e) => {
+    setStartTime(e.target.value);
+  };
 
   const [isIntervalTypeModalVisible, setIntervalTypeModalVisibility] =
     useState(false);
@@ -69,6 +88,10 @@ export default function RightDashboard() {
     getContact();
     getDistrict();
     getSchool();
+    getLFDistrict();
+    getLFSchool();
+    getLFFloor();
+    getLFRoom();
   }, []);
 
   //API calls
@@ -80,8 +103,17 @@ export default function RightDashboard() {
           id: e[33],
           value: e[33],
           lable: e[16],
+          end: e[19],
+          start: e[24],
         }));
         setOwners(data);
+        const startdate = data[0].start.split(" ")[3];
+        const enddate = data[0].end.split(" ")[3];
+        const date = new Date().toISOString().split("T")[0];
+        const Start = `${date}T${startdate}`;
+        const End = `${date}T${enddate}`;
+        setStartTime(Start);
+        setEndTime(End);
       })
       .catch(function (error) {
         console.log(error);
@@ -114,7 +146,6 @@ export default function RightDashboard() {
           value: e[0],
           lable: e[1],
         }));
-        console.log(response.data);
         const selected = data.filter((e) => e.id === 22);
         setSelectedCustomer(selected);
         const updatedData = data.filter((e) => e.id !== 22);
@@ -172,13 +203,46 @@ export default function RightDashboard() {
   };
   const handleClickPeopleSearch = () => {
     const option = document.getElementById("people_input_Select").value;
-    const data = document.getElementById("people_input_Search").value;
-    console.log(data , option);
+    const data1 = document.getElementById("people_input_Search").value;
+    switch (option) {
+      case "1":
+        console.log(data1);
+        break;
+      case "2":
+        console.log(data1);
+        break;
+      case "3":
+        console.log(data1);
+        break;
+      case "4":
+        axios
+          .post(
+            "http://192.168.0.65:8500/rest/gvRestApi/schedule/getContacts/",
+            {
+              search_filter: data1,
+            }
+          )
+          .then(function (response) {
+            const data = response.data.DATA.map((e) => ({
+              id: e[0],
+              value: e[0],
+              lable: e[1],
+            }));
+            setContact(data);
+            setSelectedContact([]);
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
+        break;
+      default:
+        break;
+    }
   };
   const handleClickLocationSearch = () => {
     const option = document.getElementById("location_input_Select").value;
     const data = document.getElementById("location_input_Search").value;
-    console.log(data , option);
+    console.log(data, option);
   };
 
   const getDistrict = () => {
@@ -263,6 +327,75 @@ export default function RightDashboard() {
       });
   };
 
+  const getLFDistrict = () => {
+    axios
+      .get("http://192.168.0.65:8500/rest/gvRestApi/schedule/getLevelType/1", {
+        label_id: 1,
+      })
+      .then(function (response) {
+        const data = response.data.DATA.map((e) => ({
+          id: e[0],
+          value: e[0],
+          lable: e[1],
+        }));
+        setLFDistrict(data);
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  };
+  const getLFSchool = () => {
+    axios
+      .get("http://192.168.0.65:8500/rest/gvRestApi/schedule/getLevelType/2", {
+        label_id: 1,
+      })
+      .then(function (response) {
+        const data = response.data.DATA.map((e) => ({
+          id: e[0],
+          value: e[0],
+          lable: e[1],
+        }));
+        setLFSchool(data);
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  };
+  const getLFFloor = () => {
+    axios
+      .get("http://192.168.0.65:8500/rest/gvRestApi/schedule/getLevelType/3", {
+        label_id: 1,
+      })
+      .then(function (response) {
+        const data = response.data.DATA.map((e) => ({
+          id: e[0],
+          value: e[0],
+          lable: e[1],
+        }));
+        setLFFloor(data);
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  };
+  const getLFRoom = () => {
+    axios
+      .get("http://192.168.0.65:8500/rest/gvRestApi/schedule/getLevelType/4", {
+        label_id: 1,
+      })
+      .then(function (response) {
+        const data = response.data.DATA.map((e) => ({
+          id: e[0],
+          value: e[0],
+          lable: e[1],
+        }));
+        setLFRoom(data);
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  };
+
   const handleClick1 = () => {
     setIsOpen1(!isOpen1);
   };
@@ -317,6 +450,8 @@ export default function RightDashboard() {
                             <input
                               type="datetime-local"
                               name="scheduleStartTime"
+                              value={StartTime}
+                              onChange={(e) => handleStartTime(e)}
                               className="form-control"
                               style={{ height: "40px" }}
                             />
@@ -331,6 +466,8 @@ export default function RightDashboard() {
                               type="datetime-local"
                               name="scheduleEndTime"
                               className="form-control"
+                              value={EndTime}
+                              onChange={(e) => handleEndTime(e)}
                               style={{ height: "40px" }}
                             />
                           </div>
@@ -346,9 +483,9 @@ export default function RightDashboard() {
                               onChange={handleIntervalTypeChange}
                             >
                               <option value="">select value</option>
-                              <option value="Weekly">Daily</option>
-                              <option value="Daily">weekly</option>
-                              <option value="Weekly">recurring</option>
+                              <option value="Weekly">weekly</option>
+                              <option value="Monthly">Monthly</option>
+                              <option value="Recurring">Recurring</option>
                             </select>
                           </div>
                           <Modal
@@ -381,9 +518,11 @@ export default function RightDashboard() {
                                       className="custom-select"
                                     >
                                       <option value="">select value</option>
-                                      <option value="Weekly">Daily</option>
-                                      <option value="Daily">weekly</option>
-                                      <option value="Weekly">recurring</option>
+                                      <option value="Weekly">weekly</option>
+                                      <option value="Monthly"></option>
+                                      <option value="Recurring">
+                                        Recurring
+                                      </option>
                                     </select>
                                   </div>
                                 </div>
@@ -430,9 +569,11 @@ export default function RightDashboard() {
                                       className="custom-select"
                                     >
                                       <option value="">select value</option>
-                                      <option value="Weekly">Daily</option>
-                                      <option value="Daily">weekly</option>
-                                      <option value="Weekly">recurring</option>
+                                      <option value="Weekly">weekly</option>
+                                      <option value="Monthly"></option>
+                                      <option value="Recurring">
+                                        Recurring
+                                      </option>
                                     </select>
                                   </div>
                                 </div>
@@ -443,9 +584,11 @@ export default function RightDashboard() {
                                       className="custom-select"
                                     >
                                       <option value="">select value</option>
-                                      <option value="Weekly">Daily</option>
-                                      <option value="Daily">weekly</option>
-                                      <option value="Weekly">recurring</option>
+                                      <option value="Weekly">weekly</option>
+                                      <option value="Monthly"></option>
+                                      <option value="Recurring">
+                                        Recurring
+                                      </option>
                                     </select>
                                   </div>
                                 </div>
@@ -466,7 +609,9 @@ export default function RightDashboard() {
                                   />
                                 </div>
                                 <div className="col-4 text-center">
-                                  <div>Remove</div>
+                                  <div>
+                                    <a href="/"> Remove</a>
+                                  </div>
                                 </div>
                               </div>
                               <div className="row intervalType-row5 mt-3">
@@ -668,7 +813,7 @@ export default function RightDashboard() {
                           <div className="selectedField-value">
                             <div className="title">Customer</div>
                             <div className="dropdown">
-                              <select
+                              {/* <select
                                 name="customer"
                                 className="custom-select"
                                 onChange={(e) => handleCustomerClick(e)}
@@ -683,7 +828,10 @@ export default function RightDashboard() {
                                     {e.lable}
                                   </option>
                                 ))}
-                              </select>
+                              </select> */}
+                              <InfiniteDropdown
+                                handleClick={handleCustomerClick}
+                              />
                             </div>
                           </div>
                         </Col>
@@ -883,7 +1031,8 @@ export default function RightDashboard() {
                                       name="district1"
                                       className="custom-select"
                                     >
-                                      {District.map((e, id) => {
+                                      <option value=""></option>
+                                      {LFDistrict.map((e, id) => {
                                         return (
                                           <option value={e.value} key={id}>
                                             {e.lable}
@@ -906,7 +1055,7 @@ export default function RightDashboard() {
                                       className="custom-select"
                                     >
                                       <option value=""></option>
-                                      {School.map((e, id) => {
+                                      {LFSchool.map((e, id) => {
                                         return (
                                           <option value={e.value} key={id}>
                                             {e.lable}
@@ -930,7 +1079,7 @@ export default function RightDashboard() {
                                       className="custom-select"
                                     >
                                       <option value=""></option>
-                                      {Floor.map((e, id) => {
+                                      {LFFloor.map((e, id) => {
                                         return (
                                           <option value={e.value} key={id}>
                                             {e.lable}
@@ -954,7 +1103,7 @@ export default function RightDashboard() {
                                       className="custom-select"
                                     >
                                       <option value=""></option>
-                                      {Room.map((e, id) => {
+                                      {LFRoom.map((e, id) => {
                                         return (
                                           <option value={e.value} key={id}>
                                             {e.lable}
@@ -1024,7 +1173,7 @@ export default function RightDashboard() {
                           >
                             Close
                           </Button>
-                          <Button className="filter-apply-btn">Close</Button>
+                          <Button className="filter-apply-btn">Apply</Button>
                         </Modal.Footer>
                       </Modal>
                     </Row>
