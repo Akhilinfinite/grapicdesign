@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import Select from "react-select";
 import "./index.scss";
 import "./LocationStyles.scss";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -24,6 +23,7 @@ import Filter from "../../asserts/images/Icons/filter.svg";
 import Add from "../../asserts/images/Icons/add.svg";
 import Down from "../../asserts/images/Icons/down_arrow.png";
 import Up from "../../asserts/images/Icons/up_arrow.png";
+import InfiniteDropdown from "./components/InfiniteDropdown";
 
 export default function RightDashboard() {
   const [isOpen1, setIsOpen1] = useState(true);
@@ -32,13 +32,8 @@ export default function RightDashboard() {
   const [Owners, setOwners] = useState([]);
   const [Scheduler, setScheduler] = useState([]);
   const [SelectedScheduler, setSelectedScheduler] = useState([]);
-
   const [Customer, setCustomer] = useState([]);
   const [SelectedCustomer, setSelectedCustomer] = useState([]);
-  const [visibleData, setVisibleData] = useState([]);
-  const [offset, setOffset] = useState(0);
-  const BATCH_SIZE = 900;
-
   const [Contact, setContact] = useState([]);
   const [SelectedContact, setSelectedContact] = useState([]);
   const [District, setDistrict] = useState([]);
@@ -53,6 +48,7 @@ export default function RightDashboard() {
 
   const [StartTime, setStartTime] = useState("");
   const [EndTime, setEndTime] = useState("");
+
 
   const handleEndTime = (e) => {
     setEndTime(e.target.value);
@@ -93,11 +89,14 @@ export default function RightDashboard() {
           const data = response.data.DATA.map((e) => ({
             id: e[33],
             value: e[33],
-            lable: e[16],
+            label: e[16],
             end: e[19],
             start: e[24],
+            EVENTSLOTTIME: e[26],
           }));
           setOwners(data);
+          console.log(response.data);
+          console.log(data);
           const startdate = data[0].start.split(" ")[3];
           const enddate = data[0].end.split(" ")[3];
           const date = new Date().toISOString().split("T")[0];
@@ -120,7 +119,7 @@ export default function RightDashboard() {
           const data = response.data.DATA.map((e) => ({
             id: e[0],
             value: e[0],
-            lable: e[1],
+            label: e[1],
           }));
           const selected = data.filter((e) => e.id === 2);
           setSelectedScheduler(selected);
@@ -149,8 +148,6 @@ export default function RightDashboard() {
           setSelectedCustomer(selected);
           const updatedData = data.filter((e) => e.id !== 22);
           setCustomer(updatedData);
-          setVisibleData(data.slice(0, BATCH_SIZE));
-          setOffset(BATCH_SIZE);
         })
         .catch(function (error) {
           console.log(error);
@@ -176,40 +173,13 @@ export default function RightDashboard() {
         const data = response.data.DATA.map((e) => ({
           id: e[0],
           value: e[0],
-          lable: e[1],
+          label: e[1],
         }));
         setContact(data);
       })
       .catch(function (error) {
         console.log(error);
       });
-  };
-  const loadMoreData = () => {
-    if (offset < Customer.length) {
-      const newOffset = offset + BATCH_SIZE;
-      setVisibleData((prevData) => [
-        ...prevData,
-        ...Customer.slice(offset, newOffset),
-      ]);
-      setOffset(newOffset);
-    }
-  };
-  
-  const customStyles = {
-    menuList: (provided) => ({
-      ...provided,
-      height: "400px",
-      overflowY: "auto",
-    }),
-  };
-  
-  const handleMenuScroll = (event) => {
-    const bottom =
-      event.target.scrollHeight - event.target.scrollTop ===
-      event.target.clientHeight;
-    if (bottom) {
-      loadMoreData();
-    }
   };
   //API Contact
   useEffect(() => {
@@ -223,7 +193,7 @@ export default function RightDashboard() {
           const data = response.data.DATA.map((e) => ({
             id: e[0],
             value: e[0],
-            lable: e[1],
+            label: e[1],
           }));
           setContact(data);
           const selected = data.filter((e) => e.id === 22);
@@ -249,7 +219,7 @@ export default function RightDashboard() {
           const data = response.data.DATA.map((e) => ({
             id: e[0],
             value: e[0],
-            lable: e[16],
+            label: e[16],
           }));
           setDistrict(data);
         })
@@ -271,7 +241,7 @@ export default function RightDashboard() {
           const data = response.data.DATA.map((e) => ({
             id: e[0],
             value: e[14],
-            lable: e[16],
+            label: e[16],
           }));
           setSchool(data);
           setFloor([]);
@@ -284,21 +254,21 @@ export default function RightDashboard() {
     getSchool();
   }, []);
 
-  const handleSchoolClick = (e) => {
-    const variable = e.target.value;
-    const data1 = School.filter((e) => e.value === variable);
+  const handleSchoolClick = (selectedOption) => {
+    const variable = selectedOption.value;
     setFloor([]);
     axios
       .post("http://192.168.0.65:8500/rest/gvRestApi/master/getLocation/", {
         label_id: "3",
-        loc_parentid: data1[0].value,
+        loc_parentid: variable,
       })
       .then(function (response) {
         const data = response.data.DATA.map((e) => ({
           id: e[0],
           value: e[14],
-          lable: e[16],
+          label: e[16],
         }));
+        console.log(data);
         setFloor(data);
         setRoom([]);
       })
@@ -306,20 +276,19 @@ export default function RightDashboard() {
         console.log(error);
       });
   };
-  const handleFloorClick = (e) => {
-    const variable = e.target.value;
-    const data1 = Floor.filter((e) => e.value === variable);
+  const handleFloorClick = (selectedOption) => {
+    const variable = selectedOption.value;
     setRoom([]);
     axios
       .post("http://192.168.0.65:8500/rest/gvRestApi/master/getLocation/", {
         label_id: "4",
-        loc_parentid: data1[0].value,
+        loc_parentid: variable,
       })
       .then(function (response) {
         const data = response.data.DATA.map((e) => ({
           id: e[0],
           value: e[14],
-          lable: e[16],
+          label: e[16],
         }));
         setRoom(data);
       })
@@ -341,7 +310,7 @@ export default function RightDashboard() {
           const data = response.data.DATA.map((e) => ({
             id: e[0],
             value: e[0],
-            lable: e[1],
+            label: e[1],
           }));
           setLFDistrict(data);
         })
@@ -365,7 +334,7 @@ export default function RightDashboard() {
           const data = response.data.DATA.map((e) => ({
             id: e[0],
             value: e[0],
-            lable: e[1],
+            label: e[1],
           }));
           setLFSchool(data);
         })
@@ -389,7 +358,7 @@ export default function RightDashboard() {
           const data = response.data.DATA.map((e) => ({
             id: e[0],
             value: e[0],
-            lable: e[1],
+            label: e[1],
           }));
           setLFFloor(data);
         })
@@ -413,7 +382,7 @@ export default function RightDashboard() {
           const data = response.data.DATA.map((e) => ({
             id: e[0],
             value: e[0],
-            lable: e[1],
+            label: e[1],
           }));
           setLFRoom(data);
         })
@@ -849,13 +818,10 @@ export default function RightDashboard() {
                           <div className="selectedField-value">
                             <div className="title">Owner</div>
                             <div className="dropdown">
-                              <select name="owner" className="custom-select">
-                                {Owners.map((e, id) => (
-                                  <option value={e.value} key={id}>
-                                    {e.lable}
-                                  </option>
-                                ))}
-                              </select>
+                              <InfiniteDropdown
+                                options={Owners}
+                                selectedValue={Owners[0] ? [Owners[0]] : []}
+                              />
                             </div>
                           </div>
                         </Col>
@@ -863,22 +829,13 @@ export default function RightDashboard() {
                           <div className="selectedField-value">
                             <div className="title">Scheduler</div>
                             <div className="dropdown">
-                              <select
-                                name="scheduler"
-                                className="custom-select"
-                              >
-                                {SelectedScheduler.map((e, id) => (
-                                  <option value={e.value} key={id}>
-                                    {e.lable}
-                                  </option>
-                                ))}
-                                {Scheduler.map((e, id) => (
-                                  <option value={e.value} key={id}>
-                                    {e.lable}
-                                  </option>
-                                ))}
-                                SelectedCustomer
-                              </select>
+                              <InfiniteDropdown
+                                options={Scheduler}
+                                selectedValue={SelectedScheduler}
+                                onChange={(selectedOption) =>
+                                  setSelectedScheduler([selectedOption])
+                                }
+                              />
                             </div>
                           </div>
                         </Col>
@@ -886,12 +843,10 @@ export default function RightDashboard() {
                           <div className="selectedField-value">
                             <div className="title">Customer</div>
                             <div className="dropdown">
-                              <Select
-                                options={visibleData}
-                                value={SelectedCustomer}
+                              <InfiniteDropdown
+                                options={Customer}
+                                selectedValue={SelectedCustomer}
                                 onChange={handleCustomerClick}
-                                styles={customStyles}
-                                onMenuScrollToBottom={handleMenuScroll}
                               />
                             </div>
                           </div>
@@ -900,21 +855,13 @@ export default function RightDashboard() {
                           <div className="selectedField-value">
                             <div className="title">Contact</div>
                             <div className="dropdown">
-                              <select name="contact" className="custom-select">
-                                {!SelectedContact.length && (
-                                  <option value=""></option>
-                                )}
-                                {SelectedContact.map((e, id) => (
-                                  <option value={e.value} key={id}>
-                                    {e.lable}
-                                  </option>
-                                ))}
-                                {Contact.map((e, id) => (
-                                  <option value={e.value} key={id}>
-                                    {e.lable}
-                                  </option>
-                                ))}
-                              </select>
+                              <InfiniteDropdown
+                                options={Contact}
+                                selectedValue={SelectedContact}
+                                onChange={(selectedOption) =>
+                                  setSelectedContact([selectedOption])
+                                }
+                              />
                             </div>
                           </div>
                         </Col>
@@ -1246,15 +1193,10 @@ export default function RightDashboard() {
                         <div className="selectedField-value">
                           <div className="title">District</div>
                           <div className="dropdown">
-                            <select name="days" className="custom-select">
-                              {District.map((e, id) => {
-                                return (
-                                  <option value={e.value} key={id}>
-                                    {e.lable}
-                                  </option>
-                                );
-                              })}
-                            </select>
+                            <InfiniteDropdown
+                              options={District}
+                              selectedValue={District[0] ? [District[0]] : []}
+                            />
                           </div>
                         </div>
                       </Col>
@@ -1262,20 +1204,10 @@ export default function RightDashboard() {
                         <div className="selectedField-value">
                           <div className="title">School</div>
                           <div className="dropdown">
-                            <select
-                              name="days"
-                              className="custom-select"
-                              onChange={(e) => handleSchoolClick(e)}
-                            >
-                              <option value=""></option>
-                              {School.map((e, id) => {
-                                return (
-                                  <option value={e.value} key={id}>
-                                    {e.lable}
-                                  </option>
-                                );
-                              })}
-                            </select>
+                            <InfiniteDropdown
+                              options={School}
+                              onChange={handleSchoolClick}
+                            />
                           </div>
                         </div>
                       </Col>
@@ -1283,20 +1215,10 @@ export default function RightDashboard() {
                         <div className="selectedField-value">
                           <div className="title">Floor</div>
                           <div className="dropdown">
-                            <select
-                              name="days"
-                              className="custom-select"
-                              onChange={(e) => handleFloorClick(e)}
-                            >
-                              <option value=""></option>
-                              {Floor.map((e, id) => {
-                                return (
-                                  <option value={e.value} key={id}>
-                                    {e.lable}
-                                  </option>
-                                );
-                              })}
-                            </select>
+                            <InfiniteDropdown
+                              options={Floor}
+                              onChange={handleFloorClick}
+                            />
                           </div>
                         </div>
                       </Col>
@@ -1304,16 +1226,7 @@ export default function RightDashboard() {
                         <div className="selectedField-value">
                           <div className="title">Room</div>
                           <div className="dropdown">
-                            <select name="days" className="custom-select">
-                              <option value=""></option>
-                              {Room.map((e, id) => {
-                                return (
-                                  <option value={e.value} key={id}>
-                                    {e.lable}
-                                  </option>
-                                );
-                              })}
-                            </select>
+                            <InfiniteDropdown options={Room} />
                           </div>
                         </div>
                       </Col>

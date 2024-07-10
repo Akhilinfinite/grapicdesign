@@ -609,3 +609,16 @@
 .selectedField-header {
   background-color: #f4f6f8 !important;
 }
+
+@media (max-width: 450px) {
+  .calender-setup {
+    .add {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      p{
+        margin-top: 1rem;
+      }
+    }
+  }
+}
