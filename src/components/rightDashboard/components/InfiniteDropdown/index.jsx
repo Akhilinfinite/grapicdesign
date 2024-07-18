@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import Select, { components } from 'react-select';
+import Select from 'react-select';
 
 const InfiniteDropdown = ({ options, selectedValue, onChange }) => {
   const [visibleData, setVisibleData] = useState([]);

@@ -38,8 +38,11 @@ export default function RightDashboard() {
   const [SelectedContact, setSelectedContact] = useState([]);
   const [District, setDistrict] = useState([]);
   const [School, setSchool] = useState([]);
+  const [SelectedSchool, setSelectedSchool] = useState([]);
   const [Floor, setFloor] = useState([]);
+  const [SelectedFloor, setSelectedFloor] = useState([]);
   const [Room, setRoom] = useState([]);
+  const [SelectedRoom, setSelectedRoom] = useState([]);
 
   const [LFDistrict, setLFDistrict] = useState([]);
   const [LFSchool, setLFSchool] = useState([]);
@@ -48,7 +51,6 @@ export default function RightDashboard() {
 
   const [StartTime, setStartTime] = useState("");
   const [EndTime, setEndTime] = useState("");
-
 
   const handleEndTime = (e) => {
     setEndTime(e.target.value);
@@ -95,8 +97,6 @@ export default function RightDashboard() {
             EVENTSLOTTIME: e[26],
           }));
           setOwners(data);
-          console.log(response.data);
-          console.log(data);
           const startdate = data[0].start.split(" ")[3];
           const enddate = data[0].end.split(" ")[3];
           const date = new Date().toISOString().split("T")[0];
@@ -257,6 +257,9 @@ export default function RightDashboard() {
   const handleSchoolClick = (selectedOption) => {
     const variable = selectedOption.value;
     setFloor([]);
+    setSelectedSchool([selectedOption]);
+    setSelectedFloor([]);
+    setSelectedRoom([]);
     axios
       .post("http://192.168.0.65:8500/rest/gvRestApi/master/getLocation/", {
         label_id: "3",
@@ -268,7 +271,6 @@ export default function RightDashboard() {
           value: e[14],
           label: e[16],
         }));
-        console.log(data);
         setFloor(data);
         setRoom([]);
       })
@@ -279,6 +281,8 @@ export default function RightDashboard() {
   const handleFloorClick = (selectedOption) => {
     const variable = selectedOption.value;
     setRoom([]);
+    setSelectedRoom([]);
+    setSelectedFloor([selectedOption]);
     axios
       .post("http://192.168.0.65:8500/rest/gvRestApi/master/getLocation/", {
         label_id: "4",
@@ -1206,6 +1210,7 @@ export default function RightDashboard() {
                           <div className="dropdown">
                             <InfiniteDropdown
                               options={School}
+                              selectedValue={SelectedSchool}
                               onChange={handleSchoolClick}
                             />
                           </div>
@@ -1217,6 +1222,7 @@ export default function RightDashboard() {
                           <div className="dropdown">
                             <InfiniteDropdown
                               options={Floor}
+                              selectedValue={SelectedFloor}
                               onChange={handleFloorClick}
                             />
                           </div>
@@ -1226,7 +1232,10 @@ export default function RightDashboard() {
                         <div className="selectedField-value">
                           <div className="title">Room</div>
                           <div className="dropdown">
-                            <InfiniteDropdown options={Room} />
+                            <InfiniteDropdown
+                              options={Room}
+                              selectedValue={SelectedRoom}
+                            />
                           </div>
                         </div>
                       </Col>

@@ -1,0 +1,36 @@
+{
+  "files": {
+    "main.css": "./static/css/main.464de96e.css",
+    "main.js": "./static/js/main.70f67d01.js",
+    "static/js/453.41b2fbca.chunk.js": "./static/js/453.41b2fbca.chunk.js",
+    "static/media/SFM_logo.png": "./static/media/SFM_logo.15269dc37968b52da3a3.png",
+    "static/media/calendar time.svg": "./static/media/calendar time.88f6bc7a905c3baf999ece64a5d295a6.svg",
+    "static/media/calendar people.svg": "./static/media/calendar people.99d7cfa404280111ac316f7983b99890.svg",
+    "static/media/location calendar.svg": "./static/media/location calendar.8e1a40c627f7be9141e3780bfe63d4f1.svg",
+    "static/media/graphics-view.svg": "./static/media/graphics-view.3751e4fe4fd6ed095f993bee9b561fd0.svg",
+    "static/media/filter.svg": "./static/media/filter.8d9733fcdaa6120921987a6766099710.svg",
+    "static/media/calendar day.svg": "./static/media/calendar day.95ebd3bef6b67dc96c9157003eab7f1c.svg",
+    "static/media/calendar right.svg": "./static/media/calendar right.604073db4eed6b36ee4eb58fee00583a.svg",
+    "static/media/settings.svg": "./static/media/settings.94570a61c137423b518fcf1659055445.svg",
+    "static/media/edit-square-line-icon 1.svg": "./static/media/edit-square-line-icon 1.8df3640eb7c4073b363f79ab89e662e0.svg",
+    "static/media/user.svg": "./static/media/user.8688b6625d4b086231e8c75f821e78fe.svg",
+    "static/media/profile.svg": "./static/media/profile.a5e09daa9d1062e0aebf170d17cf276e.svg",
+    "static/media/map-marker.svg": "./static/media/map-marker.a0e55c6367f7e03938039f495a0f4ffd.svg",
+    "static/media/help-circle.svg": "./static/media/help-circle.abfc2e1998f2cff6d4a525850178d069.svg",
+    "index.html": "./index.html",
+    "static/media/Schedule.svg": "./static/media/Schedule.9625057fb8f39f3f884c305e33f9e525.svg",
+    "static/media/calendar-blank.svg": "./static/media/calendar-blank.faee54a0da175a490ba4e0c93e745b5a.svg",
+    "static/media/notification.svg": "./static/media/notification.771d66ea139616d6538224ae8511b226.svg",
+    "static/media/search.svg": "./static/media/search.f9705ffe407455bd10ed6827af98d123.svg",
+    "static/media/report.svg": "./static/media/report.8c5c7a1ec0c4dd6163b8804a1388126f.svg",
+    "static/media/add.svg": "./static/media/add.89fec027b3c93fb7ef9af9405b11b6ae.svg",
+    "static/media/dashboard.svg": "./static/media/dashboard.7c7518aab7038de220b71e03c5853a39.svg",
+    "main.464de96e.css.map": "./static/css/main.464de96e.css.map",
+    "main.70f67d01.js.map": "./static/js/main.70f67d01.js.map",
+    "453.41b2fbca.chunk.js.map": "./static/js/453.41b2fbca.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.464de96e.css",
+    "static/js/main.70f67d01.js"
+  ]
+}
