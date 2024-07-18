@@ -151,58 +151,102 @@
             padding: 1rem 1.25rem;
             width: 100%;
 
-            // .datetime-setup {
-            //   width: 100%;
-            //   display: flex;
-            //   // .row {
-            //   //   display: flex;
-            //   //   max-width: 100%;
-            //   //   flex-direction: row;
-            //   //   .col {
-            //   //     padding: 0em 1em;
-            //   //     max-width: 100%;
-            //   //     width: 250px;
-            //   //     .heading {
-            //   //       margin-top: 0;
-            //   //       margin-bottom: 1rem;
-            //   //     }
-            //   //     .dropdown {
-            //   //       margin-top: 0.5rem !important;
-            //   //     }
-            //   //     .time {
-            //   //       display: flex;
-            //   //       align-items: start;
-            //   //       #input {
-            //   //         font-family: Lato;
-            //   //         font-size: 1rem;
-            //   //         line-height: 1.5;
-            //   //       }
-            //   //     }
-            //   //   }
-            //   //   .showConflict {
-            //   //     margin-top: 1.5rem !important;
-            //   //     display: flex;
-            //   //     flex-direction: row;
-            //   //     align-items: center;
-            //   //     white-space: nowrap;
-            //   //     .checkBox {
-            //   //       margin-top: 1rem !important;
-            //   //       #input #checkbox {
-            //   //         width: 20px;
-            //   //         cursor: pointer;
-            //   //         height: 20px;
-            //   //         accent-color: #0d139d;
-            //   //       }
-            //   //     }
-            //   //     .conflict {
-            //   //       margin-left: 5px;
-            //   //       display: flex;
-            //   //       align-items: end;
-            //   //       margin-top: 10px;
-            //   //     }
-            //   //   }
-            //   // }
-            // }
+            .datetime-setup {
+              .row {
+                .col-3 {
+                  .startTime-container {
+                    .time {
+                      .form-control {
+                        z-index: 1;
+                        width: 100%;
+                        padding-right: 35px;
+                      }
+                      .image-c {
+                        position: absolute;
+                        right: 0px;
+                        margin: 6px;
+                        z-index: 2;
+                        .calendar-icon {
+                          fill: #212529;
+                          width: 20px;
+                          height: 20px;
+                        }
+                      }
+                    }
+                  }
+                  .endTime-container {
+                    .time {
+                      position: relative;
+                      .form-control {
+                        z-index: 1;
+                        padding-right: 35px;
+                      }
+                      .image-c {
+                        position: absolute;
+                        right: 0px;
+                        margin: 6px;
+                        z-index: 2;
+                        .calendar-icon {
+                          fill: #212529;
+                          width: 20px;
+                          height: 20px;
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+              //   width: 100%;
+              //   display: flex;
+              //   // .row {
+              //   //   display: flex;
+              //   //   max-width: 100%;
+              //   //   flex-direction: row;
+              //   //   .col {
+              //   //     padding: 0em 1em;
+              //   //     max-width: 100%;
+              //   //     width: 250px;
+              //   //     .heading {
+              //   //       margin-top: 0;
+              //   //       margin-bottom: 1rem;
+              //   //     }
+              //   //     .dropdown {
+              //   //       margin-top: 0.5rem !important;
+              //   //     }
+              //   //     .time {
+              //   //       display: flex;
+              //   //       align-items: start;
+              //   //       #input {
+              //   //         font-family: Lato;
+              //   //         font-size: 1rem;
+              //   //         line-height: 1.5;
+              //   //       }
+              //   //     }
+              //   //   }
+              //   //   .showConflict {
+              //   //     margin-top: 1.5rem !important;
+              //   //     display: flex;
+              //   //     flex-direction: row;
+              //   //     align-items: center;
+              //   //     white-space: nowrap;
+              //   //     .checkBox {
+              //   //       margin-top: 1rem !important;
+              //   //       #input #checkbox {
+              //   //         width: 20px;
+              //   //         cursor: pointer;
+              //   //         height: 20px;
+              //   //         accent-color: #0d139d;
+              //   //       }
+              //   //     }
+              //   //     .conflict {
+              //   //       margin-left: 5px;
+              //   //       display: flex;
+              //   //       align-items: end;
+              //   //       margin-top: 10px;
+              //   //     }
+              //   //   }
+              //   // }
+            }
             .calender-setup {
               width: 100%;
               font-size: 1rem;
@@ -616,9 +660,19 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      p{
+      p {
         margin-top: 1rem;
       }
     }
   }
+}
+
+.input-group .form-control {
+  border-right: 0;
+}
+
+.input-group-append .input-group-text {
+  background: white;
+  border-left: 0;
+  cursor: pointer;
 }

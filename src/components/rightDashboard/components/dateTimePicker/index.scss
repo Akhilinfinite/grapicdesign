@@ -1,0 +1,23 @@
+.datetime-picker-container {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+  
+    // .form-control {
+    //   width: 100%;
+    //   padding-right: 35px; // Ensure there's space for the icon
+    //   height: 40px;
+    //   font-size: 16px;
+    // }
+  
+    .calendar-icon {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      width: 20px;
+      height: 20px;
+    }
+  }
+  

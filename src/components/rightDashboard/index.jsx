@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import "./index.scss";
 import "./LocationStyles.scss";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -46,15 +48,15 @@ export default function RightDashboard() {
   const [LFFloor, setLFFloor] = useState([]);
   const [LFRoom, setLFRoom] = useState([]);
 
-  const [StartTime, setStartTime] = useState("");
-  const [EndTime, setEndTime] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
 
-
-  const handleEndTime = (e) => {
-    setEndTime(e.target.value);
+  const handleStartTimeChange = (date) => {
+    setStartTime(date);
   };
-  const handleStartTime = (e) => {
-    setStartTime(e.target.value);
+
+  const handleEndTimeChange = (date) => {
+    setEndTime(date);
   };
 
   const [isIntervalTypeModalVisible, setIntervalTypeModalVisibility] =
@@ -76,11 +78,11 @@ export default function RightDashboard() {
     setLocationFilterModalVisibility(true);
   };
 
-  const handleCloseLocationFilterModal = () => {
+  const handleCloseLocationFilterModal = () =>
     setLocationFilterModalVisibility(false);
-  };
 
   //API calls
+  // API call for Owner
   useEffect(() => {
     const getOwner = () => {
       axios
@@ -97,13 +99,14 @@ export default function RightDashboard() {
           setOwners(data);
           console.log(response.data);
           console.log(data);
-          const startdate = data[0].start.split(" ")[3];
-          const enddate = data[0].end.split(" ")[3];
-          const date = new Date().toISOString().split("T")[0];
-          const Start = `${date}T${startdate}`;
-          const End = `${date}T${enddate}`;
-          setStartTime(Start);
-          setEndTime(End);
+          const startDateString = data[0].start;
+          const endDateString = data[0].end;
+
+          const startDate = new Date(startDateString);
+          const endDate = new Date(endDateString);
+
+          setStartTime(startDate);
+          setEndTime(endDate);
         })
         .catch(function (error) {
           console.log(error);
@@ -111,6 +114,7 @@ export default function RightDashboard() {
     };
     getOwner();
   }, []);
+  //API for Scheduler
   useEffect(() => {
     const getScheduler = () => {
       axios
@@ -393,15 +397,10 @@ export default function RightDashboard() {
     getLFRoom();
   }, []);
 
-  const handleClick1 = () => {
-    setIsOpen1(!isOpen1);
-  };
-  const handleClick2 = () => {
-    setIsOpen2(!isOpen2);
-  };
-  const handleClick3 = () => {
-    setIsOpen3(!isOpen3);
-  };
+  const handleClick1 = () => setIsOpen1(!isOpen1);
+
+  const handleClick2 = () => setIsOpen2(!isOpen2);
+  const handleClick3 = () => setIsOpen3(!isOpen3);
 
   const handleClickPeopleSearch = () => {
     const option = document.getElementById("people_input_Select").value;
@@ -488,14 +487,27 @@ export default function RightDashboard() {
                       <Col md={3} sm={6} xs={12} className="col-3">
                         <div className="startTime-container mb-3">
                           <div className="heading">Start Date and Time</div>
-                          <div className="time">
-                            <input
-                              type="datetime-local"
-                              name="scheduleStartTime"
-                              value={StartTime}
-                              onChange={(e) => handleStartTime(e)}
+                          <div className="time input-group">
+                            <span className="image-c">
+                              <img
+                                src={Calender}
+                                alt="Calendar"
+                                className="calendar-icon"
+                              />
+                            </span>
+                            <DatePicker
+                              selected={startTime}
+                              onChange={handleStartTimeChange}
+                              showTimeSelect
+                              dateFormat="yyyy-MM-dd HH:mm"
+                              timeFormat="HH:mm"
+                              timeIntervals={15}
                               className="form-control"
-                              style={{ height: "40px" }}
+                              style={{
+                                height: "40px",
+                                fontSize: "16px",
+                                padding: "5px",
+                              }}
                             />
                           </div>
                         </div>
@@ -504,13 +516,26 @@ export default function RightDashboard() {
                         <div className="endTime-container mb-3">
                           <div className="heading">End Date and Time</div>
                           <div className="time">
-                            <input
-                              type="datetime-local"
-                              name="scheduleEndTime"
+                            <span className="image-c">
+                              <img
+                                src={Calender}
+                                alt="Calendar"
+                                className="calendar-icon"
+                              />
+                            </span>
+                            <DatePicker
+                              selected={endTime}
+                              onChange={handleEndTimeChange}
+                              showTimeSelect
+                              dateFormat="yyyy-MM-dd HH:mm"
+                              timeFormat="HH:mm"
+                              timeIntervals={15}
                               className="form-control"
-                              value={EndTime}
-                              onChange={(e) => handleEndTime(e)}
-                              style={{ height: "40px" }}
+                              style={{
+                                height: "40px",
+                                fontSize: "16px",
+                                padding: "5px",
+                              }}
                             />
                           </div>
                         </div>
@@ -1029,52 +1054,28 @@ export default function RightDashboard() {
                           <div className="row">
                             {/* First Column */}
                             <div className="col-md-6">
+                              {/* District */}
                               <div className="row mb-3 filtersrow">
                                 <div className="col-3">
                                   <label className="title">District:</label>
                                 </div>
                                 <div className="col-9">
                                   <div className="dropdown">
-                                    <select
-                                      name="district1"
-                                      className="custom-select"
-                                    >
-                                      <option value=""></option>
-                                      {LFDistrict.map((e, id) => {
-                                        return (
-                                          <option value={e.value} key={id}>
-                                            {e.lable}
-                                          </option>
-                                        );
-                                      })}
-                                    </select>
+                                    <InfiniteDropdown options={LFDistrict} />
                                   </div>
                                 </div>
                               </div>
-
+                              {/* School */}
                               <div className="row mb-3 filtersrow">
                                 <div className="col-3">
                                   <label className="title">School:</label>
                                 </div>
                                 <div className="col-9">
                                   <div className="dropdown">
-                                    <select
-                                      name="school"
-                                      className="custom-select"
-                                    >
-                                      <option value=""></option>
-                                      {LFSchool.map((e, id) => {
-                                        return (
-                                          <option value={e.value} key={id}>
-                                            {e.lable}
-                                          </option>
-                                        );
-                                      })}
-                                    </select>
+                                    <InfiniteDropdown options={LFSchool} />
                                   </div>
                                 </div>
                               </div>
-
                               {/* Floor */}
                               <div className="row mb-3 filtersrow">
                                 <div className="col-3">
@@ -1082,23 +1083,10 @@ export default function RightDashboard() {
                                 </div>
                                 <div className="col-9">
                                   <div className="dropdown">
-                                    <select
-                                      name="floor"
-                                      className="custom-select"
-                                    >
-                                      <option value=""></option>
-                                      {LFFloor.map((e, id) => {
-                                        return (
-                                          <option value={e.value} key={id}>
-                                            {e.lable}
-                                          </option>
-                                        );
-                                      })}
-                                    </select>
+                                    <InfiniteDropdown options={LFFloor} />
                                   </div>
                                 </div>
                               </div>
-
                               {/* Room */}
                               <div className="row mb-3 filtersrow">
                                 <div className="col-3">
@@ -1106,19 +1094,7 @@ export default function RightDashboard() {
                                 </div>
                                 <div className="col-9">
                                   <div className="dropdown">
-                                    <select
-                                      name="room"
-                                      className="custom-select"
-                                    >
-                                      <option value=""></option>
-                                      {LFRoom.map((e, id) => {
-                                        return (
-                                          <option value={e.value} key={id}>
-                                            {e.lable}
-                                          </option>
-                                        );
-                                      })}
-                                    </select>
+                                    <InfiniteDropdown options={LFRoom} />
                                   </div>
                                 </div>
                               </div>
