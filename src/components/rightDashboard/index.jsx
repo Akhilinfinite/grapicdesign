@@ -300,6 +300,11 @@ export default function RightDashboard() {
         console.log(error);
       });
   };
+
+  const handleRoomClick = (selectedOption) => {
+    setSelectedRoom([selectedOption]);
+  };
+
   //API Location filter District
   useEffect(() => {
     const getLFDistrict = () => {
@@ -1033,52 +1038,28 @@ export default function RightDashboard() {
                           <div className="row">
                             {/* First Column */}
                             <div className="col-md-6">
+                              {/* District */}
                               <div className="row mb-3 filtersrow">
                                 <div className="col-3">
                                   <label className="title">District:</label>
                                 </div>
                                 <div className="col-9">
                                   <div className="dropdown">
-                                    <select
-                                      name="district1"
-                                      className="custom-select"
-                                    >
-                                      <option value=""></option>
-                                      {LFDistrict.map((e, id) => {
-                                        return (
-                                          <option value={e.value} key={id}>
-                                            {e.lable}
-                                          </option>
-                                        );
-                                      })}
-                                    </select>
+                                    <InfiniteDropdown options={LFDistrict} />
                                   </div>
                                 </div>
                               </div>
-
+                              {/* School */}
                               <div className="row mb-3 filtersrow">
                                 <div className="col-3">
                                   <label className="title">School:</label>
                                 </div>
                                 <div className="col-9">
                                   <div className="dropdown">
-                                    <select
-                                      name="school"
-                                      className="custom-select"
-                                    >
-                                      <option value=""></option>
-                                      {LFSchool.map((e, id) => {
-                                        return (
-                                          <option value={e.value} key={id}>
-                                            {e.lable}
-                                          </option>
-                                        );
-                                      })}
-                                    </select>
+                                    <InfiniteDropdown options={LFSchool} />
                                   </div>
                                 </div>
                               </div>
-
                               {/* Floor */}
                               <div className="row mb-3 filtersrow">
                                 <div className="col-3">
@@ -1086,23 +1067,10 @@ export default function RightDashboard() {
                                 </div>
                                 <div className="col-9">
                                   <div className="dropdown">
-                                    <select
-                                      name="floor"
-                                      className="custom-select"
-                                    >
-                                      <option value=""></option>
-                                      {LFFloor.map((e, id) => {
-                                        return (
-                                          <option value={e.value} key={id}>
-                                            {e.lable}
-                                          </option>
-                                        );
-                                      })}
-                                    </select>
+                                    <InfiniteDropdown options={LFFloor} />
                                   </div>
                                 </div>
                               </div>
-
                               {/* Room */}
                               <div className="row mb-3 filtersrow">
                                 <div className="col-3">
@@ -1110,19 +1078,7 @@ export default function RightDashboard() {
                                 </div>
                                 <div className="col-9">
                                   <div className="dropdown">
-                                    <select
-                                      name="room"
-                                      className="custom-select"
-                                    >
-                                      <option value=""></option>
-                                      {LFRoom.map((e, id) => {
-                                        return (
-                                          <option value={e.value} key={id}>
-                                            {e.lable}
-                                          </option>
-                                        );
-                                      })}
-                                    </select>
+                                    <InfiniteDropdown options={LFRoom} />
                                   </div>
                                 </div>
                               </div>
@@ -1235,6 +1191,7 @@ export default function RightDashboard() {
                             <InfiniteDropdown
                               options={Room}
                               selectedValue={SelectedRoom}
+                              onChange={handleRoomClick}
                             />
                           </div>
                         </div>
