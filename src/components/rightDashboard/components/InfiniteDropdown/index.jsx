@@ -43,7 +43,7 @@ const InfiniteDropdown = ({ options, selectedValue, onChange }) => {
   const customStyles = {
     menuList: (provided) => ({
       ...provided,
-      height: '300px',
+      height: '200px',
       overflowY: 'auto',
     }),
   };
@@ -80,7 +80,7 @@ const InfiniteDropdown = ({ options, selectedValue, onChange }) => {
                 props.innerRef(ref);
               }}
               onScroll={handleMenuScroll}
-              style={{ height: '300px', overflowY: 'auto' }}
+              style={{ height: '200px', overflowY: 'auto' }}
             ></div>
           ),
         }}

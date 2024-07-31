@@ -2,6 +2,9 @@
   padding: 0em 0.75em;
   display: flex;
   flex-direction: column;
+  overflow-y: none;
+  height: auto;
+  max-height: fit-content;
   .topRightdashboard {
     padding: 0.5em;
     margin-left: 0.625em;
@@ -394,7 +397,7 @@
 }
 
 .search-footer {
-  margin-bottom: 100px;
+  margin-bottom: 130px;
 }
 
 .btn {
@@ -610,7 +613,7 @@
   background-color: #f4f6f8 !important;
 }
 
-@media (max-width: 450px) {
+@media (max-width: 575px) {
   .calender-setup {
     .add {
       display: flex;

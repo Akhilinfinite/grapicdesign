@@ -24,6 +24,7 @@ import Add from "../../asserts/images/Icons/add.svg";
 import Down from "../../asserts/images/Icons/down_arrow.png";
 import Up from "../../asserts/images/Icons/up_arrow.png";
 import InfiniteDropdown from "./components/InfiniteDropdown";
+import CustomDateTimePicker from "./components/customDateTimeInput";
 
 export default function RightDashboard() {
   const [isOpen1, setIsOpen1] = useState(true);
@@ -51,28 +52,10 @@ export default function RightDashboard() {
 
   const [StartTime, setStartTime] = useState("");
   const [EndTime, setEndTime] = useState("");
-
-  const handleEndTime = (e) => {
-    setEndTime(e.target.value);
-  };
-  const handleStartTime = (e) => {
-    setStartTime(e.target.value);
-  };
-
-  const [isIntervalTypeModalVisible, setIntervalTypeModalVisibility] =
-    useState(false);
-
+  const [intervalTime, setIntervalTime] = useState();
+  
   const [isLocationFilterModalVisible, setLocationFilterModalVisibility] =
     useState(false);
-
-  const handleIntervalTypeChange = (e) => {
-    const value = e.target.value;
-    if (value) {
-      setIntervalTypeModalVisibility(true);
-    }
-  };
-
-  const closeIntervalTypeModal = () => setIntervalTypeModalVisibility(false);
 
   const handleLocationFilterClick = () => {
     setLocationFilterModalVisibility(true);
@@ -97,13 +80,20 @@ export default function RightDashboard() {
             EVENTSLOTTIME: e[26],
           }));
           setOwners(data);
-          const startdate = data[0].start.split(" ")[3];
-          const enddate = data[0].end.split(" ")[3];
-          const date = new Date().toISOString().split("T")[0];
-          const Start = `${date}T${startdate}`;
-          const End = `${date}T${enddate}`;
-          setStartTime(Start);
-          setEndTime(End);
+          const startDateTime = new Date(
+            `${new Date().toISOString().split("T")[0]}T${
+              data[0].start.split(" ")[3]
+            }`
+          );
+          const endDateTime = new Date(
+            `${new Date().toISOString().split("T")[0]}T${
+              data[0].end.split(" ")[3]
+            }`
+          );
+
+          setStartTime(startDateTime);
+          setEndTime(endDateTime);
+          setIntervalTime(data[0].EVENTSLOTTIME);
         })
         .catch(function (error) {
           console.log(error);
@@ -146,8 +136,7 @@ export default function RightDashboard() {
           }));
           const selected = data.filter((e) => e.id === 22);
           setSelectedCustomer(selected);
-          const updatedData = data.filter((e) => e.id !== 22);
-          setCustomer(updatedData);
+          setCustomer(data);
         })
         .catch(function (error) {
           console.log(error);
@@ -174,7 +163,10 @@ export default function RightDashboard() {
           id: e[0],
           value: e[0],
           label: e[1],
+          primaryContact: e[2],
         }));
+        const selected = data.filter((e) => e.primaryContact === 1);
+        setSelectedContact(selected);
         setContact(data);
       })
       .catch(function (error) {
@@ -194,12 +186,11 @@ export default function RightDashboard() {
             id: e[0],
             value: e[0],
             label: e[1],
+            primaryContact: e[2],
           }));
-          setContact(data);
-          const selected = data.filter((e) => e.id === 22);
+          const selected = data.filter((e) => e.primaryContact === 1);
           setSelectedContact(selected);
-          const updatedData = data.filter((e) => e.id !== 22);
-          setContact(updatedData);
+          setContact(data);
         })
         .catch(function (error) {
           console.log(error);
@@ -456,6 +447,22 @@ export default function RightDashboard() {
     console.log(data, option);
   };
 
+
+  const [isIntervalTypeModalVisible, setIntervalTypeModalVisible] =
+  useState(false);
+const [intervalType, setIntervalType] = useState("");
+
+// Function to close the modal
+const closeIntervalTypeModal = () => {
+  setIntervalTypeModalVisible(false);
+};
+
+// Function to handle dropdown change
+const handleIntervalTypeChange = (event) => {
+  setIntervalType(event.target.value);
+  setIntervalTypeModalVisible(true);
+};
+
   return (
     <div className="mainRightDashboard">
       <div className="topRightdashboard">
@@ -498,13 +505,10 @@ export default function RightDashboard() {
                         <div className="startTime-container mb-3">
                           <div className="heading">Start Date and Time</div>
                           <div className="time">
-                            <input
-                              type="datetime-local"
-                              name="scheduleStartTime"
+                            <CustomDateTimePicker
                               value={StartTime}
-                              onChange={(e) => handleStartTime(e)}
-                              className="form-control"
-                              style={{ height: "40px" }}
+                              onChange={setStartTime}
+                              interval={intervalTime}
                             />
                           </div>
                         </div>
@@ -513,13 +517,10 @@ export default function RightDashboard() {
                         <div className="endTime-container mb-3">
                           <div className="heading">End Date and Time</div>
                           <div className="time">
-                            <input
-                              type="datetime-local"
-                              name="scheduleEndTime"
-                              className="form-control"
+                            <CustomDateTimePicker
                               value={EndTime}
-                              onChange={(e) => handleEndTime(e)}
-                              style={{ height: "40px" }}
+                              onChange={setEndTime}
+                              interval={intervalTime}
                             />
                           </div>
                         </div>
@@ -527,169 +528,501 @@ export default function RightDashboard() {
                       <Col md={3} sm={6} xs={12} className="col-3">
                         <div className="interval-container mb-3">
                           <div className="heading">Interval Type</div>
-                          <div className="dropdown dropdown-wrapper search keyword">
-                            <select
-                              name="days"
-                              className="custom-select"
-                              onChange={handleIntervalTypeChange}
-                            >
-                              <option value="">select value</option>
-                              <option value="Weekly">weekly</option>
-                              <option value="Monthly">Monthly</option>
-                              <option value="Recurring">Recurring</option>
-                            </select>
-                          </div>
-                          <Modal
-                            show={isIntervalTypeModalVisible}
-                            onHide={closeIntervalTypeModal}
-                            backdrop={false}
-                            keyboard={true}
-                          >
-                            <Modal.Header closeButton>
-                              <Modal.Title>Interval Type</Modal.Title>
-                            </Modal.Header>
-                            <Modal.Body>
-                              <div className="row intervalType-row1">
-                                <div className="col-sm-6 mb-2">
-                                  <label className="mr-2">Repeat every</label>
-                                  <input
-                                    type="number"
-                                    className="form-control repeat-every-value"
-                                    style={{
-                                      width: "30%",
-                                      display: "inline-block",
-                                      marginLeft: "5px",
-                                    }}
-                                  />
-                                </div>
-                                <div className="col-sm-6">
-                                  <div className="dropdown-wrapper">
-                                    <select
-                                      name="days"
-                                      className="custom-select"
-                                    >
-                                      <option value="">select value</option>
-                                      <option value="Weekly">weekly</option>
-                                      <option value="Monthly"></option>
-                                      <option value="Recurring">
-                                        Recurring
-                                      </option>
-                                    </select>
+                          <div>
+                            <div className="dropdown dropdown-wrapper search keyword">
+                              <select
+                                name="intervalType"
+                                className="custom-select"
+                                onChange={handleIntervalTypeChange}
+                              >
+                                <option value="">select value</option>
+                                <option value="Weekly">weekly</option>
+                                <option value="Monthly">Monthly</option>
+                                <option value="Recurring">Recurring</option>
+                              </select>
+                            </div>
+
+                            {/* Weekly Interval Modal */}
+                            {intervalType === "Weekly" && (
+                              <Modal
+                                show={isIntervalTypeModalVisible}
+                                onHide={closeIntervalTypeModal}
+                                backdrop={false}
+                                keyboard={true}
+                              >
+                                <Modal.Header closeButton>
+                                  <Modal.Title>
+                                    Weekly Interval Type
+                                  </Modal.Title>
+                                </Modal.Header>
+                                <Modal.Body>
+                                  <div className="row intervalType-row1">
+                                    <div className="col-sm-6 mb-2">
+                                      <label className="mr-2">
+                                        Repeat every
+                                      </label>
+                                      <input
+                                        type="number"
+                                        className="form-control repeat-every-value"
+                                        style={{
+                                          width: "30%",
+                                          display: "inline-block",
+                                          marginLeft: "5px",
+                                        }}
+                                      />
+                                    </div>
+                                    <div className="col-sm-6">
+                                      <div className="dropdown-wrapper">
+                                        <select
+                                          name="days"
+                                          className="custom-select"
+                                        >
+                                          <option value="">select value</option>
+                                          <option value="Weekly">weekly</option>
+                                          <option value="Monthly">Monthly</option>
+                                          <option value="Recurring">
+                                            Recurring
+                                          </option>
+                                        </select>
+                                      </div>
+                                    </div>
                                   </div>
-                                </div>
-                              </div>
-                              <div className="row intervalType-row2 mt-3">
-                                <div className="col-sm-3"></div>
-                                <div className="col-sm-6">
-                                  <div className="d-flex align-items-center justify-content-center">
-                                    <input
-                                      type="radio"
-                                      className="onday-radio"
-                                      style={{ height: "20px", width: "20px" }}
-                                    />
-                                    <label className="onDay-section">
-                                      On Day
-                                    </label>
-                                    <input
-                                      type="number"
-                                      className="form-control onday-value"
+                                  <div className="row intervalType-row2 mt-3 one">
+                                    <div className="col-sm-3"></div>
+                                    <div className="col-sm-6">
+                                      <div className="d-flex align-items-center justify-content-center">
+                                        <input
+                                          type="radio"
+                                          className="onday-radio"
+                                          style={{
+                                            height: "20px",
+                                            width: "20px",
+                                          }}
+                                        />
+                                        <label className="onDay-section">
+                                          On Day
+                                        </label>
+                                        <input
+                                          type="number"
+                                          className="form-control onday-value"
+                                          style={{
+                                            width: "30%",
+                                            display: "inline-block",
+                                            marginRight: "10px",
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+                                    <div className="col-sm-3"></div>
+                                  </div>
+
+                                  <div className="row intervalType-row3 mt-3">
+                                    <div className="col-sm-4 mb-2 intervalType-row3-col1">
+                                      <input
+                                        type="radio"
+                                        className="onday-radio"
+                                        style={{
+                                          height: "20px",
+                                          width: "20px",
+                                        }}
+                                      />
+                                      <label className="ml-2">On the</label>
+                                    </div>
+                                    <div className="col-sm-4 mb-2">
+                                      <div className="dropdown-wrapper">
+                                        <select
+                                          name="days"
+                                          className="custom-select"
+                                        >
+                                          <option value="">select value</option>
+                                          <option value="Weekly">weekly</option>
+                                          <option value="Monthly">Monthly</option>
+                                          <option value="Recurring">
+                                            Recurring
+                                          </option>
+                                        </select>
+                                      </div>
+                                    </div>
+                                    <div className="col-sm-4 mb-2">
+                                      <div className="dropdown-wrapper">
+                                        <select
+                                          name="days"
+                                          className="custom-select"
+                                        >
+                                          <option value="">select value</option>
+                                          <option value="Weekly">weekly</option>
+                                          <option value="Monthly">Monthly</option>
+                                          <option value="Recurring">
+                                            Recurring
+                                          </option>
+                                        </select>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="row intervalType-row4 mt-3">
+                                    <div className="col-8">
+                                      <label>End Date</label>
+                                      <input
+                                        type="datetime-local"
+                                        name="date-select"
+                                        className="form-control time"
+                                        style={{
+                                          width: "70%",
+                                          display: "inline-block",
+                                          marginLeft: "5px",
+                                        }}
+                                      />
+                                    </div>
+                                    <div className="col-4 text-center">
+                                      <div>
+                                        <a href="/"> Remove</a>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="row intervalType-row5 mt-3">
+                                    <div className="col">
+                                      <p className="text-center">
+                                        Occurs every month on the first Monday
+                                        starting <span>10/11/23</span> until{" "}
+                                        <span>15/11/23</span>
+                                      </p>
+                                    </div>
+                                  </div>
+                                </Modal.Body>
+                                <Modal.Footer>
+                                  <Button
+                                    className="intervalCloseBtn"
+                                    onClick={closeIntervalTypeModal}
+                                  >
+                                    Close
+                                  </Button>
+                                  <Button
+                                    variant="primary"
+                                    onClick={closeIntervalTypeModal}
+                                  >
+                                    Save
+                                  </Button>
+                                </Modal.Footer>
+                              </Modal>
+                            )}
+
+                            {/* Monthly Interval Modal */}
+                            {intervalType === "Monthly" && (
+                              <Modal
+                                show={isIntervalTypeModalVisible}
+                                onHide={closeIntervalTypeModal}
+                                backdrop={false}
+                                keyboard={true}
+                              >
+                                <Modal.Header closeButton>
+                                  <Modal.Title>
+                                    Monthly Interval Type
+                                  </Modal.Title>
+                                </Modal.Header>
+                                <Modal.Body>
+                                  <div className="row intervalType-row1">
+                                    <div
+                                      className="col-sm-6 mb-2"
                                       style={{
-                                        width: "30%",
-                                        display: "inline-block",
-                                        marginRight: "10px",
+                                        display: "flex",
+                                        justifyContent: "space-evenly",
+                                        alignItems: "center",
                                       }}
-                                    />
-                                  </div>
-                                </div>
-                                <div className="col-sm-3"></div>
-                              </div>
-
-                              <div className="row intervalType-row3 mt-3">
-                                <div className="col-sm-4 mb-2 intervalType-row3-col1">
-                                  <input
-                                    type="radio"
-                                    className="onday-radio"
-                                    style={{ height: "20px", width: "20px" }}
-                                  />
-                                  <label className="ml-2">On the</label>
-                                </div>
-                                <div className="col-sm-4 mb-2">
-                                  <div className="dropdown-wrapper">
-                                    <select
-                                      name="days"
-                                      className="custom-select"
                                     >
-                                      <option value="">select value</option>
-                                      <option value="Weekly">weekly</option>
-                                      <option value="Monthly"></option>
-                                      <option value="Recurring">
-                                        Recurring
-                                      </option>
-                                    </select>
+                                      <label className="mr-2">
+                                        Repeat every
+                                      </label>
+                                      <input
+                                        type="number"
+                                        className="form-control repeat-every-value"
+                                        style={{
+                                          width: "30%",
+                                          display: "inline-block",
+                                          marginLeft: "5px",
+                                        }}
+                                      />
+                                    </div>
+                                    <div className="col-sm-6">
+                                      <label>Month(s)</label>
+                                    </div>
                                   </div>
-                                </div>
-                                <div className="col-sm-4 mb-2">
-                                  <div className="dropdown-wrapper">
-                                    <select
-                                      name="days"
-                                      className="custom-select"
-                                    >
-                                      <option value="">select value</option>
-                                      <option value="Weekly">weekly</option>
-                                      <option value="Monthly"></option>
-                                      <option value="Recurring">
-                                        Recurring
-                                      </option>
-                                    </select>
-                                  </div>
-                                </div>
-                              </div>
 
-                              <div className="row intervalType-row4 mt-3">
-                                <div className="col-8">
-                                  <label>End Date</label>
-                                  <input
-                                    type="datetime-local"
-                                    name="date-select"
-                                    className="form-control time"
-                                    style={{
-                                      width: "70%",
-                                      display: "inline-block",
-                                      marginLeft: "5px",
-                                    }}
-                                  />
-                                </div>
-                                <div className="col-4 text-center">
-                                  <div>
-                                    <a href="/"> Remove</a>
+                                  <div className="row intervalType-row2 mt-3 two">
+                                    <div
+                                      className="col-sm-5 mb-2"
+                                      style={{
+                                        display: "flex",
+                                        justifyContent: "space-evenly",
+                                        alignItems: "center",
+                                      }}
+                                    >
+                                      <input
+                                        type="radio"
+                                        name="monthlyOption"
+                                        className="onday-radio"
+                                        style={{
+                                          height: "20px",
+                                          width: "20px",
+                                        }}
+                                      />
+                                      <label className="ml-2">On Day</label>
+                                      <input
+                                        type="number"
+                                        className="form-control onday-value"
+                                        style={{
+                                          width: "30%",
+                                          display: "inline-block",
+                                          marginRight: "10px",
+                                        }}
+                                      />
+                                    </div>
+                                    <div
+                                      className="col-sm-7 mb-2"
+                                      style={{
+                                        display: "flex",
+                                        justifyContent: "space-evenly",
+                                        alignItems: "center",
+                                      }}
+                                    >
+                                      <input
+                                        type="radio"
+                                        name="monthlyOption"
+                                        className="onday-radio"
+                                        style={{
+                                          height: "20px",
+                                          width: "20px",
+                                        }}
+                                      />
+                                      <label
+                                        className="ml-2"
+                                        style={{
+                                          whiteSpace: "nowrap",
+                                          paddingRight: "10px",
+                                          paddingLeft: "5px",
+                                        }}
+                                      >
+                                        On the
+                                      </label>
+                                      <div
+                                        className="dropdown-wrapper"
+                                        style={{ display: "inline-block" }}
+                                      >
+                                        <select
+                                          name="occurrence"
+                                          className="custom-select mb-2"
+                                          style={{ marginRight: "5px" }}
+                                        >
+                                          <option value="">select value</option>
+                                          <option value="First">First</option>
+                                          <option value="Second">Second</option>
+                                          <option value="Third">Third</option>
+                                          <option value="Fourth">Fourth</option>
+                                          <option value="Last">Last</option>
+                                        </select>
+                                        <select
+                                          name="weekday"
+                                          className="custom-select"
+                                        >
+                                          <option value="">select value</option>
+                                          <option value="Monday">Monday</option>
+                                          <option value="Tuesday">
+                                            Tuesday
+                                          </option>
+                                          <option value="Wednesday">
+                                            Wednesday
+                                          </option>
+                                          <option value="Thursday">
+                                            Thursday
+                                          </option>
+                                          <option value="Friday">Friday</option>
+                                          <option value="Saturday">
+                                            Saturday
+                                          </option>
+                                          <option value="Sunday">Sunday</option>
+                                        </select>
+                                      </div>
+                                    </div>
                                   </div>
-                                </div>
-                              </div>
-                              <div className="row intervalType-row5 mt-3">
-                                <div className="col">
-                                  <p className="text-center">
-                                    Occurs every month on the first Monday
-                                    starting <span>10/11/23</span> until{" "}
-                                    <span>15/11/23</span>
-                                  </p>
-                                </div>
-                              </div>
-                            </Modal.Body>
-                            <Modal.Footer>
-                              <Button
-                                className="intervalCloseBtn"
-                                onClick={closeIntervalTypeModal}
+
+                                  <div className="row intervalType-row3 mt-3">
+                                    <div className="col-8">
+                                      <label>End Date</label>
+                                      <input
+                                        type="datetime-local"
+                                        name="date-select"
+                                        className="form-control time"
+                                        style={{
+                                          width: "70%",
+                                          display: "inline-block",
+                                          marginLeft: "5px",
+                                        }}
+                                      />
+                                    </div>
+                                    <div className="col-4 text-center">
+                                      <div>
+                                        <a href="/"> Remove</a>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="row intervalType-row4 mt-3">
+                                    <div className="col">
+                                      <p className="text-center">
+                                        Occurs every month on the first Monday
+                                        starting <span>10/11/23</span> until{" "}
+                                        <span>15/11/23</span>
+                                      </p>
+                                    </div>
+                                  </div>
+                                </Modal.Body>
+                                <Modal.Footer>
+                                  <Button
+                                    className="intervalCloseBtn"
+                                    onClick={closeIntervalTypeModal}
+                                  >
+                                    Close
+                                  </Button>
+                                  <Button
+                                    variant="primary"
+                                    onClick={closeIntervalTypeModal}
+                                  >
+                                    Save
+                                  </Button>
+                                </Modal.Footer>
+                              </Modal>
+                            )}
+
+                            {/* Recurring Interval Modal */}
+                            {intervalType === "Recurring" && (
+                              <Modal
+                                show={isIntervalTypeModalVisible}
+                                onHide={closeIntervalTypeModal}
+                                backdrop={false}
+                                keyboard={true}
                               >
-                                Close
-                              </Button>
-                              <Button
-                                variant="primary"
-                                onClick={closeIntervalTypeModal}
-                              >
-                                Save
-                              </Button>
-                            </Modal.Footer>
-                          </Modal>
+                                <Modal.Header closeButton>
+                                  <Modal.Title>
+                                    Recurring Interval Type
+                                  </Modal.Title>
+                                </Modal.Header>
+                                <Modal.Body>
+                                  <div className="row intervalType-row1">
+                                    <div className="col-sm-6 mb-2">
+                                      <label className="mr-2">
+                                        Repeat every
+                                      </label>
+                                      <input
+                                        type="number"
+                                        className="form-control repeat-every-value"
+                                        style={{
+                                          width: "30%",
+                                          display: "inline-block",
+                                          marginLeft: "5px",
+                                        }}
+                                      />
+                                    </div>
+                                    <div className="col-sm-6">
+                                      <div className="dropdown-wrapper">
+                                        <select
+                                          name="interval"
+                                          className="custom-select"
+                                        >
+                                          <option value="Day(s)">Day(s)</option>
+                                          <option value="Week(s)">
+                                            Week(s)
+                                          </option>
+                                          <option value="Month(s)">
+                                            Month(s)
+                                          </option>
+                                          <option value="Year(s)">
+                                            Year(s)
+                                          </option>
+                                        </select>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="row intervalType-row2 mt-3 three">
+                                    <div className="col-sm-12">
+                                      <div className="d-flex justify-content-between">
+                                        {[
+                                          "Monday",
+                                          "Tuesday",
+                                          "Wednesday",
+                                          "Thursday",
+                                          "Friday",
+                                          "Saturday",
+                                          "Sunday",
+                                        ].map((day) => (
+                                          <div
+                                            key={day}
+                                            className="custom-control custom-checkbox"
+                                          >
+                                            <input
+                                              type="checkbox"
+                                              className="custom-control-input"
+                                              id={`check${day}`}
+                                            />
+                                            <label
+                                              className="custom-control-label"
+                                              htmlFor={`check${day}`}
+                                            >
+                                              {day}
+                                            </label>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="row intervalType-row3 mt-3">
+                                    <div className="col-8">
+                                      <label>End Date</label>
+                                      <input
+                                        type="datetime-local"
+                                        name="date-select"
+                                        className="form-control time"
+                                        style={{
+                                          width: "70%",
+                                          display: "inline-block",
+                                          marginLeft: "5px",
+                                        }}
+                                      />
+                                    </div>
+                                    <div className="col-4 text-center">
+                                      <div>
+                                        <a href="/"> Remove</a>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="row intervalType-row4 mt-3">
+                                    <div className="col">
+                                      <p className="text-center">
+                                        Occurs every <span>3</span> week(s) on
+                                        the selected days starting{" "}
+                                        <span>10/11/23</span> until{" "}
+                                        <span>15/11/23</span>
+                                      </p>
+                                    </div>
+                                  </div>
+                                </Modal.Body>
+                                <Modal.Footer>
+                                  <Button
+                                    className="intervalCloseBtn"
+                                    onClick={closeIntervalTypeModal}
+                                  >
+                                    Close
+                                  </Button>
+                                  <Button
+                                    variant="primary"
+                                    onClick={closeIntervalTypeModal}
+                                  >
+                                    Save
+                                  </Button>
+                                </Modal.Footer>
+                              </Modal>
+                            )}
+                          </div>
                         </div>
                       </Col>
                       <Col md={3} sm={6} xs={12} className="col-3">
