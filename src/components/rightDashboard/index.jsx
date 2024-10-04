@@ -27,6 +27,7 @@ import InfiniteDropdown from "./components/InfiniteDropdown";
 import CustomDateTimePicker from "./components/customDateTimeInput";
 
 export default function RightDashboard() {
+  const baseURL = "http://192.168.0.65:8500/rest/gvRestApi/";
   const [isOpen1, setIsOpen1] = useState(true);
   const [isOpen2, setIsOpen2] = useState(true);
   const [isOpen3, setIsOpen3] = useState(true);
@@ -49,19 +50,253 @@ export default function RightDashboard() {
   const [LFSchool, setLFSchool] = useState([]);
   const [LFFloor, setLFFloor] = useState([]);
   const [LFRoom, setLFRoom] = useState([]);
+  const [LFSelectedDistrict, setLFSelectedDistrict] = useState([]);
+  const [LFSelectedSchool, setLFSelectedSchool] = useState([]);
+  const [LFSelectedFloor, setLFSelectedFloor] = useState([]);
+  const [LFSelectedRoom, setLFSelectedRoom] = useState([]);
+  const [LFCapacity, setLFCapacity] = useState([]);
+  const [LFvalues, setLFvalues] = useState({
+    LFSelectedDistrict: "",
+    LFSelectedSchool: "",
+    LFSelectedFloor: "",
+    LFSelectedRoom: "",
+    LFCapacity: "",
+  });
 
   const [StartTime, setStartTime] = useState("");
   const [EndTime, setEndTime] = useState("");
   const [intervalTime, setIntervalTime] = useState();
-  
+
   const [isLocationFilterModalVisible, setLocationFilterModalVisibility] =
     useState(false);
 
   const handleLocationFilterClick = () => {
     setLocationFilterModalVisibility(true);
   };
+  const handelLocationSearchDropDown = (e) => {
+    const option = e.target.value;
+    switch (option) {
+      case "1":
+        console.log(option);
+        break;
+      case "2":
+        setDistrict([]);
+        setSchool([]);
+        setFloor([]);
+        setRoom([]);
+        setSelectedSchool([]);
+        setSelectedFloor([]);
+        setSelectedRoom([]);
+        axios
+          .post(`${baseURL}schedule/quickLocationLookup/`, {
+            vlabel: 2,
+            owner: 1,
+            loctype_kir: 0,
+            label_text: "School",
+            is_DefLocation: 0,
+            loctype: "0,0,0,0,0,0,0",
+            def_LocID: 1,
+          })
+          .then(function (response) {
+            const data = response.data.map((e) => ({
+              id: e.KEY,
+              value: e.KEY,
+              label: e.VALUE,
+            }));
+            setSchool(data);
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
+        break;
+      case "3":
+        setDistrict([]);
+        setSchool([]);
+        setFloor([]);
+        setRoom([]);
+        setSelectedSchool([]);
+        setSelectedFloor([]);
+        setSelectedRoom([]);
+        axios
+          .post(`${baseURL}schedule/quickLocationLookup/`, {
+            vlabel: 3,
+            owner: 1,
+            loctype_kir: 0,
+            label_text: "Floor",
+            is_DefLocation: 0,
+            loctype: "0,0,0,0,0,0,0",
+            def_LocID: 1,
+          })
+          .then(function (response) {
+            const data = response.data.map((e) => ({
+              id: e.KEY,
+              value: e.KEY,
+              label: e.VALUE,
+            }));
+            setFloor(data);
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
+        break;
+      case "4":
+        setDistrict([]);
+        setSchool([]);
+        setFloor([]);
+        setRoom([]);
+        setSelectedSchool([]);
+        setSelectedFloor([]);
+        setSelectedRoom([]);
+        axios
+          .post(`${baseURL}schedule/quickLocationLookup/`, {
+            vlabel: 4,
+            owner: 1,
+            loctype_kir: 0,
+            label_text: "Room",
+            is_DefLocation: 0,
+            loctype: "0,0,0,0,0,0,0",
+            def_LocID: 1,
+          })
+          .then(function (response) {
+            const data = response.data.map((e) => ({
+              id: e.KEY,
+              value: e.KEY,
+              label: e.VALUE,
+            }));
+            setRoom(data);
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleRoomClick = (selectedOption) => {
+    setSelectedRoom([selectedOption]);
+    const variable = selectedOption.value;
+    //District
+    axios
+      .post(`${baseURL}schedule/LocationLookup/`, {
+        h_value: "0,4",
+        h_cvalue: variable,
+        clabel: 1,
+        loctype: "0,0,0,0,0,0,0",
+        labelid: "1",
+        quickloc: 4,
+        lblcount: "4",
+        deflab: 0,
+      })
+      .then(function (response) {
+        const data = response.data.slice(2).map((e) => ({
+          id: e.KEY,
+          value: e.KEY,
+          label: e.VALUE,
+        }));
+        setDistrict(data);
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+    //School
+    axios
+      .post(`${baseURL}schedule/LocationLookup/`, {
+        h_value: "0,4",
+        h_cvalue: variable,
+        clabel: 2,
+        loctype: "0,0,0,0,0,0,0",
+        labelid: "2",
+        quickloc: 4,
+        lblcount: "4",
+        deflab: 0,
+      })
+      .then(function (response) {
+        const data = response.data.slice(2).map((e) => ({
+          id: e.KEY,
+          value: e.KEY,
+          label: e.VALUE,
+        }));
+        const selectedKey = response.data[1].VALUE;
+        const selected = data.find((room) => room.value === selectedKey);
+        setSchool(data);
+        setSelectedSchool(selected);
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+    //Floor
+    axios
+      .post(`${baseURL}schedule/LocationLookup/`, {
+        h_value: "0,4",
+        h_cvalue: variable,
+        clabel: 3,
+        loctype: "0,0,0,0,0,0,0",
+        labelid: "3",
+        quickloc: 4,
+        lblcount: "4",
+        deflab: 0,
+      })
+      .then(function (response) {
+        const data = response.data.slice(2).map((e) => ({
+          id: e.KEY,
+          value: e.KEY,
+          label: e.VALUE,
+        }));
+        const selectedKey = response.data[1].VALUE;
+        const selected = data.find((room) => room.value === selectedKey);
+        setFloor(data);
+        setSelectedFloor(selected);
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+    //Room
+    axios
+      .post(`${baseURL}schedule/LocationLookup/`, {
+        h_value: "0,4",
+        h_cvalue: variable,
+        clabel: 4,
+        loctype: "0,0,0,0,0,0,0",
+        labelid: "4",
+        quickloc: 4,
+        lblcount: "4",
+        deflab: 0,
+      })
+      .then(function (response) {
+        const data = response.data.slice(2).map((e) => ({
+          id: e.KEY,
+          value: e.KEY,
+          label: e.VALUE,
+        }));
+        const selectedKey = response.data[1].VALUE;
+        const selected = data.find((room) => room.value === selectedKey);
+        setSelectedRoom(selected);
+        setRoom(data);
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  };
 
   const handleCloseLocationFilterModal = () => {
+    setLFSelectedDistrict(LFvalues.LFSelectedDistrict);
+    setLFSelectedFloor(LFvalues.LFSelectedFloor);
+    setLFSelectedSchool(LFvalues.LFSelectedSchool);
+    setLFSelectedRoom(LFvalues.LFSelectedRoom);
+    setLFCapacity(LFvalues.LFCapacity);
+    setLocationFilterModalVisibility(false);
+  };
+  const handleApplyLocationFilterModal = () => {
+    setLFvalues((prevData) => ({
+      ...prevData,
+      LFSelectedDistrict: LFSelectedDistrict,
+      LFSelectedSchool: LFSelectedSchool,
+      LFSelectedFloor: LFSelectedFloor,
+      LFSelectedRoom: LFSelectedRoom,
+      LFCapacity: LFCapacity,
+    }));
     setLocationFilterModalVisibility(false);
   };
 
@@ -69,7 +304,7 @@ export default function RightDashboard() {
   useEffect(() => {
     const getOwner = () => {
       axios
-        .post("http://192.168.0.65:8500/rest/gvRestApi/schedule/getOwners/")
+        .post(`${baseURL}schedule/getOwners/`)
         .then(function (response) {
           const data = response.data.DATA.map((e) => ({
             id: e[33],
@@ -104,7 +339,7 @@ export default function RightDashboard() {
   useEffect(() => {
     const getScheduler = () => {
       axios
-        .post("http://192.168.0.65:8500/rest/gvRestApi/schedule/getRequestors/")
+        .post(`${baseURL}schedule/getRequestors/`)
         .then(function (response) {
           const data = response.data.DATA.map((e) => ({
             id: e[0],
@@ -127,7 +362,7 @@ export default function RightDashboard() {
   useEffect(() => {
     const getCustomer = () => {
       axios
-        .post("http://192.168.0.65:8500/rest/gvRestApi/schedule/getCustomers/")
+        .post(`${baseURL}schedule/getCustomers/`)
         .then(function (response) {
           const data = response.data.DATA.map((e) => ({
             id: e[0],
@@ -154,7 +389,7 @@ export default function RightDashboard() {
     setSelectedCustomer([selectedOption]);
     setSelectedContact([]);
     axios
-      .post("http://192.168.0.65:8500/rest/gvRestApi/schedule/getContacts/", {
+      .post(`${baseURL}schedule/getContacts/`, {
         customer_id: data1[0].value,
         CUSTOMER_STATUS: 1,
       })
@@ -177,7 +412,7 @@ export default function RightDashboard() {
   useEffect(() => {
     const getContact = () => {
       axios
-        .post("http://192.168.0.65:8500/rest/gvRestApi/schedule/getContacts/", {
+        .post(`${baseURL}schedule/getContacts/`, {
           customer_id: 22,
           CUSTOMER_STATUS: 1,
         })
@@ -202,7 +437,7 @@ export default function RightDashboard() {
   useEffect(() => {
     const getDistrict = () => {
       axios
-        .post("http://192.168.0.65:8500/rest/gvRestApi/master/getLocation/", {
+        .post(`${baseURL}master/getLocation/`, {
           loc_id: "10000000",
           loc_parentid: "00000000",
         })
@@ -224,7 +459,7 @@ export default function RightDashboard() {
   useEffect(() => {
     const getSchool = () => {
       axios
-        .post("http://192.168.0.65:8500/rest/gvRestApi/master/getLocation/", {
+        .post(`${baseURL}master/getLocation/`, {
           label_id: "2",
           loc_parentid: "10000000",
         })
@@ -247,65 +482,233 @@ export default function RightDashboard() {
 
   const handleSchoolClick = (selectedOption) => {
     const variable = selectedOption.value;
-    setFloor([]);
-    setSelectedSchool([selectedOption]);
-    setSelectedFloor([]);
-    setSelectedRoom([]);
-    axios
-      .post("http://192.168.0.65:8500/rest/gvRestApi/master/getLocation/", {
-        label_id: "3",
-        loc_parentid: variable,
-      })
-      .then(function (response) {
-        const data = response.data.DATA.map((e) => ({
-          id: e[0],
-          value: e[14],
-          label: e[16],
-        }));
-        setFloor(data);
-        setRoom([]);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
+    if (District.length === 0) {
+      axios
+        .post(`${baseURL}schedule/LocationLookup/`, {
+          h_value: "0,2",
+          h_cvalue: variable,
+          clabel: 1,
+          loctype: "0,0,0,0,0,0,0",
+          labelid: "1",
+          quickloc: 2,
+          lblcount: "4",
+          deflab: 0,
+        })
+        .then(function (response) {
+          const data = response.data.slice(2).map((e) => ({
+            id: e.KEY,
+            value: e.KEY,
+            label: e.VALUE,
+          }));
+          setDistrict(data);
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+      //School
+      axios
+        .post(`${baseURL}schedule/LocationLookup/`, {
+          h_value: "0,2",
+          h_cvalue: variable,
+          clabel: 2,
+          loctype: "0,0,0,0,0,0,0",
+          labelid: "2",
+          quickloc: 2,
+          lblcount: "4",
+          deflab: 0,
+        })
+        .then(function (response) {
+          const data = response.data.slice(2).map((e) => ({
+            id: e.KEY,
+            value: e.KEY,
+            label: e.VALUE,
+          }));
+          const selectedKey = response.data[1].VALUE;
+          const selected = data.find((room) => room.value === selectedKey);
+          setSchool(data);
+          setSelectedSchool(selected);
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+      //Floor
+      axios
+        .post(`${baseURL}schedule/LocationLookup/`, {
+          h_value: "0,2",
+          h_cvalue: variable,
+          clabel: 3,
+          loctype: "0,0,0,0,0,0,0",
+          labelid: "3",
+          quickloc: 2,
+          lblcount: "4",
+          deflab: 0,
+        })
+        .then(function (response) {
+          const data = response.data.slice(2).map((e) => ({
+            id: e.KEY,
+            value: e.KEY,
+            label: e.VALUE,
+          }));
+          setFloor(data);
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+    } else {
+      setFloor([]);
+      setSelectedSchool([selectedOption]);
+      setSelectedFloor([]);
+      setSelectedRoom([]);
+      axios
+        .post(`${baseURL}master/getLocation/`, {
+          label_id: "3",
+          loc_parentid: variable,
+        })
+        .then(function (response) {
+          const data = response.data.DATA.map((e) => ({
+            id: e[0],
+            value: e[14],
+            label: e[16],
+          }));
+          setFloor(data);
+          setRoom([]);
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+    }
   };
   const handleFloorClick = (selectedOption) => {
     const variable = selectedOption.value;
-    setRoom([]);
-    setSelectedRoom([]);
-    setSelectedFloor([selectedOption]);
-    axios
-      .post("http://192.168.0.65:8500/rest/gvRestApi/master/getLocation/", {
-        label_id: "4",
-        loc_parentid: variable,
-      })
-      .then(function (response) {
-        const data = response.data.DATA.map((e) => ({
-          id: e[0],
-          value: e[14],
-          label: e[16],
-        }));
-        setRoom(data);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
-  };
-
-  const handleRoomClick = (selectedOption) => {
-    setSelectedRoom([selectedOption]);
+    if (SelectedSchool.length === 0) {
+      //District
+      axios
+        .post(`${baseURL}schedule/LocationLookup/`, {
+          h_value: "0,3",
+          h_cvalue: variable,
+          clabel: 1,
+          loctype: "0,0,0,0,0,0,0",
+          labelid: "1",
+          quickloc: 3,
+          lblcount: "4",
+          deflab: 0,
+        })
+        .then(function (response) {
+          const data = response.data.slice(2).map((e) => ({
+            id: e.KEY,
+            value: e.KEY,
+            label: e.VALUE,
+          }));
+          setDistrict(data);
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+      //School
+      axios
+        .post(`${baseURL}schedule/LocationLookup/`, {
+          h_value: "0,3",
+          h_cvalue: variable,
+          clabel: 2,
+          loctype: "0,0,0,0,0,0,0",
+          labelid: "2",
+          quickloc: 3,
+          lblcount: "4",
+          deflab: 0,
+        })
+        .then(function (response) {
+          const data = response.data.slice(2).map((e) => ({
+            id: e.KEY,
+            value: e.KEY,
+            label: e.VALUE,
+          }));
+          const selectedKey = response.data[1].VALUE;
+          const selected = data.find((room) => room.value === selectedKey);
+          setSchool(data);
+          setSelectedSchool(selected);
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+      //Floor
+      axios
+        .post(`${baseURL}schedule/LocationLookup/`, {
+          h_value: "0,3",
+          h_cvalue: variable,
+          clabel: 3,
+          loctype: "0,0,0,0,0,0,0",
+          labelid: "3",
+          quickloc: 3,
+          lblcount: "4",
+          deflab: 0,
+        })
+        .then(function (response) {
+          const data = response.data.slice(2).map((e) => ({
+            id: e.KEY,
+            value: e.KEY,
+            label: e.VALUE,
+          }));
+          const selectedKey = response.data[1].VALUE;
+          const selected = data.find((room) => room.value === selectedKey);
+          setFloor(data);
+          setSelectedFloor(selected);
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+      //Room
+      axios
+        .post(`${baseURL}schedule/LocationLookup/`, {
+          h_value: "0,3",
+          h_cvalue: variable,
+          clabel: 4,
+          loctype: "0,0,0,0,0,0,0",
+          labelid: "4",
+          quickloc: 3,
+          lblcount: "4",
+          deflab: 0,
+        })
+        .then(function (response) {
+          const data = response.data.slice(2).map((e) => ({
+            id: e.KEY,
+            value: e.KEY,
+            label: e.VALUE,
+          }));
+          setRoom(data);
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+    } else {
+      setRoom([]);
+      setSelectedRoom([]);
+      setSelectedFloor([selectedOption]);
+      axios
+        .post(`${baseURL}master/getLocation/`, {
+          label_id: "4",
+          loc_parentid: variable,
+        })
+        .then(function (response) {
+          const data = response.data.DATA.map((e) => ({
+            id: e[0],
+            value: e[14],
+            label: e[16],
+          }));
+          setRoom(data);
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+    }
   };
 
   //API Location filter District
   useEffect(() => {
     const getLFDistrict = () => {
       axios
-        .get(
-          "http://192.168.0.65:8500/rest/gvRestApi/schedule/getLevelType/1",
-          {
-            label_id: 1,
-          }
-        )
+        .get(`${baseURL}schedule/getLevelType/1`, {
+          label_id: 1,
+        })
         .then(function (response) {
           const data = response.data.DATA.map((e) => ({
             id: e[0],
@@ -324,12 +727,9 @@ export default function RightDashboard() {
   useEffect(() => {
     const getLFSchool = () => {
       axios
-        .get(
-          "http://192.168.0.65:8500/rest/gvRestApi/schedule/getLevelType/2",
-          {
-            label_id: 1,
-          }
-        )
+        .get(`${baseURL}schedule/getLevelType/2`, {
+          label_id: 1,
+        })
         .then(function (response) {
           const data = response.data.DATA.map((e) => ({
             id: e[0],
@@ -348,12 +748,9 @@ export default function RightDashboard() {
   useEffect(() => {
     const getLFFloor = () => {
       axios
-        .get(
-          "http://192.168.0.65:8500/rest/gvRestApi/schedule/getLevelType/3",
-          {
-            label_id: 1,
-          }
-        )
+        .get(`${baseURL}schedule/getLevelType/3`, {
+          label_id: 1,
+        })
         .then(function (response) {
           const data = response.data.DATA.map((e) => ({
             id: e[0],
@@ -372,12 +769,9 @@ export default function RightDashboard() {
   useEffect(() => {
     const getLFRoom = () => {
       axios
-        .get(
-          "http://192.168.0.65:8500/rest/gvRestApi/schedule/getLevelType/4",
-          {
-            label_id: 1,
-          }
-        )
+        .get(`${baseURL}schedule/getLevelType/4`, {
+          label_id: 1,
+        })
         .then(function (response) {
           const data = response.data.DATA.map((e) => ({
             id: e[0],
@@ -418,17 +812,14 @@ export default function RightDashboard() {
         break;
       case "4":
         axios
-          .post(
-            "http://192.168.0.65:8500/rest/gvRestApi/schedule/getContacts/",
-            {
-              search_filter: data1,
-            }
-          )
+          .post(`${baseURL}schedule/getContacts/`, {
+            search_filter: data1,
+          })
           .then(function (response) {
             const data = response.data.DATA.map((e) => ({
               id: e[0],
               value: e[0],
-              lable: e[1],
+              label: e[1],
             }));
             setContact(data);
             setSelectedContact([]);
@@ -447,21 +838,24 @@ export default function RightDashboard() {
     console.log(data, option);
   };
 
-
   const [isIntervalTypeModalVisible, setIntervalTypeModalVisible] =
-  useState(false);
-const [intervalType, setIntervalType] = useState("");
+    useState(false);
+  const [intervalType, setIntervalType] = useState("");
 
-// Function to close the modal
-const closeIntervalTypeModal = () => {
-  setIntervalTypeModalVisible(false);
-};
+  // Function to close the modal
+  const closeIntervalTypeModal = () => {
+    setIntervalTypeModalVisible(false);
+  };
 
-// Function to handle dropdown change
-const handleIntervalTypeChange = (event) => {
-  setIntervalType(event.target.value);
-  setIntervalTypeModalVisible(true);
-};
+  const handlePopUpOpen = () => {
+    setIntervalTypeModalVisible(true);
+  };
+
+  // Function to handle dropdown change
+  const handleIntervalTypeChange = (event) => {
+    setIntervalType(event.target.value);
+    setIntervalTypeModalVisible(true);
+  };
 
   return (
     <div className="mainRightDashboard">
@@ -515,7 +909,9 @@ const handleIntervalTypeChange = (event) => {
                       </Col>
                       <Col md={3} sm={6} xs={12} className="col-3">
                         <div className="endTime-container mb-3">
-                          <div className="heading">End Date and Time</div>
+                          <div className="heading" style={{ fontSize: "1em" }}>
+                            End Date and Time
+                          </div>
                           <div className="time">
                             <CustomDateTimePicker
                               value={EndTime}
@@ -528,7 +924,9 @@ const handleIntervalTypeChange = (event) => {
                       <Col md={3} sm={6} xs={12} className="col-3">
                         <div className="interval-container mb-3">
                           <div className="heading">Interval Type</div>
-                          <div>
+                          <div
+                            style={{ display: "flex", flexDirection: "row" }}
+                          >
                             <div className="dropdown dropdown-wrapper search keyword">
                               <select
                                 name="intervalType"
@@ -541,6 +939,16 @@ const handleIntervalTypeChange = (event) => {
                                 <option value="Recurring">Recurring</option>
                               </select>
                             </div>
+                            {/* {intervalType !== "" && ( */}
+                            <div onClick={handlePopUpOpen}>
+                              <img
+                                src={Edit}
+                                alt="edit"
+                                width={35}
+                                height={35}
+                              />
+                            </div>
+                            {/* )} */}
 
                             {/* Weekly Interval Modal */}
                             {intervalType === "Weekly" && (
@@ -579,7 +987,9 @@ const handleIntervalTypeChange = (event) => {
                                         >
                                           <option value="">select value</option>
                                           <option value="Weekly">weekly</option>
-                                          <option value="Monthly">Monthly</option>
+                                          <option value="Monthly">
+                                            Monthly
+                                          </option>
                                           <option value="Recurring">
                                             Recurring
                                           </option>
@@ -636,7 +1046,9 @@ const handleIntervalTypeChange = (event) => {
                                         >
                                           <option value="">select value</option>
                                           <option value="Weekly">weekly</option>
-                                          <option value="Monthly">Monthly</option>
+                                          <option value="Monthly">
+                                            Monthly
+                                          </option>
                                           <option value="Recurring">
                                             Recurring
                                           </option>
@@ -651,7 +1063,9 @@ const handleIntervalTypeChange = (event) => {
                                         >
                                           <option value="">select value</option>
                                           <option value="Weekly">weekly</option>
-                                          <option value="Monthly">Monthly</option>
+                                          <option value="Monthly">
+                                            Monthly
+                                          </option>
                                           <option value="Recurring">
                                             Recurring
                                           </option>
@@ -1301,6 +1715,7 @@ const handleIntervalTypeChange = (event) => {
                               name="days"
                               className="custom-select"
                               id="location_input_Select"
+                              onChange={(e) => handelLocationSearchDropDown(e)}
                             >
                               <option value="">select value</option>
                               <option value="1">District</option>
@@ -1378,7 +1793,13 @@ const handleIntervalTypeChange = (event) => {
                                 </div>
                                 <div className="col-9">
                                   <div className="dropdown">
-                                    <InfiniteDropdown options={LFDistrict} />
+                                    <InfiniteDropdown
+                                      options={LFDistrict}
+                                      selectedValue={LFSelectedDistrict}
+                                      onChange={(selectedOption) =>
+                                        setLFSelectedDistrict(selectedOption)
+                                      }
+                                    />
                                   </div>
                                 </div>
                               </div>
@@ -1389,7 +1810,13 @@ const handleIntervalTypeChange = (event) => {
                                 </div>
                                 <div className="col-9">
                                   <div className="dropdown">
-                                    <InfiniteDropdown options={LFSchool} />
+                                    <InfiniteDropdown
+                                      options={LFSchool}
+                                      selectedValue={LFSelectedSchool}
+                                      onChange={(selectedOption) =>
+                                        setLFSelectedSchool(selectedOption)
+                                      }
+                                    />
                                   </div>
                                 </div>
                               </div>
@@ -1400,7 +1827,13 @@ const handleIntervalTypeChange = (event) => {
                                 </div>
                                 <div className="col-9">
                                   <div className="dropdown">
-                                    <InfiniteDropdown options={LFFloor} />
+                                    <InfiniteDropdown
+                                      options={LFFloor}
+                                      selectedValue={LFSelectedFloor}
+                                      onChange={(selectedOption) =>
+                                        setLFSelectedFloor(selectedOption)
+                                      }
+                                    />
                                   </div>
                                 </div>
                               </div>
@@ -1411,7 +1844,13 @@ const handleIntervalTypeChange = (event) => {
                                 </div>
                                 <div className="col-9">
                                   <div className="dropdown">
-                                    <InfiniteDropdown options={LFRoom} />
+                                    <InfiniteDropdown
+                                      options={LFRoom}
+                                      selectedValue={LFSelectedRoom}
+                                      onChange={(selectedOption) =>
+                                        setLFSelectedRoom(selectedOption)
+                                      }
+                                    />
                                   </div>
                                 </div>
                               </div>
@@ -1426,6 +1865,10 @@ const handleIntervalTypeChange = (event) => {
                                   <input
                                     type="number"
                                     className="form-control repeat-every-value"
+                                    value={LFCapacity}
+                                    onChange={(e) => {
+                                      setLFCapacity(e.target.value);
+                                    }}
                                   />
                                 </div>
                               </div>
@@ -1467,14 +1910,384 @@ const handleIntervalTypeChange = (event) => {
                           </div>
                         </Modal.Body>
                         <Modal.Footer>
-                          <Button className="filter-reset-btn">Reset</Button>
+                          <Button
+                            className="filter-reset-btn"
+                            onClick={handleCloseLocationFilterModal}
+                          >
+                            Reset
+                          </Button>
                           <Button
                             className="filter-close-btn"
                             onClick={handleCloseLocationFilterModal}
                           >
                             Close
                           </Button>
-                          <Button className="filter-apply-btn">Apply</Button>
+                          <Button
+                            className="filter-apply-btn"
+                            onClick={handleApplyLocationFilterModal}
+                          >
+                            Apply
+                          </Button>
+                        </Modal.Footer>
+                      </Modal>
+                    </Row>
+                    <div clas="selectedField-header">
+                      <p>Selected Fields</p>
+                    </div>
+                    <Row>
+                      <Col xs={12} md={3} className="col-3 mb-3">
+                        <div className="selectedField-value">
+                          <div className="title">District</div>
+                          <div className="dropdown">
+                            <InfiniteDropdown
+                              options={District}
+                              selectedValue={District[0] ? [District[0]] : []}
+                            />
+                          </div>
+                        </div>
+                      </Col>
+                      <Col xs={12} md={3} className="col-3 mb-3">
+                        <div className="selectedField-value">
+                          <div className="title">School</div>
+                          <div className="dropdown">
+                            <InfiniteDropdown
+                              options={School}
+                              selectedValue={SelectedSchool}
+                              onChange={handleSchoolClick}
+                            />
+                          </div>
+                        </div>
+                      </Col>
+                      <Col xs={12} md={3} className="col-3 mb-3">
+                        <div className="selectedField-value">
+                          <div className="title">Floor</div>
+                          <div className="dropdown">
+                            <InfiniteDropdown
+                              options={Floor}
+                              selectedValue={SelectedFloor}
+                              onChange={handleFloorClick}
+                            />
+                          </div>
+                        </div>
+                      </Col>
+                      <Col xs={12} md={3} className="col-3 mb-3">
+                        <div className="selectedField-value">
+                          <div className="title">Room</div>
+                          <div className="dropdown">
+                            <InfiniteDropdown
+                              options={Room}
+                              selectedValue={SelectedRoom}
+                              onChange={handleRoomClick}
+                            />
+                          </div>
+                        </div>
+                      </Col>
+                    </Row>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="scheduleSearch-body">
+          <div className="accordion-item">
+            <button className="accordion-item-btn" onClick={handleClick3}>
+              <div className="section-1">
+                <div className="title-icon">
+                  <div className="icon-t">
+                    <img src={Location} alt="Location" />
+                  </div>
+                  <div className="title">Location</div>
+                </div>
+                <div className="title-icon">
+                  <div className="icon-t">
+                    <img src={MonthView} alt="MonthView" />
+                  </div>
+                  <div className="title">Month View</div>
+                </div>
+                <div className="title-icon">
+                  <div className="icon-t">
+                    <img src={DayView} alt="DayView" />
+                  </div>
+                  <div className="title">Day View</div>
+                </div>
+                <div className="title-icon">
+                  <div className="icon-t">
+                    <img src={TimeView} alt="TimeView" />
+                  </div>
+                  <div className="title">Time View</div>
+                </div>
+                <div className="button">
+                  {isOpen3 ? (
+                    <img src={Up} alt="icon" />
+                  ) : (
+                    <img src={Down} alt="icon" />
+                  )}
+                </div>
+              </div>
+            </button>
+            {isOpen3 && (
+              <div className="section-2">
+                <div className="accordion-body">
+                  <div className="calender-setup">
+                    <Row>
+                      <Col xs={12} className="mb-3 mr-3">
+                        <div className="location-radio-btn d-flex flex-wrap">
+                          <p className="list mr-3 mb-2">Location Type :</p>
+                          <div className="list mr-3 mb-2 mt-1">
+                            <input
+                              type="radio"
+                              id="Indoor"
+                              name="age"
+                              value="Indoor"
+                              defaultChecked={true}
+                            />
+                            <label
+                              htmlFor="Indoor"
+                              style={{ marginLeft: "8px" }}
+                            >
+                              Indoor
+                            </label>
+                          </div>
+                          <div className="list mr-3 mb-2 mt-1">
+                            <input
+                              type="radio"
+                              id="Outdoor"
+                              name="age"
+                              value="Outdoor"
+                            />
+                            <label
+                              htmlFor="Outdoor"
+                              style={{ marginLeft: "8px" }}
+                            >
+                              Outdoor
+                            </label>
+                          </div>
+                        </div>
+                      </Col>
+                    </Row>
+                    <Row>
+                      <Col xs={12} sm={4} className="col-4 mb-3">
+                        <div className="content">
+                          <div className="title">Choose field to Search</div>
+                          <div className="dropdown">
+                            <select
+                              name="days"
+                              className="custom-select"
+                              id="location_input_Select"
+                              onChange={(e) => handelLocationSearchDropDown(e)}
+                            >
+                              <option value="">select value</option>
+                              <option value="1">District</option>
+                              <option value="2">School</option>
+                              <option value="3">Floor</option>
+                              <option value="4">Room</option>
+                            </select>
+                          </div>
+                        </div>
+                      </Col>
+                      <Col xs={12} sm={4} className="col-4 mb-3">
+                        <div className="seletedFeild">
+                          <label>Selected Field</label>
+                          <div className="selectedSearchField">
+                            <input
+                              type="text"
+                              id="location_input_Search"
+                              placeholder="search key word"
+                              className="form-control"
+                            />
+                            <img
+                              src={SearchIcon}
+                              alt="Search Icon"
+                              className="search-icon"
+                              onClick={handleClickLocationSearch}
+                            />
+                          </div>
+                        </div>
+                      </Col>
+                      <Col xs={12} sm={4} className="col-4">
+                        <div className="edit-add p-4">
+                          <div className="edit">
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                cursor: "pointer",
+                              }}
+                              onClick={handleLocationFilterClick}
+                              className="handleLocationFilter"
+                            >
+                              <img
+                                src={Filter}
+                                alt="Filter"
+                                style={{ marginRight: "5px" }}
+                              />
+                              <p style={{ marginBottom: "0" }}>
+                                Location Filter
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </Col>
+
+                      <Modal
+                        show={isLocationFilterModalVisible}
+                        onHide={handleCloseLocationFilterModal}
+                        size="lg"
+                        aria-labelledby="contained-modal-title-vcenter"
+                        centered
+                      >
+                        <Modal.Header closeButton>
+                          <Modal.Title id="contained-modal-title-vcenter">
+                            Location Filters
+                          </Modal.Title>
+                        </Modal.Header>
+                        <Modal.Body>
+                          <div className="row">
+                            {/* First Column */}
+                            <div className="col-md-6">
+                              {/* District */}
+                              <div className="row mb-3 filtersrow">
+                                <div className="col-3">
+                                  <label className="title">District:</label>
+                                </div>
+                                <div className="col-9">
+                                  <div className="dropdown">
+                                    <InfiniteDropdown
+                                      options={LFDistrict}
+                                      selectedValue={LFSelectedDistrict}
+                                      onChange={(selectedOption) =>
+                                        setLFSelectedDistrict(selectedOption)
+                                      }
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                              {/* School */}
+                              <div className="row mb-3 filtersrow">
+                                <div className="col-3">
+                                  <label className="title">School:</label>
+                                </div>
+                                <div className="col-9">
+                                  <div className="dropdown">
+                                    <InfiniteDropdown
+                                      options={LFSchool}
+                                      selectedValue={LFSelectedSchool}
+                                      onChange={(selectedOption) =>
+                                        setLFSelectedSchool(selectedOption)
+                                      }
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                              {/* Floor */}
+                              <div className="row mb-3 filtersrow">
+                                <div className="col-3">
+                                  <label className="title">Floor:</label>
+                                </div>
+                                <div className="col-9">
+                                  <div className="dropdown">
+                                    <InfiniteDropdown
+                                      options={LFFloor}
+                                      selectedValue={LFSelectedFloor}
+                                      onChange={(selectedOption) =>
+                                        setLFSelectedFloor(selectedOption)
+                                      }
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                              {/* Room */}
+                              <div className="row mb-3 filtersrow">
+                                <div className="col-3">
+                                  <label className="title">Room:</label>
+                                </div>
+                                <div className="col-9">
+                                  <div className="dropdown">
+                                    <InfiniteDropdown
+                                      options={LFRoom}
+                                      selectedValue={LFSelectedRoom}
+                                      onChange={(selectedOption) =>
+                                        setLFSelectedRoom(selectedOption)
+                                      }
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="col-md-6">
+                              <div className="row mb-3 filtersrow">
+                                <div className="col-3">
+                                  <label className="title">Capacity:</label>
+                                </div>
+                                <div className="col-9">
+                                  <input
+                                    type="number"
+                                    className="form-control repeat-every-value"
+                                    value={LFCapacity}
+                                    onChange={(e) => {
+                                      setLFCapacity(e.target.value);
+                                    }}
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="row mb-3 filtersrow">
+                                <div className="col-3">
+                                  <label className="title">Handicap:</label>
+                                </div>
+                                <div className="col-9">
+                                  <div className="dropdown">
+                                    <select
+                                      name="handicap"
+                                      className="custom-select"
+                                    >
+                                      <option value="">select value</option>
+                                      <option value="na">NA</option>
+                                      <option value="yes">Yes</option>
+                                    </select>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="row mb-3 filtersrow">
+                                <div className="col-3">
+                                  <label className="title">Amenities:</label>
+                                </div>
+                                <div className="col-9">
+                                  <div className="dropdown">
+                                    <select
+                                      name="amenities"
+                                      className="custom-select"
+                                    >
+                                      <option value="">select value</option>
+                                    </select>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </Modal.Body>
+                        <Modal.Footer>
+                          <Button
+                            className="filter-reset-btn"
+                            onClick={handleCloseLocationFilterModal}
+                          >
+                            Reset
+                          </Button>
+                          <Button
+                            className="filter-close-btn"
+                            onClick={handleCloseLocationFilterModal}
+                          >
+                            Close
+                          </Button>
+                          <Button
+                            className="filter-apply-btn"
+                            onClick={handleApplyLocationFilterModal}
+                          >
+                            Apply
+                          </Button>
                         </Modal.Footer>
                       </Modal>
                     </Row>

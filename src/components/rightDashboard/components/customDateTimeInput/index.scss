@@ -1,14 +1,38 @@
 .custom-date-time-picker {
   position: relative;
-  width: auto;
+  width: 100%; // Adjusts according to the container's width
+  min-width: 25%; // Limit the maximum width
+  height: auto; // Adjust height automatically based on content
+  padding: 1%; // Add padding relative to screen size
 
   .date-time-input {
+    width: 100%; // Make the input take the full width of its container
+    height: auto; // Adjust height automatically
     padding: 0.5em;
-    box-sizing: border-box;
+    cursor: pointer;
+    background: url("../../../../asserts/images/Icons/calendar-blank.svg") no-repeat right 0.5em center;
+    background-size: 1.5em; // Adjust size as needed
+  }
+
+  // Responsive design for different screen sizes
+  @media (max-width: 1024px) {
+    min-width: 50%; // Adjust width for tablets
+  }
+
+  @media (max-width: 768px) {
+    min-width: 75%; // Adjust width for small tablets or large phones
+  }
+
+  @media (max-width: 480px) {
+    min-width: 100%; // Full width on mobile devices
+  }
+  .date-time-input {
+    padding: 0.5em;
     cursor: pointer;
     background: url("../../../../asserts/images/Icons/calendar-blank.svg")
       no-repeat right 0.5em center; // Calendar icon
     background-size: 1.5em; // Adjust size as needed
+    font-size: 0.8em;
   }
 
   .date-time-picker-popup {
