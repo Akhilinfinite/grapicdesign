@@ -25,6 +25,7 @@ import Down from "../../asserts/images/Icons/down_arrow.png";
 import Up from "../../asserts/images/Icons/up_arrow.png";
 import InfiniteDropdown from "./components/InfiniteDropdown";
 import CustomDateTimePicker from "./components/customDateTimeInput";
+import Untitled1 from "./components/Untitled1";
 
 export default function RightDashboard() {
   const baseURL = "http://192.168.0.65:8500/rest/gvRestApi/";
@@ -38,6 +39,7 @@ export default function RightDashboard() {
   const [SelectedCustomer, setSelectedCustomer] = useState([]);
   const [Contact, setContact] = useState([]);
   const [SelectedContact, setSelectedContact] = useState([]);
+
   const [District, setDistrict] = useState([]);
   const [School, setSchool] = useState([]);
   const [SelectedSchool, setSelectedSchool] = useState([]);
@@ -174,6 +176,15 @@ export default function RightDashboard() {
     }
   };
 
+  const handleCloseLocationFilterModal = () => {
+    setLFSelectedDistrict(LFvalues.LFSelectedDistrict);
+    setLFSelectedFloor(LFvalues.LFSelectedFloor);
+    setLFSelectedSchool(LFvalues.LFSelectedSchool);
+    setLFSelectedRoom(LFvalues.LFSelectedRoom);
+    setLFCapacity(LFvalues.LFCapacity);
+    setLocationFilterModalVisibility(false);
+  };
+
   const handleRoomClick = (selectedOption) => {
     setSelectedRoom([selectedOption]);
     const variable = selectedOption.value;
@@ -280,14 +291,6 @@ export default function RightDashboard() {
       });
   };
 
-  const handleCloseLocationFilterModal = () => {
-    setLFSelectedDistrict(LFvalues.LFSelectedDistrict);
-    setLFSelectedFloor(LFvalues.LFSelectedFloor);
-    setLFSelectedSchool(LFvalues.LFSelectedSchool);
-    setLFSelectedRoom(LFvalues.LFSelectedRoom);
-    setLFCapacity(LFvalues.LFCapacity);
-    setLocationFilterModalVisibility(false);
-  };
   const handleApplyLocationFilterModal = () => {
     setLFvalues((prevData) => ({
       ...prevData,
@@ -852,9 +855,31 @@ export default function RightDashboard() {
   };
 
   // Function to handle dropdown change
-  const handleIntervalTypeChange = (event) => {
-    setIntervalType(event.target.value);
+  const handleIntervalTypeChange = (e) => {
+    setIntervalType(e.target.value);
     setIntervalTypeModalVisible(true);
+  };
+
+  const [locationData, setLocationData] = useState([]);
+  const [selectedLocationType, setSelectedLocationType] = useState("Indoor");
+
+  const handleLocationTypeChange = (e) => {
+    const selectedValue = e.target.value;
+    setSelectedLocationType(selectedValue);
+    const loctype_kir = selectedValue === "Indoor" ? 0 : "Outdoor" ? 1 : 2;
+    axios
+      .post("http://192.168.0.65:8500/rest/gvRestApi/schedule/getLabels/", {
+        owner_id: "",
+        loctype_kir: loctype_kir,
+      })
+      .then(function (response) {
+        const data = response.data.DATA;
+        setLocationData(data);
+        console.log("Location data:", data);
+      })
+      .catch(function (error) {
+        console.error("Error fetching labels:", error);
+      });
   };
 
   return (
@@ -2030,7 +2055,7 @@ export default function RightDashboard() {
               <div className="section-2">
                 <div className="accordion-body">
                   <div className="calender-setup">
-                    <Row>
+                    {/* <Row>
                       <Col xs={12} className="mb-3 mr-3">
                         <div className="location-radio-btn d-flex flex-wrap">
                           <p className="list mr-3 mb-2">Location Type :</p>
@@ -2041,6 +2066,7 @@ export default function RightDashboard() {
                               name="age"
                               value="Indoor"
                               defaultChecked={true}
+                              onChange={handleLocationTypeChange}
                             />
                             <label
                               htmlFor="Indoor"
@@ -2055,6 +2081,7 @@ export default function RightDashboard() {
                               id="Outdoor"
                               name="age"
                               value="Outdoor"
+                              onChange={handleLocationTypeChange}
                             />
                             <label
                               htmlFor="Outdoor"
@@ -2065,7 +2092,7 @@ export default function RightDashboard() {
                           </div>
                         </div>
                       </Col>
-                    </Row>
+                    </Row> */}
                     <Row>
                       <Col xs={12} sm={4} className="col-4 mb-3">
                         <div className="content">
@@ -2294,8 +2321,29 @@ export default function RightDashboard() {
                     <div clas="selectedField-header">
                       <p>Selected Fields</p>
                     </div>
+                    {/* <Row>
+                      {locationData.length > 0 && (
+                        <div>
+                          {locationData.map((item, index) => (
+                            <div key={index} className="row mb-3 filtersrow">
+                              <div className="col-3">
+                                <label className="title">{item[1]}:</label>
+                              </div>
+                              <div className="col-9">
+                                <div className="dropdown">
+                                  <select>
+                                    <option value="">Select {item[1]}</option>
+                                  </select>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </Row> */}
+                    <Untitled1 />
                     <Row>
-                      <Col xs={12} md={3} className="col-3 mb-3">
+                      {/* <Col xs={12} md={3} className="col-3 mb-3">
                         <div className="selectedField-value">
                           <div className="title">District</div>
                           <div className="dropdown">
@@ -2341,7 +2389,7 @@ export default function RightDashboard() {
                             />
                           </div>
                         </div>
-                      </Col>
+                      </Col> */}
                     </Row>
                   </div>
                 </div>
