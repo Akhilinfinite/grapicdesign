@@ -8,11 +8,6 @@ export default function Untitled1() {
   const baseURL = "http://192.168.0.65:8500/rest/gvRestApi/";
   const [District, setDistrict] = useState([]);
   const [School, setSchool] = useState([]);
-  const [SelectedSchool, setSelectedSchool] = useState([]);
-  const [Floor, setFloor] = useState([]);
-  const [SelectedFloor, setSelectedFloor] = useState([]);
-  const [Room, setRoom] = useState([]);
-  const [SelectedRoom, setSelectedRoom] = useState([]);
 
   const [locationData, setLocationData] = useState([]);
   const [selectedLocationType, setSelectedLocationType] = useState("Indoor");
@@ -38,7 +33,6 @@ export default function Untitled1() {
             options: e[0] === 1 ? District : e[0] === 2 ? School : [],
             selectedOption: e[0] === 1 ? District[0] : [],
           }));
-          console.log(data);
           setLocationData(data);
         })
         .catch(function (error) {
@@ -58,6 +52,9 @@ export default function Untitled1() {
       case 3: // Floor
         handleFloorClick(selectedOption);
         break;
+      case 4: // Room
+        handleRoomClick(selectedOption);
+        break;
       default:
         setLocationData((prevLocationData) =>
           prevLocationData.map((location) => {
@@ -66,146 +63,186 @@ export default function Untitled1() {
             }
             return location;
           })
-        ); break;
-        
+        );
+        break;
     }
   };
 
-  // const handelLocationSearchDropDown = (e) => {
-  //   const option = e.target.value;
-  //   switch (option) {
-  //     case "1":
-  //       console.log(option);
-  //       break;
-  //     case "2":
-  //       setDistrict([]);
-  //       setSchool([]);
-  //       setFloor([]);
-  //       setRoom([]);
-  //       setSelectedSchool([]);
-  //       setSelectedFloor([]);
-  //       setSelectedRoom([]);
-  //       axios
-  //         .post(`${baseURL}schedule/quickLocationLookup/`, {
-  //           vlabel: 2,
-  //           owner: 1,
-  //           loctype_kir: 0,
-  //           label_text: "School",
-  //           is_DefLocation: 0,
-  //           loctype: "0,0,0,0,0,0,0",
-  //           def_LocID: 1,
-  //         })
-  //         .then(function (response) {
-  //           const data = response.data.map((e) => ({
-  //             id: e.KEY,
-  //             value: e.KEY,
-  //             label: e.VALUE,
-  //           }));
-  //           setSchool(data);
-  //         })
-  //         .catch(function (error) {
-  //           console.log(error);
-  //         });
-  //       break;
-  //     case "3":
-  //       setDistrict([]);
-  //       setSchool([]);
-  //       setFloor([]);
-  //       setRoom([]);
-  //       setSelectedSchool([]);
-  //       setSelectedFloor([]);
-  //       setSelectedRoom([]);
-  //       axios
-  //         .post(`${baseURL}schedule/quickLocationLookup/`, {
-  //           vlabel: 3,
-  //           owner: 1,
-  //           loctype_kir: 0,
-  //           label_text: "Floor",
-  //           is_DefLocation: 0,
-  //           loctype: "0,0,0,0,0,0,0",
-  //           def_LocID: 1,
-  //         })
-  //         .then(function (response) {
-  //           const data = response.data.map((e) => ({
-  //             id: e.KEY,
-  //             value: e.KEY,
-  //             label: e.VALUE,
-  //           }));
-  //           setFloor(data);
-  //         })
-  //         .catch(function (error) {
-  //           console.log(error);
-  //         });
-  //       break;
-  //     case "4":
-  //       setDistrict([]);
-  //       setSchool([]);
-  //       setFloor([]);
-  //       setRoom([]);
-  //       setSelectedSchool([]);
-  //       setSelectedFloor([]);
-  //       setSelectedRoom([]);
-  //       axios
-  //         .post(`${baseURL}schedule/quickLocationLookup/`, {
-  //           vlabel: 4,
-  //           owner: 1,
-  //           loctype_kir: 0,
-  //           label_text: "Room",
-  //           is_DefLocation: 0,
-  //           loctype: "0,0,0,0,0,0,0",
-  //           def_LocID: 1,
-  //         })
-  //         .then(function (response) {
-  //           const data = response.data.map((e) => ({
-  //             id: e.KEY,
-  //             value: e.KEY,
-  //             label: e.VALUE,
-  //           }));
-  //           setRoom(data);
-  //         })
-  //         .catch(function (error) {
-  //           console.log(error);
-  //         });
-  //       break;
-  //     default:
-  //       break;
-  //   }
-  // };
+  const handelLocationSearchDropDown = (e) => {
+    const option = e.target.value;
+
+    setLocationData((prevLocationData) =>
+      prevLocationData.map((location) => ({
+        ...location,
+        options: [],
+        selectedOption: [],
+      }))
+    );
+    switch (option) {
+      case "1":
+        console.log(option);
+        break;
+
+      case "2":
+        axios
+          .post(`${baseURL}schedule/quickLocationLookup/`, {
+            vlabel: 2,
+            owner: 1,
+            loctype_kir: 0,
+            label_text: "School",
+            is_DefLocation: 0,
+            loctype: "0,0,0,0,0,0,0",
+            def_LocID: 1,
+          })
+          .then(function (response) {
+            const schoolData = response.data.map((e) => ({
+              id: e.KEY,
+              value: e.KEY,
+              label: e.VALUE,
+            }));
+            setLocationData((prevLocationData) =>
+              prevLocationData.map((location) =>
+                location.id === 2
+                  ? { ...location, options: schoolData }
+                  : location
+              )
+            );
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
+        break;
+
+      case "3":
+        axios
+          .post(`${baseURL}schedule/quickLocationLookup/`, {
+            vlabel: 3,
+            owner: 1,
+            loctype_kir: 0,
+            label_text: "Floor",
+            is_DefLocation: 0,
+            loctype: "0,0,0,0,0,0,0",
+            def_LocID: 1,
+          })
+          .then(function (response) {
+            const floorData = response.data.map((e) => ({
+              id: e.KEY,
+              value: e.KEY,
+              label: e.VALUE,
+            }));
+            setLocationData((prevLocationData) =>
+              prevLocationData.map((location) =>
+                location.id === 3
+                  ? { ...location, options: floorData }
+                  : location
+              )
+            );
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
+        break;
+
+      case "4":
+        axios
+          .post(`${baseURL}schedule/quickLocationLookup/`, {
+            vlabel: 4,
+            owner: 1,
+            loctype_kir: 0,
+            label_text: "Room",
+            is_DefLocation: 0,
+            loctype: "0,0,0,0,0,0,0",
+            def_LocID: 1,
+          })
+          .then(function (response) {
+            const roomData = response.data.map((e) => ({
+              id: e.KEY,
+              value: e.KEY,
+              label: e.VALUE,
+            }));
+            setLocationData((prevLocationData) =>
+              prevLocationData.map((location) =>
+                location.id === 4
+                  ? { ...location, options: roomData }
+                  : location
+              )
+            );
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
+        break;
+
+      default:
+        break;
+    }
+  };
+
   const handleRoomClick = (selectedOption) => {
-    setSelectedRoom([selectedOption]);
     const variable = selectedOption.value;
-    //District
-    axios
-      .post(`${baseURL}schedule/LocationLookup/`, {
-        h_value: "0,4",
-        h_cvalue: variable,
-        clabel: 1,
-        loctype: "0,0,0,0,0,0,0",
-        labelid: "1",
-        quickloc: 4,
-        lblcount: "4",
-        deflab: 0,
+    setLocationData((prevLocationData) =>
+      prevLocationData.map((location) =>
+        location.id === 4
+          ? { ...location, selectedOption: [selectedOption] }
+          : location
+      )
+    );
+
+    Promise.all([
+      fetchLocationData(variable, 1, "0,4", 1),
+      fetchLocationData(variable, 2, "0,4", 2),
+      fetchLocationData(variable, 3, "0,4", 3),
+      fetchLocationData(variable, 4, "0,4", 4),
+    ])
+      .then(([districtRes, schoolRes, floorRes, roomRes]) => {
+        setLocationData((prevLocationData) =>
+          prevLocationData.map((location) => {
+            if (location.id === 1) {
+              return {
+                ...location,
+                options: districtRes.data,
+                selectedOption: districtRes.data[0],
+              };
+            }
+            if (location.id === 2) {
+              return {
+                ...location,
+                options: schoolRes.data,
+                selectedOption: schoolRes.selected,
+              };
+            }
+            if (location.id === 3) {
+              return {
+                ...location,
+                options: floorRes.data,
+                selectedOption: floorRes.selected,
+              };
+            }
+            if (location.id === 4) {
+              return {
+                ...location,
+                options: roomRes.data,
+                selectedOption: roomRes.selected,
+              };
+            }
+            return location;
+          })
+        );
       })
-      .then(function (response) {
-        const data = response.data.slice(2).map((e) => ({
-          id: e.KEY,
-          value: e.KEY,
-          label: e.VALUE,
-        }));
-        setDistrict(data);
-      })
-      .catch(function (error) {
+      .catch((error) => {
         console.log(error);
       });
-    //School
-    axios
+  };
+
+  const fetchLocationData = (variable, clabel, h_value, quickloc) => {
+    return axios
       .post(`${baseURL}schedule/LocationLookup/`, {
-        h_value: "0,4",
+        h_value: h_value,
         h_cvalue: variable,
-        clabel: 2,
+        clabel: clabel,
         loctype: "0,0,0,0,0,0,0",
-        labelid: "2",
-        quickloc: 4,
+        labelid: clabel.toString(),
+        quickloc: quickloc,
         lblcount: "4",
         deflab: 0,
       })
@@ -216,64 +253,13 @@ export default function Untitled1() {
           label: e.VALUE,
         }));
         const selectedKey = response.data[1].VALUE;
-        const selected = data.find((room) => room.value === selectedKey);
-        setSchool(data);
-        setSelectedSchool(selected);
+        const selected = data.find((item) => item.value === selectedKey);
+
+        return { data, selected };
       })
       .catch(function (error) {
         console.log(error);
-      });
-    //Floor
-    axios
-      .post(`${baseURL}schedule/LocationLookup/`, {
-        h_value: "0,4",
-        h_cvalue: variable,
-        clabel: 3,
-        loctype: "0,0,0,0,0,0,0",
-        labelid: "3",
-        quickloc: 4,
-        lblcount: "4",
-        deflab: 0,
-      })
-      .then(function (response) {
-        const data = response.data.slice(2).map((e) => ({
-          id: e.KEY,
-          value: e.KEY,
-          label: e.VALUE,
-        }));
-        const selectedKey = response.data[1].VALUE;
-        const selected = data.find((room) => room.value === selectedKey);
-        setFloor(data);
-        setSelectedFloor(selected);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
-    //Room
-    axios
-      .post(`${baseURL}schedule/LocationLookup/`, {
-        h_value: "0,4",
-        h_cvalue: variable,
-        clabel: 4,
-        loctype: "0,0,0,0,0,0,0",
-        labelid: "4",
-        quickloc: 4,
-        lblcount: "4",
-        deflab: 0,
-      })
-      .then(function (response) {
-        const data = response.data.slice(2).map((e) => ({
-          id: e.KEY,
-          value: e.KEY,
-          label: e.VALUE,
-        }));
-        const selectedKey = response.data[1].VALUE;
-        const selected = data.find((room) => room.value === selectedKey);
-        setSelectedRoom(selected);
-        setRoom(data);
-      })
-      .catch(function (error) {
-        console.log(error);
+        return { data: [], selected: null };
       });
   };
 
@@ -314,8 +300,6 @@ export default function Untitled1() {
             label: e[16],
           }));
           setSchool(data);
-          setFloor([]);
-          setRoom([]);
         })
         .catch(function (error) {
           console.log(error);
@@ -326,89 +310,54 @@ export default function Untitled1() {
 
   const handleSchoolClick = (selectedOption) => {
     const variable = selectedOption.value;
-    if (District.length === 0) {
-      axios
-        .post(`${baseURL}schedule/LocationLookup/`, {
-          h_value: "0,2",
-          h_cvalue: variable,
-          clabel: 1,
-          loctype: "0,0,0,0,0,0,0",
-          labelid: "1",
-          quickloc: 2,
-          lblcount: "4",
-          deflab: 0,
+    if (locationData.find((loc) => loc.id === 1)?.options.length === 0) {
+      // Fetch District, School, and Floor using fetchLocationData function
+
+      Promise.all([
+        fetchLocationData(variable, 1, "0,2", 2), // District
+        fetchLocationData(variable, 2, "0,2", 2), // School
+        fetchLocationData(variable, 3, "0,2", 2), // Floor
+      ])
+        .then(([districtRes, schoolRes, floorRes]) => {
+          // Update locationData with new values
+          setLocationData((prevLocationData) =>
+            prevLocationData.map((location) => {
+              if (location.id === 1) {
+                return {
+                  ...location,
+                  options: districtRes.data,
+                  selectedOption: districtRes.data[0],
+                };
+              }
+              if (location.id === 2) {
+                return {
+                  ...location,
+                  options: schoolRes.data,
+                  selectedOption: schoolRes.selected,
+                };
+              }
+              if (location.id === 3) {
+                return {
+                  ...location,
+                  options: floorRes.data,
+                  selectedOption: [],
+                };
+              }
+              return location;
+            })
+          );
         })
-        .then(function (response) {
-          const data = response.data.slice(2).map((e) => ({
-            id: e.KEY,
-            value: e.KEY,
-            label: e.VALUE,
-          }));
-          setDistrict(data);
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-      //School
-      axios
-        .post(`${baseURL}schedule/LocationLookup/`, {
-          h_value: "0,2",
-          h_cvalue: variable,
-          clabel: 2,
-          loctype: "0,0,0,0,0,0,0",
-          labelid: "2",
-          quickloc: 2,
-          lblcount: "4",
-          deflab: 0,
-        })
-        .then(function (response) {
-          const data = response.data.slice(2).map((e) => ({
-            id: e.KEY,
-            value: e.KEY,
-            label: e.VALUE,
-          }));
-          const selectedKey = response.data[1].VALUE;
-          const selected = data.find((room) => room.value === selectedKey);
-          setSchool(data);
-          setSelectedSchool(selected);
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-      //Floor
-      axios
-        .post(`${baseURL}schedule/LocationLookup/`, {
-          h_value: "0,2",
-          h_cvalue: variable,
-          clabel: 3,
-          loctype: "0,0,0,0,0,0,0",
-          labelid: "3",
-          quickloc: 2,
-          lblcount: "4",
-          deflab: 0,
-        })
-        .then(function (response) {
-          const data = response.data.slice(2).map((e) => ({
-            id: e.KEY,
-            value: e.KEY,
-            label: e.VALUE,
-          }));
-          setFloor(data);
-        })
-        .catch(function (error) {
+        .catch((error) => {
           console.log(error);
         });
     } else {
       setLocationData((prevLocationData) =>
         prevLocationData.map((location) => {
           if (location.id === 2) {
-            // Set selected school
             return { ...location, selectedOption: selectedOption };
           } else if (location.id === 3) {
-            // Clear Floor options and selected option
             return { ...location, options: [], selectedOption: [] };
           } else if (location.id === 4) {
-            // Clear Room options
             return { ...location, options: [], selectedOption: [] };
           }
           return location;
@@ -445,103 +394,48 @@ export default function Untitled1() {
   };
   const handleFloorClick = (selectedOption) => {
     const variable = selectedOption.value;
-    if (SelectedSchool.length === 0) {
-      //District
-      axios
-        .post(`${baseURL}schedule/LocationLookup/`, {
-          h_value: "0,3",
-          h_cvalue: variable,
-          clabel: 1,
-          loctype: "0,0,0,0,0,0,0",
-          labelid: "1",
-          quickloc: 3,
-          lblcount: "4",
-          deflab: 0,
+    if (locationData.find((loc) => loc.id === 1)?.options.length === 0) {
+      Promise.all([
+        fetchLocationData(variable, 1, "0,3", 3),
+        fetchLocationData(variable, 2, "0,3", 3),
+        fetchLocationData(variable, 3, "0,3", 3),
+        fetchLocationData(variable, 4, "0,3", 3),
+      ])
+        .then(([districtRes, schoolRes, floorRes, roomRes]) => {
+          setLocationData((prevLocationData) =>
+            prevLocationData.map((location) => {
+              if (location.id === 1) {
+                return {
+                  ...location,
+                  options: districtRes.data,
+                  selectedOption: districtRes.selected,
+                };
+              }
+              if (location.id === 2) {
+                return {
+                  ...location,
+                  options: schoolRes.data,
+                  selectedOption: schoolRes.selected,
+                };
+              }
+              if (location.id === 3) {
+                return {
+                  ...location,
+                  options: floorRes.data,
+                  selectedOption: floorRes.selected,
+                };
+              }
+              if (location.id === 4) {
+                return {
+                  ...location,
+                  options: roomRes.data,
+                };
+              }
+              return location;
+            })
+          );
         })
-        .then(function (response) {
-          const data = response.data.slice(2).map((e) => ({
-            id: e.KEY,
-            value: e.KEY,
-            label: e.VALUE,
-          }));
-          setDistrict(data);
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-      //School
-      axios
-        .post(`${baseURL}schedule/LocationLookup/`, {
-          h_value: "0,3",
-          h_cvalue: variable,
-          clabel: 2,
-          loctype: "0,0,0,0,0,0,0",
-          labelid: "2",
-          quickloc: 3,
-          lblcount: "4",
-          deflab: 0,
-        })
-        .then(function (response) {
-          const data = response.data.slice(2).map((e) => ({
-            id: e.KEY,
-            value: e.KEY,
-            label: e.VALUE,
-          }));
-          const selectedKey = response.data[1].VALUE;
-          const selected = data.find((room) => room.value === selectedKey);
-          setSchool(data);
-          setSelectedSchool(selected);
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-      //Floor
-      axios
-        .post(`${baseURL}schedule/LocationLookup/`, {
-          h_value: "0,3",
-          h_cvalue: variable,
-          clabel: 3,
-          loctype: "0,0,0,0,0,0,0",
-          labelid: "3",
-          quickloc: 3,
-          lblcount: "4",
-          deflab: 0,
-        })
-        .then(function (response) {
-          const data = response.data.slice(2).map((e) => ({
-            id: e.KEY,
-            value: e.KEY,
-            label: e.VALUE,
-          }));
-          const selectedKey = response.data[1].VALUE;
-          const selected = data.find((room) => room.value === selectedKey);
-          setFloor(data);
-          setSelectedFloor(selected);
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-      //Room
-      axios
-        .post(`${baseURL}schedule/LocationLookup/`, {
-          h_value: "0,3",
-          h_cvalue: variable,
-          clabel: 4,
-          loctype: "0,0,0,0,0,0,0",
-          labelid: "4",
-          quickloc: 3,
-          lblcount: "4",
-          deflab: 0,
-        })
-        .then(function (response) {
-          const data = response.data.slice(2).map((e) => ({
-            id: e.KEY,
-            value: e.KEY,
-            label: e.VALUE,
-          }));
-          setRoom(data);
-        })
-        .catch(function (error) {
+        .catch((error) => {
           console.log(error);
         });
     } else {
@@ -579,11 +473,6 @@ export default function Untitled1() {
         });
     }
   };
-  // const handleClickLocationSearch = () => {
-  //   const option = document.getElementById("location_input_Select").value;
-  //   const data = document.getElementById("location_input_Search").value;
-  //   console.log(data, option);
-  // };
   return (
     <div>
       <Row>
@@ -618,7 +507,30 @@ export default function Untitled1() {
           </div>
         </Col>
       </Row>
-
+      <Row>
+        <Col xs={12} sm={4} className="col-4 mb-3">
+          <div className="content">
+            <div className="title">Choose field to Search</div>
+            <div className="dropdown">
+              <select
+                name="days"
+                className="custom-select"
+                id="location_input_Select"
+                onChange={(e) => handelLocationSearchDropDown(e)}
+              >
+                {locationData.length !== 0 && (
+                  <option value="">select value</option>
+                )}
+                {locationData.map((location) => (
+                  <option key={location.id} value={location.id}>
+                    {location.value}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </Col>
+      </Row>
       <Row>
         {locationData.map((location) => (
           <Col xs={12} md={3} className="col-3 mb-3" key={location.id}>
@@ -637,10 +549,7 @@ export default function Untitled1() {
           </Col>
         ))}
       </Row>
-      <div clas="selectedField-header">
-        <p>Selected Fields</p>
-      </div>
-      <Row>
+      {/* <Row>
         <Col xs={12} md={3} className="col-3 mb-3">
           <div className="selectedField-value">
             <div className="title">District</div>
@@ -688,7 +597,7 @@ export default function Untitled1() {
             </div>
           </div>
         </Col>
-      </Row>
+      </Row> */}
     </div>
   );
 }
