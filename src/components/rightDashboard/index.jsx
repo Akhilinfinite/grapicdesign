@@ -25,7 +25,6 @@ import Down from "../../asserts/images/Icons/down_arrow.png";
 import Up from "../../asserts/images/Icons/up_arrow.png";
 import InfiniteDropdown from "./components/InfiniteDropdown";
 import CustomDateTimePicker from "./components/customDateTimeInput";
-import Untitled1 from "./components/Untitled1";
 
 export default function RightDashboard() {
   const baseURL = "http://192.168.0.65:8500/rest/gvRestApi/";
@@ -42,11 +41,9 @@ export default function RightDashboard() {
 
   const [District, setDistrict] = useState([]);
   const [School, setSchool] = useState([]);
-  const [SelectedSchool, setSelectedSchool] = useState([]);
-  const [Floor, setFloor] = useState([]);
-  const [SelectedFloor, setSelectedFloor] = useState([]);
-  const [Room, setRoom] = useState([]);
-  const [SelectedRoom, setSelectedRoom] = useState([]);
+
+  const [locationData, setLocationData] = useState([]);
+  const [selectedLocationType, setSelectedLocationType] = useState("Indoor");
 
   const [LFDistrict, setLFDistrict] = useState([]);
   const [LFSchool, setLFSchool] = useState([]);
@@ -75,106 +72,6 @@ export default function RightDashboard() {
   const handleLocationFilterClick = () => {
     setLocationFilterModalVisibility(true);
   };
-  const handelLocationSearchDropDown = (e) => {
-    const option = e.target.value;
-    switch (option) {
-      case "1":
-        console.log(option);
-        break;
-      case "2":
-        setDistrict([]);
-        setSchool([]);
-        setFloor([]);
-        setRoom([]);
-        setSelectedSchool([]);
-        setSelectedFloor([]);
-        setSelectedRoom([]);
-        axios
-          .post(`${baseURL}schedule/quickLocationLookup/`, {
-            vlabel: 2,
-            owner: 1,
-            loctype_kir: 0,
-            label_text: "School",
-            is_DefLocation: 0,
-            loctype: "0,0,0,0,0,0,0",
-            def_LocID: 1,
-          })
-          .then(function (response) {
-            const data = response.data.map((e) => ({
-              id: e.KEY,
-              value: e.KEY,
-              label: e.VALUE,
-            }));
-            setSchool(data);
-          })
-          .catch(function (error) {
-            console.log(error);
-          });
-        break;
-      case "3":
-        setDistrict([]);
-        setSchool([]);
-        setFloor([]);
-        setRoom([]);
-        setSelectedSchool([]);
-        setSelectedFloor([]);
-        setSelectedRoom([]);
-        axios
-          .post(`${baseURL}schedule/quickLocationLookup/`, {
-            vlabel: 3,
-            owner: 1,
-            loctype_kir: 0,
-            label_text: "Floor",
-            is_DefLocation: 0,
-            loctype: "0,0,0,0,0,0,0",
-            def_LocID: 1,
-          })
-          .then(function (response) {
-            const data = response.data.map((e) => ({
-              id: e.KEY,
-              value: e.KEY,
-              label: e.VALUE,
-            }));
-            setFloor(data);
-          })
-          .catch(function (error) {
-            console.log(error);
-          });
-        break;
-      case "4":
-        setDistrict([]);
-        setSchool([]);
-        setFloor([]);
-        setRoom([]);
-        setSelectedSchool([]);
-        setSelectedFloor([]);
-        setSelectedRoom([]);
-        axios
-          .post(`${baseURL}schedule/quickLocationLookup/`, {
-            vlabel: 4,
-            owner: 1,
-            loctype_kir: 0,
-            label_text: "Room",
-            is_DefLocation: 0,
-            loctype: "0,0,0,0,0,0,0",
-            def_LocID: 1,
-          })
-          .then(function (response) {
-            const data = response.data.map((e) => ({
-              id: e.KEY,
-              value: e.KEY,
-              label: e.VALUE,
-            }));
-            setRoom(data);
-          })
-          .catch(function (error) {
-            console.log(error);
-          });
-        break;
-      default:
-        break;
-    }
-  };
 
   const handleCloseLocationFilterModal = () => {
     setLFSelectedDistrict(LFvalues.LFSelectedDistrict);
@@ -183,112 +80,6 @@ export default function RightDashboard() {
     setLFSelectedRoom(LFvalues.LFSelectedRoom);
     setLFCapacity(LFvalues.LFCapacity);
     setLocationFilterModalVisibility(false);
-  };
-
-  const handleRoomClick = (selectedOption) => {
-    setSelectedRoom([selectedOption]);
-    const variable = selectedOption.value;
-    //District
-    axios
-      .post(`${baseURL}schedule/LocationLookup/`, {
-        h_value: "0,4",
-        h_cvalue: variable,
-        clabel: 1,
-        loctype: "0,0,0,0,0,0,0",
-        labelid: "1",
-        quickloc: 4,
-        lblcount: "4",
-        deflab: 0,
-      })
-      .then(function (response) {
-        const data = response.data.slice(2).map((e) => ({
-          id: e.KEY,
-          value: e.KEY,
-          label: e.VALUE,
-        }));
-        setDistrict(data);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
-    //School
-    axios
-      .post(`${baseURL}schedule/LocationLookup/`, {
-        h_value: "0,4",
-        h_cvalue: variable,
-        clabel: 2,
-        loctype: "0,0,0,0,0,0,0",
-        labelid: "2",
-        quickloc: 4,
-        lblcount: "4",
-        deflab: 0,
-      })
-      .then(function (response) {
-        const data = response.data.slice(2).map((e) => ({
-          id: e.KEY,
-          value: e.KEY,
-          label: e.VALUE,
-        }));
-        const selectedKey = response.data[1].VALUE;
-        const selected = data.find((room) => room.value === selectedKey);
-        setSchool(data);
-        setSelectedSchool(selected);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
-    //Floor
-    axios
-      .post(`${baseURL}schedule/LocationLookup/`, {
-        h_value: "0,4",
-        h_cvalue: variable,
-        clabel: 3,
-        loctype: "0,0,0,0,0,0,0",
-        labelid: "3",
-        quickloc: 4,
-        lblcount: "4",
-        deflab: 0,
-      })
-      .then(function (response) {
-        const data = response.data.slice(2).map((e) => ({
-          id: e.KEY,
-          value: e.KEY,
-          label: e.VALUE,
-        }));
-        const selectedKey = response.data[1].VALUE;
-        const selected = data.find((room) => room.value === selectedKey);
-        setFloor(data);
-        setSelectedFloor(selected);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
-    //Room
-    axios
-      .post(`${baseURL}schedule/LocationLookup/`, {
-        h_value: "0,4",
-        h_cvalue: variable,
-        clabel: 4,
-        loctype: "0,0,0,0,0,0,0",
-        labelid: "4",
-        quickloc: 4,
-        lblcount: "4",
-        deflab: 0,
-      })
-      .then(function (response) {
-        const data = response.data.slice(2).map((e) => ({
-          id: e.KEY,
-          value: e.KEY,
-          label: e.VALUE,
-        }));
-        const selectedKey = response.data[1].VALUE;
-        const selected = data.find((room) => room.value === selectedKey);
-        setSelectedRoom(selected);
-        setRoom(data);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
   };
 
   const handleApplyLocationFilterModal = () => {
@@ -473,8 +264,6 @@ export default function RightDashboard() {
             label: e[16],
           }));
           setSchool(data);
-          setFloor([]);
-          setRoom([]);
         })
         .catch(function (error) {
           console.log(error);
@@ -485,207 +274,146 @@ export default function RightDashboard() {
 
   const handleSchoolClick = (selectedOption) => {
     const variable = selectedOption.value;
-    if (District.length === 0) {
-      axios
-        .post(`${baseURL}schedule/LocationLookup/`, {
-          h_value: "0,2",
-          h_cvalue: variable,
-          clabel: 1,
-          loctype: "0,0,0,0,0,0,0",
-          labelid: "1",
-          quickloc: 2,
-          lblcount: "4",
-          deflab: 0,
+    if (locationData.find((loc) => loc.id === 1)?.options.length === 0) {
+      // Fetch District, School, and Floor using fetchLocationData function
+
+      Promise.all([
+        fetchLocationData(variable, 1, "0,2", 2), // District
+        fetchLocationData(variable, 2, "0,2", 2), // School
+        fetchLocationData(variable, 3, "0,2", 2), // Floor
+      ])
+        .then(([districtRes, schoolRes, floorRes]) => {
+          // Update locationData with new values
+          setLocationData((prevLocationData) =>
+            prevLocationData.map((location) => {
+              if (location.id === 1) {
+                return {
+                  ...location,
+                  options: districtRes.data,
+                  selectedOption: districtRes.data[0],
+                };
+              }
+              if (location.id === 2) {
+                return {
+                  ...location,
+                  options: schoolRes.data,
+                  selectedOption: schoolRes.selected,
+                };
+              }
+              if (location.id === 3) {
+                return {
+                  ...location,
+                  options: floorRes.data,
+                  selectedOption: [],
+                };
+              }
+              return location;
+            })
+          );
         })
-        .then(function (response) {
-          const data = response.data.slice(2).map((e) => ({
-            id: e.KEY,
-            value: e.KEY,
-            label: e.VALUE,
-          }));
-          setDistrict(data);
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-      //School
-      axios
-        .post(`${baseURL}schedule/LocationLookup/`, {
-          h_value: "0,2",
-          h_cvalue: variable,
-          clabel: 2,
-          loctype: "0,0,0,0,0,0,0",
-          labelid: "2",
-          quickloc: 2,
-          lblcount: "4",
-          deflab: 0,
-        })
-        .then(function (response) {
-          const data = response.data.slice(2).map((e) => ({
-            id: e.KEY,
-            value: e.KEY,
-            label: e.VALUE,
-          }));
-          const selectedKey = response.data[1].VALUE;
-          const selected = data.find((room) => room.value === selectedKey);
-          setSchool(data);
-          setSelectedSchool(selected);
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-      //Floor
-      axios
-        .post(`${baseURL}schedule/LocationLookup/`, {
-          h_value: "0,2",
-          h_cvalue: variable,
-          clabel: 3,
-          loctype: "0,0,0,0,0,0,0",
-          labelid: "3",
-          quickloc: 2,
-          lblcount: "4",
-          deflab: 0,
-        })
-        .then(function (response) {
-          const data = response.data.slice(2).map((e) => ({
-            id: e.KEY,
-            value: e.KEY,
-            label: e.VALUE,
-          }));
-          setFloor(data);
-        })
-        .catch(function (error) {
+        .catch((error) => {
           console.log(error);
         });
     } else {
-      setFloor([]);
-      setSelectedSchool([selectedOption]);
-      setSelectedFloor([]);
-      setSelectedRoom([]);
+      setLocationData((prevLocationData) =>
+        prevLocationData.map((location) => {
+          if (location.id === 2) {
+            return { ...location, selectedOption: selectedOption };
+          } else if (location.id === 3) {
+            return { ...location, options: [], selectedOption: [] };
+          } else if (location.id === 4) {
+            return { ...location, options: [], selectedOption: [] };
+          }
+          return location;
+        })
+      );
+
+      // Fetch Floor data from API
       axios
         .post(`${baseURL}master/getLocation/`, {
           label_id: "3",
           loc_parentid: variable,
         })
         .then(function (response) {
-          const data = response.data.DATA.map((e) => ({
+          const floorData = response.data.DATA.map((e) => ({
             id: e[0],
             value: e[14],
             label: e[16],
           }));
-          setFloor(data);
-          setRoom([]);
+
+          setLocationData((prevLocationData) =>
+            prevLocationData.map((location) =>
+              location.id === 3
+                ? { ...location, options: floorData }
+                : location.id === 4
+                ? { ...location, options: [] }
+                : location
+            )
+          );
         })
         .catch(function (error) {
           console.log(error);
         });
     }
   };
+
   const handleFloorClick = (selectedOption) => {
     const variable = selectedOption.value;
-    if (SelectedSchool.length === 0) {
-      //District
-      axios
-        .post(`${baseURL}schedule/LocationLookup/`, {
-          h_value: "0,3",
-          h_cvalue: variable,
-          clabel: 1,
-          loctype: "0,0,0,0,0,0,0",
-          labelid: "1",
-          quickloc: 3,
-          lblcount: "4",
-          deflab: 0,
+    if (locationData.find((loc) => loc.id === 1)?.options.length === 0) {
+      Promise.all([
+        fetchLocationData(variable, 1, "0,3", 3),
+        fetchLocationData(variable, 2, "0,3", 3),
+        fetchLocationData(variable, 3, "0,3", 3),
+        fetchLocationData(variable, 4, "0,3", 3),
+      ])
+        .then(([districtRes, schoolRes, floorRes, roomRes]) => {
+          setLocationData((prevLocationData) =>
+            prevLocationData.map((location) => {
+              if (location.id === 1) {
+                return {
+                  ...location,
+                  options: districtRes.data,
+                  selectedOption: districtRes.selected,
+                };
+              }
+              if (location.id === 2) {
+                return {
+                  ...location,
+                  options: schoolRes.data,
+                  selectedOption: schoolRes.selected,
+                };
+              }
+              if (location.id === 3) {
+                return {
+                  ...location,
+                  options: floorRes.data,
+                  selectedOption: floorRes.selected,
+                };
+              }
+              if (location.id === 4) {
+                return {
+                  ...location,
+                  options: roomRes.data,
+                };
+              }
+              return location;
+            })
+          );
         })
-        .then(function (response) {
-          const data = response.data.slice(2).map((e) => ({
-            id: e.KEY,
-            value: e.KEY,
-            label: e.VALUE,
-          }));
-          setDistrict(data);
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-      //School
-      axios
-        .post(`${baseURL}schedule/LocationLookup/`, {
-          h_value: "0,3",
-          h_cvalue: variable,
-          clabel: 2,
-          loctype: "0,0,0,0,0,0,0",
-          labelid: "2",
-          quickloc: 3,
-          lblcount: "4",
-          deflab: 0,
-        })
-        .then(function (response) {
-          const data = response.data.slice(2).map((e) => ({
-            id: e.KEY,
-            value: e.KEY,
-            label: e.VALUE,
-          }));
-          const selectedKey = response.data[1].VALUE;
-          const selected = data.find((room) => room.value === selectedKey);
-          setSchool(data);
-          setSelectedSchool(selected);
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-      //Floor
-      axios
-        .post(`${baseURL}schedule/LocationLookup/`, {
-          h_value: "0,3",
-          h_cvalue: variable,
-          clabel: 3,
-          loctype: "0,0,0,0,0,0,0",
-          labelid: "3",
-          quickloc: 3,
-          lblcount: "4",
-          deflab: 0,
-        })
-        .then(function (response) {
-          const data = response.data.slice(2).map((e) => ({
-            id: e.KEY,
-            value: e.KEY,
-            label: e.VALUE,
-          }));
-          const selectedKey = response.data[1].VALUE;
-          const selected = data.find((room) => room.value === selectedKey);
-          setFloor(data);
-          setSelectedFloor(selected);
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-      //Room
-      axios
-        .post(`${baseURL}schedule/LocationLookup/`, {
-          h_value: "0,3",
-          h_cvalue: variable,
-          clabel: 4,
-          loctype: "0,0,0,0,0,0,0",
-          labelid: "4",
-          quickloc: 3,
-          lblcount: "4",
-          deflab: 0,
-        })
-        .then(function (response) {
-          const data = response.data.slice(2).map((e) => ({
-            id: e.KEY,
-            value: e.KEY,
-            label: e.VALUE,
-          }));
-          setRoom(data);
-        })
-        .catch(function (error) {
+        .catch((error) => {
           console.log(error);
         });
     } else {
-      setRoom([]);
-      setSelectedRoom([]);
-      setSelectedFloor([selectedOption]);
+      setLocationData((prevLocationData) =>
+        prevLocationData.map((location) => {
+          if (location.id === 3) {
+            return { ...location, selectedOption: selectedOption };
+          } else if (location.id === 4) {
+            return { ...location, options: [], selectedOption: [] };
+          }
+          return location;
+        })
+      );
       axios
         .post(`${baseURL}master/getLocation/`, {
           label_id: "4",
@@ -697,12 +425,270 @@ export default function RightDashboard() {
             value: e[14],
             label: e[16],
           }));
-          setRoom(data);
+          setLocationData((prevLocationData) =>
+            prevLocationData.map((location) =>
+              location.id === 4
+                ? { ...location, options: data } // Set fetched Room data
+                : location
+            )
+          );
         })
         .catch(function (error) {
           console.log(error);
         });
     }
+  };
+
+  const handleRoomClick = (selectedOption) => {
+    const variable = selectedOption.value;
+    setLocationData((prevLocationData) =>
+      prevLocationData.map((location) =>
+        location.id === 4
+          ? { ...location, selectedOption: [selectedOption] }
+          : location
+      )
+    );
+
+    Promise.all([
+      fetchLocationData(variable, 1, "0,4", 1),
+      fetchLocationData(variable, 2, "0,4", 2),
+      fetchLocationData(variable, 3, "0,4", 3),
+      fetchLocationData(variable, 4, "0,4", 4),
+    ])
+      .then(([districtRes, schoolRes, floorRes, roomRes]) => {
+        setLocationData((prevLocationData) =>
+          prevLocationData.map((location) => {
+            if (location.id === 1) {
+              return {
+                ...location,
+                options: districtRes.data,
+                selectedOption: districtRes.data[0],
+              };
+            }
+            if (location.id === 2) {
+              return {
+                ...location,
+                options: schoolRes.data,
+                selectedOption: schoolRes.selected,
+              };
+            }
+            if (location.id === 3) {
+              return {
+                ...location,
+                options: floorRes.data,
+                selectedOption: floorRes.selected,
+              };
+            }
+            if (location.id === 4) {
+              return {
+                ...location,
+                options: roomRes.data,
+                selectedOption: roomRes.selected,
+              };
+            }
+            return location;
+          })
+        );
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  };
+
+  const handleLocationTypeChange = (e) => {
+    const selectedValue = e.target.value;
+    setSelectedLocationType(selectedValue);
+  };
+
+  useEffect(() => {
+    const handleLocationRadioBtnData = () => {
+      const loctype_kir1 =
+        selectedLocationType === "Indoor" ? 0 : "Outdoor" ? 1 : 2;
+      const loctype_kir = loctype_kir1;
+      axios
+        .post("http://192.168.0.65:8500/rest/gvRestApi/schedule/getLabels/", {
+          owner_id: "",
+          loctype_kir: loctype_kir,
+        })
+        .then(function (response) {
+          const data = response.data.DATA.map((e) => ({
+            id: e[0],
+            value: e[1],
+            options: e[0] === 1 ? District : e[0] === 2 ? School : [],
+            selectedOption: e[0] === 1 ? District[0] : [],
+          }));
+          setLocationData(data);
+        })
+        .catch(function (error) {
+          console.error("Error fetching labels:", error);
+        });
+    };
+    if (District.length !== 0 || School.length !== 0) {
+      handleLocationRadioBtnData();
+    }
+  }, [District, School, selectedLocationType]);
+
+  const handleOptionSelect = (locationId, selectedOption) => {
+    switch (locationId) {
+      case 2: // School
+        handleSchoolClick(selectedOption);
+        break;
+      case 3: // Floor
+        handleFloorClick(selectedOption);
+        break;
+      case 4: // Room
+        handleRoomClick(selectedOption);
+        break;
+      default:
+        setLocationData((prevLocationData) =>
+          prevLocationData.map((location) => {
+            if (location.id === locationId) {
+              return { ...location, selectedOption: selectedOption };
+            }
+            return location;
+          })
+        );
+        break;
+    }
+  };
+
+  const handelLocationSearchDropDown = (e) => {
+    const option = e.target.value;
+
+    setLocationData((prevLocationData) =>
+      prevLocationData.map((location) => ({
+        ...location,
+        options: [],
+        selectedOption: [],
+      }))
+    );
+    switch (option) {
+      case "1":
+        console.log(option);
+        break;
+
+      case "2":
+        axios
+          .post(`${baseURL}schedule/quickLocationLookup/`, {
+            vlabel: 2,
+            owner: 1,
+            loctype_kir: 0,
+            label_text: "School",
+            is_DefLocation: 0,
+            loctype: "0,0,0,0,0,0,0",
+            def_LocID: 1,
+          })
+          .then(function (response) {
+            const schoolData = response.data.map((e) => ({
+              id: e.KEY,
+              value: e.KEY,
+              label: e.VALUE,
+            }));
+            setLocationData((prevLocationData) =>
+              prevLocationData.map((location) =>
+                location.id === 2
+                  ? { ...location, options: schoolData }
+                  : location
+              )
+            );
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
+        break;
+
+      case "3":
+        axios
+          .post(`${baseURL}schedule/quickLocationLookup/`, {
+            vlabel: 3,
+            owner: 1,
+            loctype_kir: 0,
+            label_text: "Floor",
+            is_DefLocation: 0,
+            loctype: "0,0,0,0,0,0,0",
+            def_LocID: 1,
+          })
+          .then(function (response) {
+            const floorData = response.data.map((e) => ({
+              id: e.KEY,
+              value: e.KEY,
+              label: e.VALUE,
+            }));
+            setLocationData((prevLocationData) =>
+              prevLocationData.map((location) =>
+                location.id === 3
+                  ? { ...location, options: floorData }
+                  : location
+              )
+            );
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
+        break;
+
+      case "4":
+        axios
+          .post(`${baseURL}schedule/quickLocationLookup/`, {
+            vlabel: 4,
+            owner: 1,
+            loctype_kir: 0,
+            label_text: "Room",
+            is_DefLocation: 0,
+            loctype: "0,0,0,0,0,0,0",
+            def_LocID: 1,
+          })
+          .then(function (response) {
+            const roomData = response.data.map((e) => ({
+              id: e.KEY,
+              value: e.KEY,
+              label: e.VALUE,
+            }));
+            setLocationData((prevLocationData) =>
+              prevLocationData.map((location) =>
+                location.id === 4
+                  ? { ...location, options: roomData }
+                  : location
+              )
+            );
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
+        break;
+
+      default:
+        break;
+    }
+  };
+
+  const fetchLocationData = (variable, clabel, h_value, quickloc) => {
+    return axios
+      .post(`${baseURL}schedule/LocationLookup/`, {
+        h_value: h_value,
+        h_cvalue: variable,
+        clabel: clabel,
+        loctype: "0,0,0,0,0,0,0",
+        labelid: clabel.toString(),
+        quickloc: quickloc,
+        lblcount: "4",
+        deflab: 0,
+      })
+      .then(function (response) {
+        const data = response.data.slice(2).map((e) => ({
+          id: e.KEY,
+          value: e.KEY,
+          label: e.VALUE,
+        }));
+        const selectedKey = response.data[1].VALUE;
+        const selected = data.find((item) => item.value === selectedKey);
+
+        return { data, selected };
+      })
+      .catch(function (error) {
+        console.log(error);
+        return { data: [], selected: null };
+      });
   };
 
   //API Location filter District
@@ -858,28 +844,6 @@ export default function RightDashboard() {
   const handleIntervalTypeChange = (e) => {
     setIntervalType(e.target.value);
     setIntervalTypeModalVisible(true);
-  };
-
-  const [locationData, setLocationData] = useState([]);
-  const [selectedLocationType, setSelectedLocationType] = useState("Indoor");
-
-  const handleLocationTypeChange = (e) => {
-    const selectedValue = e.target.value;
-    setSelectedLocationType(selectedValue);
-    const loctype_kir = selectedValue === "Indoor" ? 0 : "Outdoor" ? 1 : 2;
-    axios
-      .post("http://192.168.0.65:8500/rest/gvRestApi/schedule/getLabels/", {
-        owner_id: "",
-        loctype_kir: loctype_kir,
-      })
-      .then(function (response) {
-        const data = response.data.DATA;
-        setLocationData(data);
-        console.log("Location data:", data);
-      })
-      .catch(function (error) {
-        console.error("Error fetching labels:", error);
-      });
   };
 
   return (
@@ -1706,6 +1670,7 @@ export default function RightDashboard() {
                               name="age"
                               value="Indoor"
                               defaultChecked={true}
+                              onChange={handleLocationTypeChange}
                             />
                             <label
                               htmlFor="Indoor"
@@ -1720,6 +1685,7 @@ export default function RightDashboard() {
                               id="Outdoor"
                               name="age"
                               value="Outdoor"
+                              onChange={handleLocationTypeChange}
                             />
                             <label
                               htmlFor="Outdoor"
@@ -1742,11 +1708,14 @@ export default function RightDashboard() {
                               id="location_input_Select"
                               onChange={(e) => handelLocationSearchDropDown(e)}
                             >
-                              <option value="">select value</option>
-                              <option value="1">District</option>
-                              <option value="2">School</option>
-                              <option value="3">Floor</option>
-                              <option value="4">Room</option>
+                              {locationData.length !== 0 && (
+                                <option value="">select value</option>
+                              )}
+                              {locationData.map((location) => (
+                                <option key={location.id} value={location.id}>
+                                  {location.value}
+                                </option>
+                              ))}
                             </select>
                           </div>
                         </div>
@@ -1960,436 +1929,27 @@ export default function RightDashboard() {
                       <p>Selected Fields</p>
                     </div>
                     <Row>
-                      <Col xs={12} md={3} className="col-3 mb-3">
-                        <div className="selectedField-value">
-                          <div className="title">District</div>
-                          <div className="dropdown">
-                            <InfiniteDropdown
-                              options={District}
-                              selectedValue={District[0] ? [District[0]] : []}
-                            />
-                          </div>
-                        </div>
-                      </Col>
-                      <Col xs={12} md={3} className="col-3 mb-3">
-                        <div className="selectedField-value">
-                          <div className="title">School</div>
-                          <div className="dropdown">
-                            <InfiniteDropdown
-                              options={School}
-                              selectedValue={SelectedSchool}
-                              onChange={handleSchoolClick}
-                            />
-                          </div>
-                        </div>
-                      </Col>
-                      <Col xs={12} md={3} className="col-3 mb-3">
-                        <div className="selectedField-value">
-                          <div className="title">Floor</div>
-                          <div className="dropdown">
-                            <InfiniteDropdown
-                              options={Floor}
-                              selectedValue={SelectedFloor}
-                              onChange={handleFloorClick}
-                            />
-                          </div>
-                        </div>
-                      </Col>
-                      <Col xs={12} md={3} className="col-3 mb-3">
-                        <div className="selectedField-value">
-                          <div className="title">Room</div>
-                          <div className="dropdown">
-                            <InfiniteDropdown
-                              options={Room}
-                              selectedValue={SelectedRoom}
-                              onChange={handleRoomClick}
-                            />
-                          </div>
-                        </div>
-                      </Col>
-                    </Row>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="scheduleSearch-body">
-          <div className="accordion-item">
-            <button className="accordion-item-btn" onClick={handleClick3}>
-              <div className="section-1">
-                <div className="title-icon">
-                  <div className="icon-t">
-                    <img src={Location} alt="Location" />
-                  </div>
-                  <div className="title">Location</div>
-                </div>
-                <div className="title-icon">
-                  <div className="icon-t">
-                    <img src={MonthView} alt="MonthView" />
-                  </div>
-                  <div className="title">Month View</div>
-                </div>
-                <div className="title-icon">
-                  <div className="icon-t">
-                    <img src={DayView} alt="DayView" />
-                  </div>
-                  <div className="title">Day View</div>
-                </div>
-                <div className="title-icon">
-                  <div className="icon-t">
-                    <img src={TimeView} alt="TimeView" />
-                  </div>
-                  <div className="title">Time View</div>
-                </div>
-                <div className="button">
-                  {isOpen3 ? (
-                    <img src={Up} alt="icon" />
-                  ) : (
-                    <img src={Down} alt="icon" />
-                  )}
-                </div>
-              </div>
-            </button>
-            {isOpen3 && (
-              <div className="section-2">
-                <div className="accordion-body">
-                  <div className="calender-setup">
-                    {/* <Row>
-                      <Col xs={12} className="mb-3 mr-3">
-                        <div className="location-radio-btn d-flex flex-wrap">
-                          <p className="list mr-3 mb-2">Location Type :</p>
-                          <div className="list mr-3 mb-2 mt-1">
-                            <input
-                              type="radio"
-                              id="Indoor"
-                              name="age"
-                              value="Indoor"
-                              defaultChecked={true}
-                              onChange={handleLocationTypeChange}
-                            />
-                            <label
-                              htmlFor="Indoor"
-                              style={{ marginLeft: "8px" }}
-                            >
-                              Indoor
-                            </label>
-                          </div>
-                          <div className="list mr-3 mb-2 mt-1">
-                            <input
-                              type="radio"
-                              id="Outdoor"
-                              name="age"
-                              value="Outdoor"
-                              onChange={handleLocationTypeChange}
-                            />
-                            <label
-                              htmlFor="Outdoor"
-                              style={{ marginLeft: "8px" }}
-                            >
-                              Outdoor
-                            </label>
-                          </div>
-                        </div>
-                      </Col>
-                    </Row> */}
-                    <Row>
-                      <Col xs={12} sm={4} className="col-4 mb-3">
-                        <div className="content">
-                          <div className="title">Choose field to Search</div>
-                          <div className="dropdown">
-                            <select
-                              name="days"
-                              className="custom-select"
-                              id="location_input_Select"
-                              onChange={(e) => handelLocationSearchDropDown(e)}
-                            >
-                              <option value="">select value</option>
-                              <option value="1">District</option>
-                              <option value="2">School</option>
-                              <option value="3">Floor</option>
-                              <option value="4">Room</option>
-                            </select>
-                          </div>
-                        </div>
-                      </Col>
-                      <Col xs={12} sm={4} className="col-4 mb-3">
-                        <div className="seletedFeild">
-                          <label>Selected Field</label>
-                          <div className="selectedSearchField">
-                            <input
-                              type="text"
-                              id="location_input_Search"
-                              placeholder="search key word"
-                              className="form-control"
-                            />
-                            <img
-                              src={SearchIcon}
-                              alt="Search Icon"
-                              className="search-icon"
-                              onClick={handleClickLocationSearch}
-                            />
-                          </div>
-                        </div>
-                      </Col>
-                      <Col xs={12} sm={4} className="col-4">
-                        <div className="edit-add p-4">
-                          <div className="edit">
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                cursor: "pointer",
-                              }}
-                              onClick={handleLocationFilterClick}
-                              className="handleLocationFilter"
-                            >
-                              <img
-                                src={Filter}
-                                alt="Filter"
-                                style={{ marginRight: "5px" }}
+                      {locationData.map((location) => (
+                        <Col
+                          xs={12}
+                          md={3}
+                          className="col-3 mb-3"
+                          key={location.id}
+                        >
+                          <div className="selectedField-value">
+                            <div className="title">{location.value}</div>
+                            <div className="dropdown">
+                              <InfiniteDropdown
+                                options={location.options}
+                                selectedValue={location.selectedOption}
+                                onChange={(selected) =>
+                                  handleOptionSelect(location.id, selected)
+                                }
                               />
-                              <p style={{ marginBottom: "0" }}>
-                                Location Filter
-                              </p>
                             </div>
                           </div>
-                        </div>
-                      </Col>
-
-                      <Modal
-                        show={isLocationFilterModalVisible}
-                        onHide={handleCloseLocationFilterModal}
-                        size="lg"
-                        aria-labelledby="contained-modal-title-vcenter"
-                        centered
-                      >
-                        <Modal.Header closeButton>
-                          <Modal.Title id="contained-modal-title-vcenter">
-                            Location Filters
-                          </Modal.Title>
-                        </Modal.Header>
-                        <Modal.Body>
-                          <div className="row">
-                            {/* First Column */}
-                            <div className="col-md-6">
-                              {/* District */}
-                              <div className="row mb-3 filtersrow">
-                                <div className="col-3">
-                                  <label className="title">District:</label>
-                                </div>
-                                <div className="col-9">
-                                  <div className="dropdown">
-                                    <InfiniteDropdown
-                                      options={LFDistrict}
-                                      selectedValue={LFSelectedDistrict}
-                                      onChange={(selectedOption) =>
-                                        setLFSelectedDistrict(selectedOption)
-                                      }
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                              {/* School */}
-                              <div className="row mb-3 filtersrow">
-                                <div className="col-3">
-                                  <label className="title">School:</label>
-                                </div>
-                                <div className="col-9">
-                                  <div className="dropdown">
-                                    <InfiniteDropdown
-                                      options={LFSchool}
-                                      selectedValue={LFSelectedSchool}
-                                      onChange={(selectedOption) =>
-                                        setLFSelectedSchool(selectedOption)
-                                      }
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                              {/* Floor */}
-                              <div className="row mb-3 filtersrow">
-                                <div className="col-3">
-                                  <label className="title">Floor:</label>
-                                </div>
-                                <div className="col-9">
-                                  <div className="dropdown">
-                                    <InfiniteDropdown
-                                      options={LFFloor}
-                                      selectedValue={LFSelectedFloor}
-                                      onChange={(selectedOption) =>
-                                        setLFSelectedFloor(selectedOption)
-                                      }
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                              {/* Room */}
-                              <div className="row mb-3 filtersrow">
-                                <div className="col-3">
-                                  <label className="title">Room:</label>
-                                </div>
-                                <div className="col-9">
-                                  <div className="dropdown">
-                                    <InfiniteDropdown
-                                      options={LFRoom}
-                                      selectedValue={LFSelectedRoom}
-                                      onChange={(selectedOption) =>
-                                        setLFSelectedRoom(selectedOption)
-                                      }
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="col-md-6">
-                              <div className="row mb-3 filtersrow">
-                                <div className="col-3">
-                                  <label className="title">Capacity:</label>
-                                </div>
-                                <div className="col-9">
-                                  <input
-                                    type="number"
-                                    className="form-control repeat-every-value"
-                                    value={LFCapacity}
-                                    onChange={(e) => {
-                                      setLFCapacity(e.target.value);
-                                    }}
-                                  />
-                                </div>
-                              </div>
-
-                              <div className="row mb-3 filtersrow">
-                                <div className="col-3">
-                                  <label className="title">Handicap:</label>
-                                </div>
-                                <div className="col-9">
-                                  <div className="dropdown">
-                                    <select
-                                      name="handicap"
-                                      className="custom-select"
-                                    >
-                                      <option value="">select value</option>
-                                      <option value="na">NA</option>
-                                      <option value="yes">Yes</option>
-                                    </select>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="row mb-3 filtersrow">
-                                <div className="col-3">
-                                  <label className="title">Amenities:</label>
-                                </div>
-                                <div className="col-9">
-                                  <div className="dropdown">
-                                    <select
-                                      name="amenities"
-                                      className="custom-select"
-                                    >
-                                      <option value="">select value</option>
-                                    </select>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </Modal.Body>
-                        <Modal.Footer>
-                          <Button
-                            className="filter-reset-btn"
-                            onClick={handleCloseLocationFilterModal}
-                          >
-                            Reset
-                          </Button>
-                          <Button
-                            className="filter-close-btn"
-                            onClick={handleCloseLocationFilterModal}
-                          >
-                            Close
-                          </Button>
-                          <Button
-                            className="filter-apply-btn"
-                            onClick={handleApplyLocationFilterModal}
-                          >
-                            Apply
-                          </Button>
-                        </Modal.Footer>
-                      </Modal>
-                    </Row>
-                    <div clas="selectedField-header">
-                      <p>Selected Fields</p>
-                    </div>
-                    {/* <Row>
-                      {locationData.length > 0 && (
-                        <div>
-                          {locationData.map((item, index) => (
-                            <div key={index} className="row mb-3 filtersrow">
-                              <div className="col-3">
-                                <label className="title">{item[1]}:</label>
-                              </div>
-                              <div className="col-9">
-                                <div className="dropdown">
-                                  <select>
-                                    <option value="">Select {item[1]}</option>
-                                  </select>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </Row> */}
-                    <Untitled1 />
-                    <Row>
-                      {/* <Col xs={12} md={3} className="col-3 mb-3">
-                        <div className="selectedField-value">
-                          <div className="title">District</div>
-                          <div className="dropdown">
-                            <InfiniteDropdown
-                              options={District}
-                              selectedValue={District[0] ? [District[0]] : []}
-                            />
-                          </div>
-                        </div>
-                      </Col>
-                      <Col xs={12} md={3} className="col-3 mb-3">
-                        <div className="selectedField-value">
-                          <div className="title">School</div>
-                          <div className="dropdown">
-                            <InfiniteDropdown
-                              options={School}
-                              selectedValue={SelectedSchool}
-                              onChange={handleSchoolClick}
-                            />
-                          </div>
-                        </div>
-                      </Col>
-                      <Col xs={12} md={3} className="col-3 mb-3">
-                        <div className="selectedField-value">
-                          <div className="title">Floor</div>
-                          <div className="dropdown">
-                            <InfiniteDropdown
-                              options={Floor}
-                              selectedValue={SelectedFloor}
-                              onChange={handleFloorClick}
-                            />
-                          </div>
-                        </div>
-                      </Col>
-                      <Col xs={12} md={3} className="col-3 mb-3">
-                        <div className="selectedField-value">
-                          <div className="title">Room</div>
-                          <div className="dropdown">
-                            <InfiniteDropdown
-                              options={Room}
-                              selectedValue={SelectedRoom}
-                              onChange={handleRoomClick}
-                            />
-                          </div>
-                        </div>
-                      </Col> */}
+                        </Col>
+                      ))}
                     </Row>
                   </div>
                 </div>
