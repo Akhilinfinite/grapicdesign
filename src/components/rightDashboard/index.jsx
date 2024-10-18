@@ -227,6 +227,7 @@ export default function RightDashboard() {
     };
     getContact();
   }, []);
+
   //API District
   useEffect(() => {
     const getDistrict = () => {
@@ -1925,32 +1926,34 @@ export default function RightDashboard() {
                         </Modal.Footer>
                       </Modal>
                     </Row>
-                    <div clas="selectedField-header">
+                    <div className="selectedField-header">
                       <p>Selected Fields</p>
                     </div>
-                    <Row>
-                      {locationData.map((location) => (
-                        <Col
-                          xs={12}
-                          md={3}
-                          className="col-3 mb-3"
-                          key={location.id}
-                        >
-                          <div className="selectedField-value">
-                            <div className="title">{location.value}</div>
-                            <div className="dropdown">
-                              <InfiniteDropdown
-                                options={location.options}
-                                selectedValue={location.selectedOption}
-                                onChange={(selected) =>
-                                  handleOptionSelect(location.id, selected)
-                                }
-                              />
+                    <div className="selectedField-dropdown">
+                      <Row>
+                        {locationData.map((location) => (
+                          <Col
+                            xs={12}
+                            md={3}
+                            className="col-3 mb-3"
+                            key={location.id}
+                          >
+                            <div className="selectedField-value">
+                              <div className="title">{location.value}</div>
+                              <div className="dropdown">
+                                <InfiniteDropdown
+                                  options={location.options}
+                                  selectedValue={location.selectedOption}
+                                  onChange={(selected) =>
+                                    handleOptionSelect(location.id, selected)
+                                  }
+                                />
+                              </div>
                             </div>
-                          </div>
-                        </Col>
-                      ))}
-                    </Row>
+                          </Col>
+                        ))}
+                      </Row>
+                    </div>
                   </div>
                 </div>
               </div>
