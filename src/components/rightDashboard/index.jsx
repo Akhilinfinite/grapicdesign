@@ -556,19 +556,19 @@ export default function RightDashboard() {
   const handelLocationSearchDropDown = (e) => {
     const option = e.target.value;
 
-    setLocationData((prevLocationData) =>
-      prevLocationData.map((location) => ({
-        ...location,
-        options: [],
-        selectedOption: [],
-      }))
-    );
     switch (option) {
       case "1":
         console.log(option);
         break;
 
       case "2":
+        setLocationData((prevLocationData) =>
+          prevLocationData.map((location) => ({
+            ...location,
+            options: [],
+            selectedOption: [],
+          }))
+        );
         axios
           .post(`${baseURL}schedule/quickLocationLookup/`, {
             vlabel: 2,
@@ -599,6 +599,13 @@ export default function RightDashboard() {
         break;
 
       case "3":
+        setLocationData((prevLocationData) =>
+          prevLocationData.map((location) => ({
+            ...location,
+            options: [],
+            selectedOption: [],
+          }))
+        );
         axios
           .post(`${baseURL}schedule/quickLocationLookup/`, {
             vlabel: 3,
@@ -629,6 +636,13 @@ export default function RightDashboard() {
         break;
 
       case "4":
+        setLocationData((prevLocationData) =>
+          prevLocationData.map((location) => ({
+            ...location,
+            options: [],
+            selectedOption: [],
+          }))
+        );
         axios
           .post(`${baseURL}schedule/quickLocationLookup/`, {
             vlabel: 4,
