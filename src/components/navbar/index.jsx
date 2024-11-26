@@ -5,8 +5,16 @@ import Settings from "../../asserts/images/Icons/settings.svg";
 import Notification from "../../asserts/images/Icons/notification.svg";
 import Help from "../../asserts/images/Icons/help-circle.svg";
 import User from "../../asserts/images/Icons/user.svg";
+import Logout from "../../asserts/images/Icons/logout.png";
+
+import { logout } from "../../redux/slices/authSlice";
+import { useDispatch } from "react-redux";
 
 export default function Navbar() {
+  const dispatch = useDispatch();
+  const handleLogout = () => {
+    dispatch(logout());
+  };
   return (
     <div className="mainNav">
       <div className="leftNav">
@@ -38,6 +46,14 @@ export default function Navbar() {
               <img src={Help} alt="logo" />
             </div>
             <div className="text">Help</div>
+          </div>
+          <div className="submenu">
+            <div className="icon" onClick={handleLogout}>
+              <img src={Logout} alt="logo" />
+            </div>
+            <div className="text" onClick={handleLogout}>
+              Logout
+            </div>
           </div>
           <div className="submenu">
             <div className="icon">

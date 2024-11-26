@@ -153,59 +153,6 @@
           .accordion-body {
             padding: 1rem 1.25rem;
             width: 100%;
-
-            // .datetime-setup {
-            //   width: 100%;
-            //   display: flex;
-            //   // .row {
-            //   //   display: flex;
-            //   //   max-width: 100%;
-            //   //   flex-direction: row;
-            //   //   .col {
-            //   //     padding: 0em 1em;
-            //   //     max-width: 100%;
-            //   //     width: 250px;
-            //   //     .heading {
-            //   //       margin-top: 0;
-            //   //       margin-bottom: 1rem;
-            //   //     }
-            //   //     .dropdown {
-            //   //       margin-top: 0.5rem !important;
-            //   //     }
-            //   //     .time {
-            //   //       display: flex;
-            //   //       align-items: start;
-            //   //       #input {
-            //   //         font-family: Lato;
-            //   //         font-size: 1rem;
-            //   //         line-height: 1.5;
-            //   //       }
-            //   //     }
-            //   //   }
-            //   //   .showConflict {
-            //   //     margin-top: 1.5rem !important;
-            //   //     display: flex;
-            //   //     flex-direction: row;
-            //   //     align-items: center;
-            //   //     white-space: nowrap;
-            //   //     .checkBox {
-            //   //       margin-top: 1rem !important;
-            //   //       #input #checkbox {
-            //   //         width: 20px;
-            //   //         cursor: pointer;
-            //   //         height: 20px;
-            //   //         accent-color: #0d139d;
-            //   //       }
-            //   //     }
-            //   //     .conflict {
-            //   //       margin-left: 5px;
-            //   //       display: flex;
-            //   //       align-items: end;
-            //   //       margin-top: 10px;
-            //   //     }
-            //   //   }
-            //   // }
-            // }
             .calender-setup {
               width: 100%;
               font-size: 1rem;
@@ -215,27 +162,6 @@
               background-color: #fff;
               -webkit-text-size-adjust: 100%;
               -webkit-tap-highlight-color: transparent;
-              // .location-radio-btn {
-              //   display: flex;
-              //   flex-direction: row;
-              //   align-items: center;
-              //   padding: 0.5em;
-              //   .list {
-              //     padding: 0em 0.5em 0em 1em;
-              //     text-align: center;
-              //     input {
-              //       width: 20px;
-              //       height: 20px;
-              //       background-color: #f1f1f1;
-              //       border-radius: 50%;
-              //       vertical-align: bottom;
-              //       border: 1px solid #f1f1f1;
-              //       outline: none;
-              //       cursor: pointer;
-              //       accent-color: hsl(238, 85%, 33%);
-              //     }
-              //   }
-              // }
               .calender-row {
                 display: flex;
                 flex-wrap: wrap;
@@ -259,36 +185,6 @@
                   display: flex;
                   flex-direction: column;
                 }
-                // .edit-add {
-                //   padding: 1rem !important;
-                //   display: flex;
-                //   flex-direction: row;
-                //   margin-top: 10px !important;
-                //   .edit {
-                //     margin-left: 1.25em;
-                //     display: flex;
-                //     flex-direction: row;
-                //     p {
-                //       margin-left: 10px;
-                //       margin-top: 2em;
-                //       margin-bottom: 1rem;
-                //     }
-                //   }
-                //   .add {
-                //     margin-left: 1.25em;
-                //     display: flex;
-                //     flex-direction: row;
-                //     p {
-                //       margin-left: 10px;
-                //       margin-top: 2em;
-                //       margin-bottom: 1rem;
-                //       font-size: 1rem;
-                //       font-weight: 400;
-                //       line-height: 1.5;
-                //       color: #212529;
-                //     }
-                //   }
-                // }
               }
               .selectedField-header {
                 background-color: #f7f7f7;
@@ -311,35 +207,6 @@
                 color: #585b58;
                 padding: 8px;
               }
-              // .selectedField-dropdown {
-              //   margin-top: -1em;
-              //   padding: 0.5em;
-              //   background-color: #f1f1f1;
-              //   color: #585b58;
-              //   .content {
-              //     padding: 0.5rem !important;
-              //     margin-top: 0.5rem !important;
-              //     display: flex;
-              //     flex-direction: row;
-              //     .selectedField-value {
-              //       width: 25%;
-              //       margin: 0em 0.75em;
-              //       font-family: Lato;
-              //       font-size: 1rem;
-              //       font-weight: 400;
-              //       line-height: 1.5;
-              //       .dropdown {
-              //         select {
-              //           font-size: 1rem;
-              //           font-weight: 400;
-              //           line-height: 1.5;
-              //           color: #212529;
-              //           font-family: Lato;
-              //         }
-              //       }
-              //     }
-              //   }
-              // }
             }
           }
         }
@@ -353,52 +220,6 @@
     color: #212529;
     margin: 1.25em -0.75em 0em -0.75em !important;
     font-family: Lato;
-    // .search-footer {
-    //   flex-shrink: 0;
-    //   width: 100%;
-    //   max-width: 100%;
-    //   padding-right: calc(var(--bs-gutter-x) * 0.5);
-    //   padding-left: calc(var(--bs-gutter-x) * 0.5);
-    //   margin-top: var(--bs-gutter-y);
-    //   text-align: center !important;
-    //   display: flex;
-    //   justify-content: end;
-    //   .button {
-    //     .btn{
-    //       margin: 2em 2.5em;
-    //     }
-    //     .btnmodify {
-    //       text-align: center;
-    //       font-family: Lato;
-    //       font-size: 1rem;
-    //       line-height: 1.5;
-    //       font-weight: 600;
-    //       height: 36px;
-    //       width: 140px;
-    //       margin-left: 10px;
-    //       border-radius: 12px;
-    //       color: white;
-    //       cursor: pointer;
-    //       background-color: #fa783c;
-    //       border: 1px #fa783c;
-    //     }
-    //     .btnrequest {
-    //       cursor: pointer;
-    //       height: 36px;
-    //       font-family: Lato;
-    //       font-size: 1rem;
-    //       line-height: 1.5;
-    //       width: 140px;
-    //       font-weight: 600;
-    //       margin-left: 10px;
-    //       margin-top: 10px;
-    //       border-radius: 12px;
-    //       color: white;
-    //       background-color: #0d139d;
-    //       border: 1px #0d139d;
-    //     }
-    //   }
-    // }
   }
 }
 
@@ -418,29 +239,29 @@
   border-radius: 12px !important;
   color: white !important;
   cursor: pointer;
-  // border: 1px solid #212529 !important; /* Changed border property */
+  // border: 1px solid #212529 !important;
 }
 .btn-clear {
   background-color: #fa783c !important;
-  border: 1px solid #fa783c !important; /* Changed border property */
+  border: 1px solid #fa783c !important;
 }
 
 .btn-schedule {
   background-color: #0d139d !important;
-  border: 1px solid #0d139d !important; /* Changed border property */
+  border: 1px solid #0d139d !important;
 }
 .btn-search {
   background-color: #0d139d !important;
-  border: 1px solid #0d139d !important; /* Changed border property */
+  border: 1px solid #0d139d !important; 
 }
 
-/* Adjustments for responsiveness */
+
 @media (max-width: 767px) {
   .search-footer {
-    justify-content: center !important; /* Align buttons to center on small screens */
+    justify-content: center !important;
   }
   .button {
-    margin-top: 10px !important; /* Add margin to create space between buttons on mobile */
+    margin-top: 10px !important;
   }
   .scheduleSearch_5 {
     text-align: center !important;
@@ -459,16 +280,16 @@
 .location-radio-btn .list {
   margin-right: 10px !important;
 }
-/* Add margin-bottom to the label for space */
+
 .location-radio-btn .list label {
   margin-left: 8px;
-  margin-bottom: 5px; /* Add margin-bottom for space */
+  margin-bottom: 5px;
 }
 
-/* Adjustments for responsiveness */
+
 @media (max-width: 767px) {
   .location-radio-btn .list {
-    flex: 0 0 100%; /* Set to 100% width on mobile to stack vertically */
+    flex: 0 0 100%;
   }
 }
 
@@ -477,7 +298,6 @@
   height: 36px !important;
 }
 
-//-------------------------------- modal popup styles
 @media screen and (min-width: 450px) and (max-width: 600px) {
   .intervalType-row1 input[type="number"] {
     width: 20% !important;
@@ -550,11 +370,6 @@
   margin-left: 10px;
   margin-right: 10px;
 }
-// @media (max-width: 767px) {
-//   .intervalType-row1 input[type=number] {
-//     width: 30% !important;
-//   }
-// }
 
 @media (max-width: 767px) {
   .intervalType-row1 {
@@ -564,17 +379,17 @@
 
 @media (min-width: 768px) and (max-width: 991px) {
   .filtersrow .col-3 {
-    text-align: right; /* Align labels to the right */
-    padding-right: 10px; /* Add some right padding for spacing */
+    text-align: right;
+    padding-right: 10px;
   }
 
   .filtersrow .col-9 {
-    text-align: left; /* Align dropdowns/inputs to the left */
-    padding-left: 10px; /* Add some left padding for spacing */
+    text-align: left;
+    padding-left: 10px;
   }
 
   .filtersrow .col-9 .custom-select {
-    width: calc(100% - 10px); /* Adjust the width of dropdowns */
+    width: calc(100% - 10px);
   }
 }
 

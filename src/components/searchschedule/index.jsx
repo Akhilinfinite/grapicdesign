@@ -5,6 +5,7 @@ import LeftDashboard from "../leftDashboard";
 import RightDashboard from "../rightDashboard";
 
 function Searchschedule() {
+
   return (
     <div className="mainPage">
       <div className="navBar">

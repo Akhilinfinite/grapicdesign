@@ -25,6 +25,9 @@ import Down from "../../asserts/images/Icons/down_arrow.png";
 import Up from "../../asserts/images/Icons/up_arrow.png";
 import InfiniteDropdown from "./components/InfiniteDropdown";
 import CustomDateTimePicker from "./components/customDateTimeInput";
+import { fetchDefaultValues } from "../../redux/slices/sampleSlice.js";
+
+import { useSelector, useDispatch } from "react-redux";
 
 export default function RightDashboard() {
   const baseURL = "http://192.168.0.65:8500/rest/gvRestApi/";
@@ -41,9 +44,10 @@ export default function RightDashboard() {
 
   const [District, setDistrict] = useState([]);
   const [School, setSchool] = useState([]);
+  const [Site, setSite] = useState([]);
 
   const [locationData, setLocationData] = useState([]);
-  const [selectedLocationType, setSelectedLocationType] = useState("Indoor");
+  const [selectedLocationType, setSelectedLocationType] = useState("indoor");
 
   const [LFDistrict, setLFDistrict] = useState([]);
   const [LFSchool, setLFSchool] = useState([]);
@@ -61,6 +65,71 @@ export default function RightDashboard() {
     LFSelectedRoom: "",
     LFCapacity: "",
   });
+  const [radiobtn, setRadiobtn] = useState([]);
+  const dispatch = useDispatch();
+  const data = useSelector((state) => state.sample.data);
+  const loading = useSelector((state) => state.sample.loading);
+
+  useEffect(() => {
+    dispatch(fetchDefaultValues());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (!loading && Array.isArray(data)) {
+      const labelData = [
+        {
+          id: 0,
+          value: "indoor",
+          label: "Indoor",
+          enable: "",
+        },
+        {
+          id: 1,
+          value: "outdoor",
+          label: "Outdoor",
+          enable: "",
+        },
+        {
+          id: 2,
+          value: "equip",
+          label: "Equip",
+          enable: "",
+        },
+        {
+          id: 3,
+          value: "people",
+          label: "People",
+          enable: "",
+        },
+      ];
+      const filteredData1 = data.map((e) => ({
+        CATEGORY: e[0],
+        DESCRIPTION: e[1],
+        OWNER_ID: e[2],
+        VARNAME: e[3],
+        VARVALUE: e[4],
+      }));
+      const filteredData = filteredData1.filter(
+        (item) =>
+          item.VARNAME.startsWith("disp_") && (item.VARVALUE === "Yes" || "No")
+      );
+      const optimisedData = filteredData.map((item, index) => ({
+        id: index + 1,
+        value: item.VARVALUE === "Yes" ? 1 : 0,
+        lable: item.VARNAME.replace("disp_", ""),
+      }));
+
+      labelData.forEach((labelItem) => {
+        const matchingItem = optimisedData.find(
+          (optItem) => optItem.lable === labelItem.value
+        );
+        if (matchingItem) {
+          labelItem.enable = matchingItem.value;
+        }
+      });
+      setRadiobtn(labelData);
+    }
+  }, [data, loading]);
 
   const [StartTime, setStartTime] = useState("");
   const [EndTime, setEndTime] = useState("");
@@ -95,6 +164,9 @@ export default function RightDashboard() {
   };
 
   //API calls
+
+  //People
+
   useEffect(() => {
     const getOwner = () => {
       axios
@@ -228,6 +300,44 @@ export default function RightDashboard() {
     getContact();
   }, []);
 
+  const handleClickPeopleSearch = () => {
+    const option = document.getElementById("people_input_Select").value;
+    const data1 = document.getElementById("people_input_Search").value;
+    switch (option) {
+      case "1":
+        console.log(data1);
+        break;
+      case "2":
+        console.log(data1);
+        break;
+      case "3":
+        console.log(data1);
+        break;
+      case "4":
+        axios
+          .post(`${baseURL}schedule/getContacts/`, {
+            search_filter: data1,
+          })
+          .then(function (response) {
+            const data = response.data.DATA.map((e) => ({
+              id: e[0],
+              value: e[0],
+              label: e[1],
+            }));
+            setContact(data);
+            setSelectedContact([]);
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
+        break;
+      default:
+        break;
+    }
+  };
+
+  //Location
+
   //API District
   useEffect(() => {
     const getDistrict = () => {
@@ -272,6 +382,69 @@ export default function RightDashboard() {
     };
     getSchool();
   }, []);
+
+  useEffect(() => {
+    const getSite = () => {
+      axios
+        .post(`${baseURL}master/getLocation/`, {
+          label_id: "5",
+          loc_parentid: "10000000",
+        })
+        .then(function (response) {
+          const data = response.data.DATA.map((e) => ({
+            id: e[0],
+            value: e[14],
+            label: e[16],
+          }));
+          setSite(data);
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+    };
+    getSite();
+  }, []);
+
+  const handleLocationTypeChange = (e) => {
+    const selectedValue = e.target.value;
+    setSelectedLocationType(selectedValue);
+  };
+
+  useEffect(() => {
+    const handleLocationRadioBtnData = () => {
+      const loctype_kir1 =
+        selectedLocationType === "indoor" ? 0 : "outdoor" ? 1 : "equip" ? 2 : 3;
+      const loctype_kir = loctype_kir1;
+      axios
+        .post("http://192.168.0.65:8500/rest/gvRestApi/schedule/getLabels/", {
+          owner_id: "",
+          loctype_kir: loctype_kir,
+        })
+        .then(function (response) {
+          const data = response.data.DATA.map((e) => ({
+            id: e[0],
+            value: e[1],
+            options:
+              e[0] === 1
+                ? District
+                : e[0] === 2
+                ? School
+                : e[0] === 5
+                ? Site
+                : [],
+            selectedOption: e[0] === 1 ? District[0] : [],
+            dropdownSelected: false,
+          }));
+          setLocationData(data);
+        })
+        .catch(function (error) {
+          console.error("Error fetching labels:", error);
+        });
+    };
+    if (District.length !== 0 || School.length !== 0) {
+      handleLocationRadioBtnData();
+    }
+  }, [District, School, Site, selectedLocationType]);
 
   const handleSchoolClick = (selectedOption) => {
     const variable = selectedOption.value;
@@ -323,7 +496,11 @@ export default function RightDashboard() {
           } else if (location.id === 3) {
             return { ...location, options: [], selectedOption: [] };
           } else if (location.id === 4) {
-            return { ...location, options: [], selectedOption: [] };
+            return {
+              ...location,
+              options: [],
+              selectedOption: [],
+            };
           }
           return location;
         })
@@ -450,87 +627,186 @@ export default function RightDashboard() {
       )
     );
 
-    Promise.all([
-      fetchLocationData(variable, 1, "0,4", 1),
-      fetchLocationData(variable, 2, "0,4", 2),
-      fetchLocationData(variable, 3, "0,4", 3),
-      fetchLocationData(variable, 4, "0,4", 4),
-    ])
-      .then(([districtRes, schoolRes, floorRes, roomRes]) => {
-        setLocationData((prevLocationData) =>
-          prevLocationData.map((location) => {
-            if (location.id === 1) {
-              return {
-                ...location,
-                options: districtRes.data,
-                selectedOption: districtRes.data[0],
-              };
-            }
-            if (location.id === 2) {
-              return {
-                ...location,
-                options: schoolRes.data,
-                selectedOption: schoolRes.selected,
-              };
-            }
-            if (location.id === 3) {
-              return {
-                ...location,
-                options: floorRes.data,
-                selectedOption: floorRes.selected,
-              };
-            }
-            if (location.id === 4) {
-              return {
-                ...location,
-                options: roomRes.data,
-                selectedOption: roomRes.selected,
-              };
-            }
-            return location;
-          })
-        );
-      })
-      .catch((error) => {
-        console.log(error);
-      });
-  };
-
-  const handleLocationTypeChange = (e) => {
-    const selectedValue = e.target.value;
-    setSelectedLocationType(selectedValue);
-  };
-
-  useEffect(() => {
-    const handleLocationRadioBtnData = () => {
-      const loctype_kir1 =
-        selectedLocationType === "Indoor" ? 0 : "Outdoor" ? 1 : 2;
-      const loctype_kir = loctype_kir1;
-      axios
-        .post("http://192.168.0.65:8500/rest/gvRestApi/schedule/getLabels/", {
-          owner_id: "",
-          loctype_kir: loctype_kir,
+    if (locationData.find((loc) => loc.id === 1)?.options.length === 0) {
+      Promise.all([
+        fetchLocationData(variable, 1, "0,4", 1),
+        fetchLocationData(variable, 2, "0,4", 2),
+        fetchLocationData(variable, 3, "0,4", 3),
+        fetchLocationData(variable, 4, "0,4", 4),
+      ])
+        .then(([districtRes, schoolRes, floorRes, roomRes]) => {
+          setLocationData((prevLocationData) =>
+            prevLocationData.map((location) => {
+              if (location.id === 1) {
+                return {
+                  ...location,
+                  options: districtRes.data,
+                  selectedOption: districtRes.data[0],
+                };
+              }
+              if (location.id === 2) {
+                return {
+                  ...location,
+                  options: schoolRes.data,
+                  selectedOption: schoolRes.selected,
+                };
+              }
+              if (location.id === 3) {
+                return {
+                  ...location,
+                  options: floorRes.data,
+                  selectedOption: floorRes.selected,
+                };
+              }
+              if (location.id === 4) {
+                return {
+                  ...location,
+                  options: roomRes.data,
+                  selectedOption: roomRes.selected,
+                };
+              }
+              return location;
+            })
+          );
         })
-        .then(function (response) {
-          const data = response.data.DATA.map((e) => ({
-            id: e[0],
-            value: e[1],
-            options: e[0] === 1 ? District : e[0] === 2 ? School : [],
-            selectedOption: e[0] === 1 ? District[0] : [],
-          }));
-          setLocationData(data);
-        })
-        .catch(function (error) {
-          console.error("Error fetching labels:", error);
+        .catch((error) => {
+          console.log(error);
         });
-    };
-    if (District.length !== 0 || School.length !== 0) {
-      handleLocationRadioBtnData();
     }
-  }, [District, School, selectedLocationType]);
+  };
+
+  const handleSiteClick = (selectedOption) => {
+    const variable = selectedOption.value;
+
+    if (locationData.find((loc) => loc.id === 1)?.options.length === 0) {
+      Promise.all([
+        fetchLocationData(variable, 1, "0,2", 2, 1), //District
+        fetchLocationData(variable, 2, "0,2", 2, 5), // Site
+        fetchLocationData(variable, 3, "0,2", 2, 6), // Site Amenities
+      ])
+        .then(([districtRes, siteRes, siteAmenityRes]) => {
+          setLocationData((prevLocationData) =>
+            prevLocationData.map((location) => {
+              if (location.id === 1) {
+                return {
+                  ...location,
+                  options: districtRes.data,
+                  selectedOption: districtRes.data[0],
+                };
+              }
+              if (location.id === 5) {
+                return {
+                  ...location,
+                  options: siteRes.data,
+                  selectedOption: siteRes.selected,
+                };
+              }
+              if (location.id === 6) {
+                return {
+                  ...location,
+                  options: siteAmenityRes.data,
+                  selectedOption: [],
+                };
+              }
+              return location;
+            })
+          );
+        })
+        .catch((error) => {
+          console.error("Error fetching site or site amenities data:", error);
+        });
+    } else {
+      setLocationData((prevLocationData) =>
+        prevLocationData.map((location) => {
+          if (location.id === 5) {
+            return { ...location, selectedOption };
+          } else if (location.id === 6) {
+            return { ...location, options: [], selectedOption: [] };
+          }
+          return location;
+        })
+      );
+
+      // Fetch Site Amenity data
+      axios
+        .post(`${baseURL}master/getLocation/`, {
+          label_id: "6", // For Site Amenities
+          loc_parentid: variable,
+        })
+        .then((response) => {
+          const siteAmenityData = response.data.DATA.map((e) => ({
+            id: e[0],
+            value: e[14],
+            label: e[16],
+          }));
+
+          setLocationData((prevLocationData) =>
+            prevLocationData.map((location) =>
+              location.id === 6
+                ? { ...location, options: siteAmenityData }
+                : location
+            )
+          );
+        })
+        .catch((error) => {
+          console.error("Error fetching site amenities:", error);
+        });
+    }
+  };
+
+  const handleSiteAmenityClick = (selectedOption) => {
+    const variable = selectedOption.value;
+
+    setLocationData((prevLocationData) =>
+      prevLocationData.map((location) =>
+        location.id === 6 ? { ...location, selectedOption } : location
+      )
+    );
+
+    if (locationData.find((loc) => loc.id === 1)?.options.length === 0) {
+      Promise.all([
+        fetchLocationData(variable, 1, "0,3", 3, 1), //District
+        fetchLocationData(variable, 2, "0,3", 3, 5), // Site
+        fetchLocationData(variable, 3, "0,3", 3, 6), // Site Amenities
+      ])
+        .then(([districtRes, siteRes, siteAmenityRes]) => {
+          setLocationData((prevLocationData) =>
+            prevLocationData.map((location) => {
+              if (location.id === 1) {
+                return {
+                  ...location,
+                  options: districtRes.data,
+                  selectedOption: districtRes.data[0],
+                };
+              }
+              if (location.id === 5) {
+                return {
+                  ...location,
+                  options: siteRes.data,
+                  selectedOption: siteRes.selected,
+                };
+              }
+              if (location.id === 6) {
+                return {
+                  ...location,
+                  options: siteAmenityRes.data,
+                  selectedOption: siteAmenityRes.selected,
+                };
+              }
+              return location;
+            })
+          );
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    }
+  };
 
   const handleOptionSelect = (locationId, selectedOption) => {
     switch (locationId) {
+      case 1: // District
+        break;
       case 2: // School
         handleSchoolClick(selectedOption);
         break;
@@ -539,6 +815,12 @@ export default function RightDashboard() {
         break;
       case 4: // Room
         handleRoomClick(selectedOption);
+        break;
+      case 5: // Site
+        handleSiteClick(selectedOption);
+        break;
+      case 6: // SiteAmenity
+        handleSiteAmenityClick(selectedOption);
         break;
       default:
         setLocationData((prevLocationData) =>
@@ -553,138 +835,142 @@ export default function RightDashboard() {
     }
   };
 
+  const handledefaltselect = () => {
+    setLocationData((prevLocationData) =>
+      prevLocationData.map((location) => {
+        if (location.id === 1) {
+          return {
+            ...location,
+            options: District,
+            selectedOption: District[0],
+          };
+        } else if (location.id === 2) {
+          return {
+            ...location,
+            options: School,
+            selectedOption: [],
+          };
+        } else if (location.id === 5) {
+          return {
+            ...location,
+            options: Site,
+            selectedOption: [],
+          };
+        } else {
+          return {
+            ...location,
+            options: [],
+            selectedOption: [],
+          };
+        }
+      })
+    );
+  };
+
   const handelLocationSearchDropDown = (e) => {
     const option = e.target.value;
 
+    setLocationData((prevLocationData) =>
+      prevLocationData.map((location) => ({
+        ...location,
+        dropdownSelected: location.id.toString() === option,
+      }))
+    );
+    handleLocationOption(option);
+  };
+
+  const handleLocationOption = (option) => {
     switch (option) {
+      case "0":
       case "1":
-        console.log(option);
+        handledefaltselect();
         break;
 
       case "2":
-        setLocationData((prevLocationData) =>
-          prevLocationData.map((location) => ({
-            ...location,
-            options: [],
-            selectedOption: [],
-          }))
-        );
-        axios
-          .post(`${baseURL}schedule/quickLocationLookup/`, {
-            vlabel: 2,
-            owner: 1,
-            loctype_kir: 0,
-            label_text: "School",
-            is_DefLocation: 0,
-            loctype: "0,0,0,0,0,0,0",
-            def_LocID: 1,
-          })
-          .then(function (response) {
-            const schoolData = response.data.map((e) => ({
-              id: e.KEY,
-              value: e.KEY,
-              label: e.VALUE,
-            }));
-            setLocationData((prevLocationData) =>
-              prevLocationData.map((location) =>
-                location.id === 2
-                  ? { ...location, options: schoolData }
-                  : location
-              )
-            );
-          })
-          .catch(function (error) {
-            console.log(error);
-          });
+        fetchLocationDataDefault(2, "School");
         break;
 
       case "3":
-        setLocationData((prevLocationData) =>
-          prevLocationData.map((location) => ({
-            ...location,
-            options: [],
-            selectedOption: [],
-          }))
-        );
-        axios
-          .post(`${baseURL}schedule/quickLocationLookup/`, {
-            vlabel: 3,
-            owner: 1,
-            loctype_kir: 0,
-            label_text: "Floor",
-            is_DefLocation: 0,
-            loctype: "0,0,0,0,0,0,0",
-            def_LocID: 1,
-          })
-          .then(function (response) {
-            const floorData = response.data.map((e) => ({
-              id: e.KEY,
-              value: e.KEY,
-              label: e.VALUE,
-            }));
-            setLocationData((prevLocationData) =>
-              prevLocationData.map((location) =>
-                location.id === 3
-                  ? { ...location, options: floorData }
-                  : location
-              )
-            );
-          })
-          .catch(function (error) {
-            console.log(error);
-          });
+        fetchLocationDataDefault(3, "Floor");
         break;
 
       case "4":
-        setLocationData((prevLocationData) =>
-          prevLocationData.map((location) => ({
-            ...location,
-            options: [],
-            selectedOption: [],
-          }))
-        );
-        axios
-          .post(`${baseURL}schedule/quickLocationLookup/`, {
-            vlabel: 4,
-            owner: 1,
-            loctype_kir: 0,
-            label_text: "Room",
-            is_DefLocation: 0,
-            loctype: "0,0,0,0,0,0,0",
-            def_LocID: 1,
-          })
-          .then(function (response) {
-            const roomData = response.data.map((e) => ({
-              id: e.KEY,
-              value: e.KEY,
-              label: e.VALUE,
-            }));
-            setLocationData((prevLocationData) =>
-              prevLocationData.map((location) =>
-                location.id === 4
-                  ? { ...location, options: roomData }
-                  : location
-              )
-            );
-          })
-          .catch(function (error) {
-            console.log(error);
-          });
+        fetchLocationDataDefault(4, "Room");
+        break;
+
+      case "5":
+        fetchLocationDataDefault(5, "Site", {
+          vlabel: "2",
+          loctype_kir: "1",
+          label_text: "Site",
+        });
+        break;
+
+      case "6":
+        fetchLocationDataDefault(6, "Site Amenity", {
+          vlabel: "3",
+          loctype_kir: "1",
+          label_text: "Site Amenity",
+        });
         break;
 
       default:
+        console.warn("Invalid option:", option);
         break;
     }
   };
 
-  const fetchLocationData = (variable, clabel, h_value, quickloc) => {
+  const fetchLocationDataDefault = (id, labelText, additionalParams = {}) => {
+    setLocationData((prevLocationData) =>
+      prevLocationData.map((location) => ({
+        ...location,
+        options: [],
+        selectedOption: [],
+      }))
+    );
+
+    axios
+      .post(`${baseURL}schedule/quickLocationLookup/`, {
+        vlabel: id,
+        owner: 1,
+        loctype_kir: 0,
+        label_text: labelText,
+        is_DefLocation: 0,
+        loctype: "0,0,0,0,0,0,0",
+        def_LocID: 1,
+        ...additionalParams,
+      })
+      .then((response) => {
+        const fetchedData = response.data.map((e) => ({
+          id: e.KEY,
+          value: e.KEY,
+          label: e.VALUE,
+        }));
+        setLocationData((prevLocationData) =>
+          prevLocationData.map((location) =>
+            location.id === id
+              ? { ...location, options: fetchedData }
+              : location
+          )
+        );
+      })
+      .catch((error) => console.error(error));
+  };
+
+  const handleClickLocationSearch = () => {
+    const option = document.getElementById("location_input_Select").value;
+    const data = document.getElementById("location_input_Search").value;
+    console.log(data, option);
+  };
+
+  const fetchLocationData = (variable, clabel, h_value, quickloc, label_id) => {
     return axios
       .post(`${baseURL}schedule/LocationLookup/`, {
         h_value: h_value,
         h_cvalue: variable,
         clabel: clabel,
         loctype: "0,0,0,0,0,0,0",
-        labelid: clabel.toString(),
+        labelid: label_id ? label_id : clabel.toString(),
         quickloc: quickloc,
         lblcount: "4",
         deflab: 0,
@@ -799,47 +1085,6 @@ export default function RightDashboard() {
   };
   const handleClick3 = () => {
     setIsOpen3(!isOpen3);
-  };
-
-  const handleClickPeopleSearch = () => {
-    const option = document.getElementById("people_input_Select").value;
-    const data1 = document.getElementById("people_input_Search").value;
-    switch (option) {
-      case "1":
-        console.log(data1);
-        break;
-      case "2":
-        console.log(data1);
-        break;
-      case "3":
-        console.log(data1);
-        break;
-      case "4":
-        axios
-          .post(`${baseURL}schedule/getContacts/`, {
-            search_filter: data1,
-          })
-          .then(function (response) {
-            const data = response.data.DATA.map((e) => ({
-              id: e[0],
-              value: e[0],
-              label: e[1],
-            }));
-            setContact(data);
-            setSelectedContact([]);
-          })
-          .catch(function (error) {
-            console.log(error);
-          });
-        break;
-      default:
-        break;
-    }
-  };
-  const handleClickLocationSearch = () => {
-    const option = document.getElementById("location_input_Select").value;
-    const data = document.getElementById("location_input_Search").value;
-    console.log(data, option);
   };
 
   const [isIntervalTypeModalVisible, setIntervalTypeModalVisible] =
@@ -1678,37 +1923,29 @@ export default function RightDashboard() {
                       <Col xs={12} className="mb-3 mr-3">
                         <div className="location-radio-btn d-flex flex-wrap">
                           <p className="list mr-3 mb-2">Location Type :</p>
-                          <div className="list mr-3 mb-2 mt-1">
-                            <input
-                              type="radio"
-                              id="Indoor"
-                              name="age"
-                              value="Indoor"
-                              defaultChecked={true}
-                              onChange={handleLocationTypeChange}
-                            />
-                            <label
-                              htmlFor="Indoor"
-                              style={{ marginLeft: "8px" }}
-                            >
-                              Indoor
-                            </label>
-                          </div>
-                          <div className="list mr-3 mb-2 mt-1">
-                            <input
-                              type="radio"
-                              id="Outdoor"
-                              name="age"
-                              value="Outdoor"
-                              onChange={handleLocationTypeChange}
-                            />
-                            <label
-                              htmlFor="Outdoor"
-                              style={{ marginLeft: "8px" }}
-                            >
-                              Outdoor
-                            </label>
-                          </div>
+                          {radiobtn
+                            .filter((item) => item.enable === 1)
+                            .map((item, index) => (
+                              <div
+                                key={item.id}
+                                className="list mr-3 mb-2 mt-1"
+                              >
+                                <input
+                                  type="radio"
+                                  id={item.value}
+                                  name="locationType"
+                                  value={item.value}
+                                  defaultChecked={index === 0} // Only check the first enabled item
+                                  onChange={handleLocationTypeChange}
+                                />
+                                <label
+                                  htmlFor={item.value}
+                                  style={{ marginLeft: "8px" }}
+                                >
+                                  {item.label}
+                                </label>
+                              </div>
+                            ))}
                         </div>
                       </Col>
                     </Row>
@@ -1724,7 +1961,7 @@ export default function RightDashboard() {
                               onChange={(e) => handelLocationSearchDropDown(e)}
                             >
                               {locationData.length !== 0 && (
-                                <option value="">select value</option>
+                                <option value="0">Defalt</option>
                               )}
                               {locationData.map((location) => (
                                 <option key={location.id} value={location.id}>
