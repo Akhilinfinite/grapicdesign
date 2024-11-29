@@ -49,21 +49,28 @@ export default function RightDashboard() {
   const [locationData, setLocationData] = useState([]);
   const [selectedLocationType, setSelectedLocationType] = useState("indoor");
 
-  const [LFDistrict, setLFDistrict] = useState([]);
-  const [LFSchool, setLFSchool] = useState([]);
-  const [LFFloor, setLFFloor] = useState([]);
-  const [LFRoom, setLFRoom] = useState([]);
-  const [LFSelectedDistrict, setLFSelectedDistrict] = useState([]);
-  const [LFSelectedSchool, setLFSelectedSchool] = useState([]);
-  const [LFSelectedFloor, setLFSelectedFloor] = useState([]);
-  const [LFSelectedRoom, setLFSelectedRoom] = useState([]);
-  const [LFCapacity, setLFCapacity] = useState([]);
+  const [locationFilters, setLocationFilters] = useState({
+    LFDistrict: [],
+    LFSchool: [],
+    LFFloor: [],
+    LFRoom: [],
+    LFSelectedDistrict: null,
+    LFSelectedSchool: null,
+    LFSelectedFloor: null,
+    LFSelectedRoom: null,
+    LFCapacity: null,
+    LFHandicap: "",
+    LFAmenities: "",
+  });
+
   const [LFvalues, setLFvalues] = useState({
     LFSelectedDistrict: "",
     LFSelectedSchool: "",
     LFSelectedFloor: "",
     LFSelectedRoom: "",
     LFCapacity: "",
+    LFHandicap: "",
+    LFAmenities: "",
   });
   const [radiobtn, setRadiobtn] = useState([]);
   const dispatch = useDispatch();
@@ -143,22 +150,17 @@ export default function RightDashboard() {
   };
 
   const handleCloseLocationFilterModal = () => {
-    setLFSelectedDistrict(LFvalues.LFSelectedDistrict);
-    setLFSelectedFloor(LFvalues.LFSelectedFloor);
-    setLFSelectedSchool(LFvalues.LFSelectedSchool);
-    setLFSelectedRoom(LFvalues.LFSelectedRoom);
-    setLFCapacity(LFvalues.LFCapacity);
+    setLocationFilters((prevFilters) => ({
+      ...prevFilters,
+      ...LFvalues, // Restore values from LFvalues
+    }));
     setLocationFilterModalVisibility(false);
   };
 
   const handleApplyLocationFilterModal = () => {
-    setLFvalues((prevData) => ({
-      ...prevData,
-      LFSelectedDistrict: LFSelectedDistrict,
-      LFSelectedSchool: LFSelectedSchool,
-      LFSelectedFloor: LFSelectedFloor,
-      LFSelectedRoom: LFSelectedRoom,
-      LFCapacity: LFCapacity,
+    setLFvalues((prevValues) => ({
+      ...prevValues,
+      ...locationFilters, // Save current location filter values
     }));
     setLocationFilterModalVisibility(false);
   };
@@ -960,7 +962,53 @@ export default function RightDashboard() {
   const handleClickLocationSearch = () => {
     const option = document.getElementById("location_input_Select").value;
     const data = document.getElementById("location_input_Search").value;
-    console.log(data, option);
+    setLocationData((prevLocationData) =>
+      prevLocationData.map((location) => ({
+        ...location,
+        dropdownSelected: location.id.toString() === option,
+      }))
+    );
+    // document.getElementById("location_input_Search").value = "";
+    switch (option) {
+      case "0":
+      case "1":
+        handledefaltselect();
+        break;
+
+      case "2":
+        fetchLocationDataDefault(2, "School", { loc_name: data });
+        break;
+
+      case "3":
+        fetchLocationDataDefault(3, "Floor", { loc_name: data });
+        break;
+
+      case "4":
+        fetchLocationDataDefault(4, "Room", { loc_name: data });
+        break;
+
+      case "5":
+        fetchLocationDataDefault(5, "Site", {
+          vlabel: "2",
+          loctype_kir: "1",
+          label_text: "Site",
+          loc_name: data,
+        });
+        break;
+
+      case "6":
+        fetchLocationDataDefault(6, "Site Amenity", {
+          vlabel: "3",
+          loctype_kir: "1",
+          label_text: "Site Amenity",
+          loc_name: data,
+        });
+        break;
+
+      default:
+        console.warn("Invalid option:", option);
+        break;
+    }
   };
 
   const fetchLocationData = (variable, clabel, h_value, quickloc, label_id) => {
@@ -994,87 +1042,32 @@ export default function RightDashboard() {
 
   //API Location filter District
   useEffect(() => {
-    const getLFDistrict = () => {
-      axios
-        .get(`${baseURL}schedule/getLevelType/1`, {
-          label_id: 1,
-        })
-        .then(function (response) {
-          const data = response.data.DATA.map((e) => ({
-            id: e[0],
-            value: e[0],
-            label: e[1],
-          }));
-          setLFDistrict(data);
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
+    const fetchLocationData = async (level, key) => {
+      try {
+        const response = await axios.get(
+          `${baseURL}schedule/getLevelType/${level}`,
+          {
+            label_id: 1,
+          }
+        );
+        const data = response.data.DATA.map((e) => ({
+          id: e[0],
+          value: e[0],
+          label: e[1],
+        }));
+        setLocationFilters((prevFilters) => ({
+          ...prevFilters,
+          [key]: data,
+        }));
+      } catch (error) {
+        console.log(error);
+      }
     };
-    getLFDistrict();
-  }, []);
-  //API Location filter School
-  useEffect(() => {
-    const getLFSchool = () => {
-      axios
-        .get(`${baseURL}schedule/getLevelType/2`, {
-          label_id: 1,
-        })
-        .then(function (response) {
-          const data = response.data.DATA.map((e) => ({
-            id: e[0],
-            value: e[0],
-            label: e[1],
-          }));
-          setLFSchool(data);
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-    };
-    getLFSchool();
-  }, []);
-  //API Location filter Floor
-  useEffect(() => {
-    const getLFFloor = () => {
-      axios
-        .get(`${baseURL}schedule/getLevelType/3`, {
-          label_id: 1,
-        })
-        .then(function (response) {
-          const data = response.data.DATA.map((e) => ({
-            id: e[0],
-            value: e[0],
-            label: e[1],
-          }));
-          setLFFloor(data);
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-    };
-    getLFFloor();
-  }, []);
-  //API Location filter Room
-  useEffect(() => {
-    const getLFRoom = () => {
-      axios
-        .get(`${baseURL}schedule/getLevelType/4`, {
-          label_id: 1,
-        })
-        .then(function (response) {
-          const data = response.data.DATA.map((e) => ({
-            id: e[0],
-            value: e[0],
-            label: e[1],
-          }));
-          setLFRoom(data);
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-    };
-    getLFRoom();
+
+    fetchLocationData(1, "LFDistrict");
+    fetchLocationData(2, "LFSchool");
+    fetchLocationData(3, "LFFloor");
+    fetchLocationData(4, "LFRoom");
   }, []);
 
   const handleClick1 = () => {
@@ -2032,74 +2025,53 @@ export default function RightDashboard() {
                           <div className="row">
                             {/* First Column */}
                             <div className="col-md-6">
-                              {/* District */}
-                              <div className="row mb-3 filtersrow">
-                                <div className="col-3">
-                                  <label className="title">District:</label>
-                                </div>
-                                <div className="col-9">
-                                  <div className="dropdown">
-                                    <InfiniteDropdown
-                                      options={LFDistrict}
-                                      selectedValue={LFSelectedDistrict}
-                                      onChange={(selectedOption) =>
-                                        setLFSelectedDistrict(selectedOption)
-                                      }
-                                    />
+                              {[
+                                {
+                                  label: "District",
+                                  key: "LFDistrict",
+                                  selectedKey: "LFSelectedDistrict",
+                                },
+                                {
+                                  label: "School",
+                                  key: "LFSchool",
+                                  selectedKey: "LFSelectedSchool",
+                                },
+                                {
+                                  label: "Floor",
+                                  key: "LFFloor",
+                                  selectedKey: "LFSelectedFloor",
+                                },
+                                {
+                                  label: "Room",
+                                  key: "LFRoom",
+                                  selectedKey: "LFSelectedRoom",
+                                },
+                              ].map((e) => (
+                                <div
+                                  className="row mb-3 filtersrow"
+                                  key={e.key}
+                                >
+                                  <div className="col-3">
+                                    <label className="title">{e.label}:</label>
+                                  </div>
+                                  <div className="col-9">
+                                    <div className="dropdown">
+                                      <InfiniteDropdown
+                                        options={locationFilters[e.key]}
+                                        selectedValue={
+                                          locationFilters[e.selectedKey]
+                                        }
+                                        onChange={(selectedOption) =>
+                                          setLocationFilters((prevFilters) => ({
+                                            ...prevFilters,
+                                            [e.selectedKey]: selectedOption,
+                                          }))
+                                        }
+                                      />
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                              {/* School */}
-                              <div className="row mb-3 filtersrow">
-                                <div className="col-3">
-                                  <label className="title">School:</label>
-                                </div>
-                                <div className="col-9">
-                                  <div className="dropdown">
-                                    <InfiniteDropdown
-                                      options={LFSchool}
-                                      selectedValue={LFSelectedSchool}
-                                      onChange={(selectedOption) =>
-                                        setLFSelectedSchool(selectedOption)
-                                      }
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                              {/* Floor */}
-                              <div className="row mb-3 filtersrow">
-                                <div className="col-3">
-                                  <label className="title">Floor:</label>
-                                </div>
-                                <div className="col-9">
-                                  <div className="dropdown">
-                                    <InfiniteDropdown
-                                      options={LFFloor}
-                                      selectedValue={LFSelectedFloor}
-                                      onChange={(selectedOption) =>
-                                        setLFSelectedFloor(selectedOption)
-                                      }
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                              {/* Room */}
-                              <div className="row mb-3 filtersrow">
-                                <div className="col-3">
-                                  <label className="title">Room:</label>
-                                </div>
-                                <div className="col-9">
-                                  <div className="dropdown">
-                                    <InfiniteDropdown
-                                      options={LFRoom}
-                                      selectedValue={LFSelectedRoom}
-                                      onChange={(selectedOption) =>
-                                        setLFSelectedRoom(selectedOption)
-                                      }
-                                    />
-                                  </div>
-                                </div>
-                              </div>
+                              ))}
                             </div>
 
                             <div className="col-md-6">
@@ -2110,10 +2082,13 @@ export default function RightDashboard() {
                                 <div className="col-9">
                                   <input
                                     type="number"
-                                    className="form-control repeat-every-value"
-                                    value={LFCapacity}
+                                    className="form-control"
+                                    value={locationFilters.LFCapacity}
                                     onChange={(e) => {
-                                      setLFCapacity(e.target.value);
+                                      setLocationFilters((prevFilters) => ({
+                                        ...prevFilters,
+                                        LFCapacity: e.target.value,
+                                      }));
                                     }}
                                   />
                                 </div>
@@ -2128,6 +2103,14 @@ export default function RightDashboard() {
                                     <select
                                       name="handicap"
                                       className="custom-select"
+                                      value={locationFilters.LFHandicap}
+                                      onChange={(e) => {
+                                        const value = e.target.value;
+                                        setLocationFilters((prevFilters) => ({
+                                          ...prevFilters,
+                                          LFHandicap: value,
+                                        }));
+                                      }}
                                     >
                                       <option value="">select value</option>
                                       <option value="na">NA</option>
@@ -2146,6 +2129,14 @@ export default function RightDashboard() {
                                     <select
                                       name="amenities"
                                       className="custom-select"
+                                      value={locationFilters.LFAmenities}
+                                      onChange={(e) => {
+                                        const value = e.target.value;
+                                        setLocationFilters((prevFilters) => ({
+                                          ...prevFilters,
+                                          LFAmenities: value,
+                                        }));
+                                      }}
                                     >
                                       <option value="">select value</option>
                                     </select>
