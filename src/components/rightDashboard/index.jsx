@@ -28,6 +28,7 @@ import CustomDateTimePicker from "./components/customDateTimeInput";
 import { fetchDefaultValues } from "../../redux/slices/sampleSlice.js";
 
 import { useSelector, useDispatch } from "react-redux";
+import IntervalType from "./components/intervalType/index.jsx";
 
 export default function RightDashboard() {
   const baseURL = "http://192.168.0.65:8500/rest/gvRestApi/";
@@ -45,6 +46,8 @@ export default function RightDashboard() {
   const [District, setDistrict] = useState([]);
   const [School, setSchool] = useState([]);
   const [Site, setSite] = useState([]);
+  const [Loctype, setLoctype] = useState("0,0,0,0,0,0,0");
+  const [Count, setCount] = useState(0);
 
   const [locationData, setLocationData] = useState([]);
   const [selectedLocationType, setSelectedLocationType] = useState("indoor");
@@ -76,8 +79,10 @@ export default function RightDashboard() {
     ],
     LFCapacity: null,
     LFHandicap: "",
-    LFAmenities: "",
-    displayLevels: [], // Levels to display based on radio button selection
+    LFAmenities: [
+      { id: 1, lable: "Amenities", options: null, selectedValue: null },
+    ],
+    displayLevels: [],
   });
   const [LFvalues, setLFvalues] = useState({
     levels: [],
@@ -95,12 +100,23 @@ export default function RightDashboard() {
             label_id: 1,
           }
         );
-
-        const data = response.data.DATA.map((e) => ({
-          id: e[0],
-          value: e[0],
-          label: e[1],
-        }));
+        const res = await axios.get(`${baseURL}master/getAmenityList/1`);
+        const Amenitydata = [
+          { id: "", value: "", label: "---Select---" },
+          ...res.data.DATA.map((e) => ({
+            id: e[0],
+            value: e[0],
+            label: e[1],
+          })),
+        ];
+        const data = [
+          { id: "0", value: "0", label: "---Select---" },
+          ...response.data.DATA.map((e) => ({
+            id: e[0],
+            value: e[0],
+            label: e[1],
+          })),
+        ];
 
         // Update the options for the level
         setlocationFilters((prevFilters) => ({
@@ -110,6 +126,11 @@ export default function RightDashboard() {
               ? { ...level, options: data, selectedValue: null } // Update options based on API response
               : level
           ),
+          LFAmenities: prevFilters.LFAmenities.map((amenity) => ({
+            ...amenity,
+            options: Amenitydata,
+            selectedValue: null,
+          })),
         }));
       } catch (error) {
         console.error(`Error fetching data for level ${levelId}:`, error);
@@ -173,6 +194,44 @@ export default function RightDashboard() {
     setLocationFilterModalVisibility(true);
   };
 
+  const handleResetLocationFilterModal = () => {
+    setlocationFilters((prevFilters) => {
+      const resetLevels = (levels) =>
+        levels.map((level) => ({
+          ...level,
+          selectedValue: null, // Clear selected values
+        }));
+
+      return {
+        ...prevFilters,
+        levels: resetLevels(prevFilters.levels),
+        displayLevels: resetLevels(prevFilters.displayLevels),
+        LFCapacity: null, // Reset capacity
+        LFHandicap: "", // Reset handicap
+        LFAmenities: prevFilters.LFAmenities.map((amenity) => ({
+          ...amenity,
+          selectedValue: null, // Clear selected amenity
+        })),
+      };
+    });
+
+    setLFvalues({
+      levels: locationFilters.levels.map((level) => ({
+        ...level,
+        selectedValue: null, // Clear selected values
+        options: level.options, // Retain options
+      })),
+      LFCapacity: null, // Reset capacity
+      LFHandicap: "", // Reset handicap
+      LFAmenities: locationFilters.LFAmenities.map((amenity) => ({
+        ...amenity,
+        selectedValue: null, // Clear selected amenity
+      })),
+    });
+
+    setLoctype("0,0,0,0,0,0,0"); // Reset loctype
+    setCount(0);
+  };
   const handleCloseLocationFilterModal = () => {
     setlocationFilters((prevFilters) => {
       const updateSelectedValues = (levels) =>
@@ -194,21 +253,121 @@ export default function RightDashboard() {
     });
     setLocationFilterModalVisibility(false);
   };
-
-  const handleApplyLocationFilterModal = () => {
-    setLFvalues({
-      levels: locationFilters.levels.map((level) => ({
-        id: level.id,
-        label: level.label,
-        selectedValue: level.selectedValue,
-        options: level.options,
-      })),
-      LFCapacity: locationFilters.LFCapacity,
-      LFHandicap: locationFilters.LFHandicap,
-      LFAmenities: locationFilters.LFAmenities,
-    });
-    setLocationFilterModalVisibility(false);
+  const CriteriaLookup = async (ctype_value, ctype, loctype) => {
+    try {
+      const response = await axios.post(`${baseURL}schedule/CriteriaLookup/`, {
+        h_value: "0,1,0",
+        clabel: "0",
+        h_cvalue: "0",
+        h_chkvalue: "1",
+        ctype_value: ctype_value,
+        ctype: ctype,
+        loctype: loctype ? loctype : "0,0,0,0,0,0,0",
+        loclevel: "0",
+        quickloc: "0",
+      });
+      return response;
+    } catch (error) {
+      console.log(error);
+      return { data: [], selected: null };
+    }
   };
+  const handleApplyLocationFilterModal = async () => {
+    try {
+      const results = [];
+      for (const displayLevel of locationFilters.displayLevels) {
+        const ctype_value = displayLevel.selectedValue?.value || "0";
+        const ctype = `type${displayLevel.id}`;
+        const loctype =
+          results.length > 0
+            ? results[results.length - 1].data[2]
+            : "0,0,0,0,0,0,0";
+
+        const res = await CriteriaLookup(ctype_value, ctype, loctype);
+        results.push(res);
+      }
+      // console.log(results[3].data[2])
+      setLoctype(results[results.length - 1].data[2]);
+      setCount(1);
+
+      // Update LFvalues with the current data
+      setLFvalues({
+        levels: locationFilters.levels.map((level) => ({
+          id: level.id,
+          label: level.label,
+          selectedValue: level.selectedValue,
+          options: level.options,
+        })),
+        LFCapacity: locationFilters.LFCapacity,
+        LFHandicap: locationFilters.LFHandicap,
+        LFAmenities: locationFilters.LFAmenities,
+      });
+
+      // Close the modal
+      setLocationFilterModalVisibility(false);
+    } catch (error) {
+      console.error("Error while applying location filters:", error);
+    }
+  };
+  useEffect(() => {
+    const resetLocationData = async () => {
+      try {
+        const districtResponse = await fetchLocationData(
+          "10000000",
+          "1",
+          "0,1",
+          "1",
+          "1"
+        );
+
+        const schoolOrSiteResponse = await fetchLocationData(
+          "10000000",
+          "2",
+          "0,2",
+          "2",
+          selectedLocationType === "indoor" ? "2" : "5" // quickloc
+        );
+
+        // Update locationData based on selectedLocationType
+        setLocationData((prevLocationData) => {
+          const updatedData = prevLocationData.map((location) => {
+            if (location.id === 1) {
+              // Update District
+              return {
+                ...location,
+                options: districtResponse.data,
+                selectedOption:
+                  districtResponse.data.length > 0
+                    ? districtResponse.selected
+                    : null,
+              };
+            }
+            if (
+              (selectedLocationType === "indoor" && location.id === 2) ||
+              (selectedLocationType === "outdoor" && location.id === 5)
+            ) {
+              // Update School or Site
+              return {
+                ...location,
+                options: schoolOrSiteResponse.data,
+                selectedOption: null,
+              };
+            } else {
+              // Clear data for other levels
+              return { ...location, options: [], selectedValue: null };
+            }
+          });
+
+          return updatedData;
+        });
+      } catch (error) {
+        console.error("Error resetting location data:", error);
+      }
+    };
+    if (Loctype && Count === 1) {
+      resetLocationData();
+    }
+  }, [Loctype, Count, selectedLocationType]);
 
   const [radiobtn, setRadiobtn] = useState([]);
   const dispatch = useDispatch();
@@ -524,6 +683,7 @@ export default function RightDashboard() {
   const handleLocationTypeChange = (e) => {
     const selectedValue = e.target.value;
     setSelectedLocationType(selectedValue);
+    setLoctype("0,0,0,0,0,0,0");
   };
 
   useEffect(() => {
@@ -621,20 +781,9 @@ export default function RightDashboard() {
           return location;
         })
       );
-
       // Fetch Floor data from API
-      axios
-        .post(`${baseURL}master/getLocation/`, {
-          label_id: "3",
-          loc_parentid: variable,
-        })
-        .then(function (response) {
-          const floorData = response.data.DATA.map((e) => ({
-            id: e[0],
-            value: e[14],
-            label: e[16],
-          }));
-
+      fetchLocationData(variable, 3, "0,2", 2)
+        .then(({ data: floorData }) => {
           setLocationData((prevLocationData) =>
             prevLocationData.map((location) =>
               location.id === 3
@@ -708,17 +857,8 @@ export default function RightDashboard() {
           return location;
         })
       );
-      axios
-        .post(`${baseURL}master/getLocation/`, {
-          label_id: "4",
-          loc_parentid: variable,
-        })
-        .then(function (response) {
-          const data = response.data.DATA.map((e) => ({
-            id: e[0],
-            value: e[14],
-            label: e[16],
-          }));
+      fetchLocationData(variable, 4, "0,3", 3)
+        .then(({ data }) => {
           setLocationData((prevLocationData) =>
             prevLocationData.map((location) =>
               location.id === 4
@@ -1052,8 +1192,11 @@ export default function RightDashboard() {
         loctype_kir: 0,
         label_text: labelText,
         is_DefLocation: 0,
-        loctype: "0,0,0,0,0,0,0",
+        loctype: Loctype,
         def_LocID: 1,
+        amenity: locationFilters.LFAmenities[0]?.selected?.Value || "",
+        v_cap: locationFilters.LFCapacity ? locationFilters.LFCapacity : "0",
+        v_hdcap: locationFilters.LFHandicap ? locationFilters.LFHandicap : "0",
         ...additionalParams,
       })
       .then((response) => {
@@ -1076,6 +1219,7 @@ export default function RightDashboard() {
   const handleClickLocationSearch = () => {
     const option = document.getElementById("location_input_Select").value;
     const data = document.getElementById("location_input_Search").value;
+    document.getElementById("location_input_Search").value = "";
     setLocationData((prevLocationData) =>
       prevLocationData.map((location) => ({
         ...location,
@@ -1125,33 +1269,36 @@ export default function RightDashboard() {
     }
   };
 
-  const fetchLocationData = (variable, clabel, h_value, quickloc, label_id) => {
-    return axios
-      .post(`${baseURL}schedule/LocationLookup/`, {
+  const fetchLocationData = async (
+    variable,
+    clabel,
+    h_value,
+    quickloc,
+    label_id
+  ) => {
+    try {
+      const response = await axios.post(`${baseURL}schedule/LocationLookup/`, {
         h_value: h_value,
         h_cvalue: variable,
         clabel: clabel,
-        loctype: "0,0,0,0,0,0,0",
+        loctype: Loctype,
         labelid: label_id ? label_id : clabel.toString(),
         quickloc: quickloc,
         lblcount: "4",
         deflab: 0,
-      })
-      .then(function (response) {
-        const data = response.data.slice(2).map((e) => ({
-          id: e.KEY,
-          value: e.KEY,
-          label: e.VALUE,
-        }));
-        const selectedKey = response.data[1].VALUE;
-        const selected = data.find((item) => item.value === selectedKey);
-
-        return { data, selected };
-      })
-      .catch(function (error) {
-        console.log(error);
-        return { data: [], selected: null };
       });
+      const data = response.data.slice(2).map((e) => ({
+        id: e.KEY,
+        value: e.KEY,
+        label: e.VALUE,
+      }));
+      const selectedKey = response.data[1].VALUE;
+      const selected = data.find((item) => item.value === selectedKey);
+      return { data, selected };
+    } catch (error) {
+      console.log(error);
+      return { data: [], selected: null };
+    }
   };
 
   const handleClick1 = () => {
@@ -1164,9 +1311,46 @@ export default function RightDashboard() {
     setIsOpen3(!isOpen3);
   };
 
+  
   const [isIntervalTypeModalVisible, setIntervalTypeModalVisible] =
     useState(false);
   const [intervalType, setIntervalType] = useState("");
+  const [intervalState, setIntervalState] = useState({
+    // Common properties
+    intervalType: "",
+    repeatEvery: "",
+    endDate: "",
+
+    // Weekly modal specific
+    weeklyOnDay: "",
+    weeklyOnTheOccurrence: "",
+    weeklyOnTheDay: "",
+
+    // Monthly modal specific
+    monthlyOnDay: "",
+    monthlyOccurrence: "",
+    monthlyWeekDay: "",
+
+    // Recurring modal specific
+    recurringInterval: "Day(s)",
+    recurringDaysSelected: [],
+  });
+
+  const [selectedIntervalState, setSelectedIntervalState] = useState({
+    ...intervalState,
+  });
+  const handleSave = () => {
+    setSelectedIntervalState({ ...intervalState });
+    console.log("Saved State:", selectedIntervalState);
+
+    setIntervalTypeModalVisible(false);
+  };
+
+  const handleClose = () => {
+    setIntervalState({ ...selectedIntervalState });
+    console.log("State reverted to saved values:", selectedIntervalState);
+    setIntervalTypeModalVisible(false);
+  };
 
   // Function to close the modal
   const closeIntervalTypeModal = () => {
@@ -1179,8 +1363,71 @@ export default function RightDashboard() {
 
   // Function to handle dropdown change
   const handleIntervalTypeChange = (e) => {
+    setIntervalState({
+      intervalType: "",
+      repeatEvery: "",
+      endDate: "",
+      weeklyOnDay: "",
+      weeklyOnTheOccurrence: "",
+      weeklyOnTheDay: "",
+      monthlyOnDay: "",
+      monthlyOccurrence: "",
+      monthlyWeekDay: "",
+      recurringInterval: "Day(s)",
+      recurringDaysSelected: [],
+    });
+
+    setSelectedIntervalState({
+      intervalType: "",
+      repeatEvery: "",
+      endDate: "",
+      weeklyOnDay: "",
+      weeklyOnTheOccurrence: "",
+      weeklyOnTheDay: "",
+      monthlyOnDay: "",
+      monthlyOccurrence: "",
+      monthlyWeekDay: "",
+      recurringInterval: "Day(s)",
+      recurringDaysSelected: [],
+    });
     setIntervalType(e.target.value);
     setIntervalTypeModalVisible(true);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+
+    if (type === "checkbox") {
+      // Handle checkbox values
+      setIntervalState((prevState) => {
+        let updatedDays = [...prevState.recurringDaysSelected];
+        if (checked) {
+          if (!updatedDays.includes(name)) updatedDays.push(name);
+        } else {
+          updatedDays = updatedDays.filter((day) => day !== name);
+        }
+
+        return { ...prevState, recurringDaysSelected: updatedDays };
+      });
+    } else if (type === "number") {
+      // Handle number inputs (ensuring valid numeric values)
+      setIntervalState((prevState) => ({
+        ...prevState,
+        [name]: value !== "" ? parseInt(value, 10) : "",
+      }));
+    } else if (type === "datetime-local" || type === "date") {
+      // Handle date/datetime-local inputs
+      setIntervalState((prevState) => ({
+        ...prevState,
+        [name]: value,
+      }));
+    } else {
+      // Handle text, radio, and other inputs
+      setIntervalState((prevState) => ({
+        ...prevState,
+        [name]: value,
+      }));
+    }
   };
 
   return (
@@ -1303,13 +1550,18 @@ export default function RightDashboard() {
                                           display: "inline-block",
                                           marginLeft: "5px",
                                         }}
+                                        name="repeatEvery"
+                                        value={intervalState.repeatEvery}
+                                        onChange={handleInputChange}
                                       />
                                     </div>
                                     <div className="col-sm-6">
                                       <div className="dropdown-wrapper">
                                         <select
-                                          name="days"
+                                          name="intervalType"
                                           className="custom-select"
+                                          value={intervalState.intervalType}
+                                          onChange={handleInputChange}
                                         >
                                           <option value="">select value</option>
                                           <option value="Weekly">weekly</option>
@@ -1323,6 +1575,7 @@ export default function RightDashboard() {
                                       </div>
                                     </div>
                                   </div>
+
                                   <div className="row intervalType-row2 mt-3 one">
                                     <div className="col-sm-3"></div>
                                     <div className="col-sm-6">
@@ -1334,6 +1587,18 @@ export default function RightDashboard() {
                                             height: "20px",
                                             width: "20px",
                                           }}
+                                          name="onDayRadio"
+                                          checked={
+                                            intervalState.onDayRadio === true
+                                          }
+                                          onChange={(e) =>
+                                            handleInputChange({
+                                              target: {
+                                                name: "onDayRadio",
+                                                value: true,
+                                              },
+                                            })
+                                          }
                                         />
                                         <label className="onDay-section">
                                           On Day
@@ -1346,6 +1611,9 @@ export default function RightDashboard() {
                                             display: "inline-block",
                                             marginRight: "10px",
                                           }}
+                                          name="weeklyOnDay"
+                                          value={intervalState.weeklyOnDay}
+                                          onChange={handleInputChange}
                                         />
                                       </div>
                                     </div>
@@ -1361,39 +1629,53 @@ export default function RightDashboard() {
                                           height: "20px",
                                           width: "20px",
                                         }}
+                                        name="onTheRadio"
+                                        checked={
+                                          intervalState.onTheRadio === true
+                                        }
+                                        onChange={(e) =>
+                                          handleInputChange({
+                                            target: {
+                                              name: "onTheRadio",
+                                              value: true,
+                                            },
+                                          })
+                                        }
                                       />
                                       <label className="ml-2">On the</label>
                                     </div>
                                     <div className="col-sm-4 mb-2">
                                       <div className="dropdown-wrapper">
                                         <select
-                                          name="days"
+                                          name="weeklyOnTheOccurrence"
                                           className="custom-select"
+                                          value={
+                                            intervalState.weeklyOnTheOccurrence
+                                          }
+                                          onChange={handleInputChange}
                                         >
                                           <option value="">select value</option>
-                                          <option value="Weekly">weekly</option>
-                                          <option value="Monthly">
-                                            Monthly
-                                          </option>
-                                          <option value="Recurring">
-                                            Recurring
-                                          </option>
+                                          <option value="First">First</option>
+                                          <option value="Second">Second</option>
+                                          <option value="Third">Third</option>
                                         </select>
                                       </div>
                                     </div>
                                     <div className="col-sm-4 mb-2">
                                       <div className="dropdown-wrapper">
                                         <select
-                                          name="days"
+                                          name="weeklyOnTheDay"
                                           className="custom-select"
+                                          value={intervalState.weeklyOnTheDay}
+                                          onChange={handleInputChange}
                                         >
                                           <option value="">select value</option>
-                                          <option value="Weekly">weekly</option>
-                                          <option value="Monthly">
-                                            Monthly
+                                          <option value="Monday">Monday</option>
+                                          <option value="Tuesday">
+                                            Tuesday
                                           </option>
-                                          <option value="Recurring">
-                                            Recurring
+                                          <option value="Wednesday">
+                                            Wednesday
                                           </option>
                                         </select>
                                       </div>
@@ -1405,13 +1687,15 @@ export default function RightDashboard() {
                                       <label>End Date</label>
                                       <input
                                         type="datetime-local"
-                                        name="date-select"
+                                        name="endDate"
                                         className="form-control time"
                                         style={{
                                           width: "70%",
                                           display: "inline-block",
                                           marginLeft: "5px",
                                         }}
+                                        value={intervalState.endDate}
+                                        onChange={handleInputChange}
                                       />
                                     </div>
                                     <div className="col-4 text-center">
@@ -1433,13 +1717,13 @@ export default function RightDashboard() {
                                 <Modal.Footer>
                                   <Button
                                     className="intervalCloseBtn"
-                                    onClick={closeIntervalTypeModal}
+                                    onClick={handleClose}
                                   >
                                     Close
                                   </Button>
                                   <Button
                                     variant="primary"
-                                    onClick={closeIntervalTypeModal}
+                                    onClick={handleSave}
                                   >
                                     Save
                                   </Button>
@@ -1481,6 +1765,9 @@ export default function RightDashboard() {
                                           display: "inline-block",
                                           marginLeft: "5px",
                                         }}
+                                        name="monthlyRepeatEvery"
+                                        value={intervalState.monthlyRepeatEvery}
+                                        onChange={handleInputChange}
                                       />
                                     </div>
                                     <div className="col-sm-6">
@@ -1505,6 +1792,18 @@ export default function RightDashboard() {
                                           height: "20px",
                                           width: "20px",
                                         }}
+                                        checked={
+                                          intervalState.monthlyOption ===
+                                          "onDay"
+                                        }
+                                        onChange={(e) =>
+                                          handleInputChange({
+                                            target: {
+                                              name: "monthlyOption",
+                                              value: "onDay",
+                                            },
+                                          })
+                                        }
                                       />
                                       <label className="ml-2">On Day</label>
                                       <input
@@ -1515,6 +1814,9 @@ export default function RightDashboard() {
                                           display: "inline-block",
                                           marginRight: "10px",
                                         }}
+                                        name="monthlyOnDay"
+                                        value={intervalState.monthlyOnDay}
+                                        onChange={handleInputChange}
                                       />
                                     </div>
                                     <div
@@ -1533,6 +1835,18 @@ export default function RightDashboard() {
                                           height: "20px",
                                           width: "20px",
                                         }}
+                                        checked={
+                                          intervalState.monthlyOption ===
+                                          "onThe"
+                                        }
+                                        onChange={(e) =>
+                                          handleInputChange({
+                                            target: {
+                                              name: "monthlyOption",
+                                              value: "onThe",
+                                            },
+                                          })
+                                        }
                                       />
                                       <label
                                         className="ml-2"
@@ -1549,9 +1863,13 @@ export default function RightDashboard() {
                                         style={{ display: "inline-block" }}
                                       >
                                         <select
-                                          name="occurrence"
+                                          name="monthlyOccurrence"
                                           className="custom-select mb-2"
                                           style={{ marginRight: "5px" }}
+                                          value={
+                                            intervalState.monthlyOccurrence
+                                          }
+                                          onChange={handleInputChange}
                                         >
                                           <option value="">select value</option>
                                           <option value="First">First</option>
@@ -1561,8 +1879,10 @@ export default function RightDashboard() {
                                           <option value="Last">Last</option>
                                         </select>
                                         <select
-                                          name="weekday"
+                                          name="monthlyWeekday"
                                           className="custom-select"
+                                          value={intervalState.monthlyWeekday}
+                                          onChange={handleInputChange}
                                         >
                                           <option value="">select value</option>
                                           <option value="Monday">Monday</option>
@@ -1590,13 +1910,15 @@ export default function RightDashboard() {
                                       <label>End Date</label>
                                       <input
                                         type="datetime-local"
-                                        name="date-select"
+                                        name="monthlyEndDate"
                                         className="form-control time"
                                         style={{
                                           width: "70%",
                                           display: "inline-block",
                                           marginLeft: "5px",
                                         }}
+                                        value={intervalState.monthlyEndDate}
+                                        onChange={handleInputChange}
                                       />
                                     </div>
                                     <div className="col-4 text-center">
@@ -1618,13 +1940,13 @@ export default function RightDashboard() {
                                 <Modal.Footer>
                                   <Button
                                     className="intervalCloseBtn"
-                                    onClick={closeIntervalTypeModal}
+                                    onClick={handleClose}
                                   >
                                     Close
                                   </Button>
                                   <Button
                                     variant="primary"
-                                    onClick={closeIntervalTypeModal}
+                                    onClick={handleSave}
                                   >
                                     Save
                                   </Button>
@@ -1653,6 +1975,9 @@ export default function RightDashboard() {
                                       </label>
                                       <input
                                         type="number"
+                                        name="repeatEvery"
+                                        value={intervalState.repeatEvery}
+                                        onChange={handleInputChange}
                                         className="form-control repeat-every-value"
                                         style={{
                                           width: "30%",
@@ -1665,6 +1990,8 @@ export default function RightDashboard() {
                                       <div className="dropdown-wrapper">
                                         <select
                                           name="interval"
+                                          value={intervalState.interval}
+                                          onChange={handleInputChange}
                                           className="custom-select"
                                         >
                                           <option value="Day(s)">Day(s)</option>
@@ -1702,6 +2029,11 @@ export default function RightDashboard() {
                                               type="checkbox"
                                               className="custom-control-input"
                                               id={`check${day}`}
+                                              name={day}
+                                              checked={intervalState.recurringDaysSelected.includes(
+                                                day
+                                              )}
+                                              onChange={handleInputChange}
                                             />
                                             <label
                                               className="custom-control-label"
@@ -1720,7 +2052,9 @@ export default function RightDashboard() {
                                       <label>End Date</label>
                                       <input
                                         type="datetime-local"
-                                        name="date-select"
+                                        name="endDate"
+                                        value={intervalState.endDate}
+                                        onChange={handleInputChange}
                                         className="form-control time"
                                         style={{
                                           width: "70%",
@@ -1735,13 +2069,24 @@ export default function RightDashboard() {
                                       </div>
                                     </div>
                                   </div>
+
                                   <div className="row intervalType-row4 mt-3">
                                     <div className="col">
                                       <p className="text-center">
-                                        Occurs every <span>3</span> week(s) on
-                                        the selected days starting{" "}
-                                        <span>10/11/23</span> until{" "}
-                                        <span>15/11/23</span>
+                                        Occurs every{" "}
+                                        <span>
+                                          {intervalState.repeatEvery || 0}
+                                        </span>{" "}
+                                        {intervalState.interval} on the selected
+                                        days starting{" "}
+                                        <span>
+                                          {intervalState.startDate ||
+                                            "10/11/23"}
+                                        </span>{" "}
+                                        until{" "}
+                                        <span>
+                                          {intervalState.endDate || "15/11/23"}
+                                        </span>
                                       </p>
                                     </div>
                                   </div>
@@ -1749,13 +2094,13 @@ export default function RightDashboard() {
                                 <Modal.Footer>
                                   <Button
                                     className="intervalCloseBtn"
-                                    onClick={closeIntervalTypeModal}
+                                    onClick={handleClose}
                                   >
                                     Close
                                   </Button>
                                   <Button
                                     variant="primary"
-                                    onClick={closeIntervalTypeModal}
+                                    onClick={handleSave}
                                   >
                                     Save
                                   </Button>
@@ -2176,8 +2521,8 @@ export default function RightDashboard() {
                                       }}
                                     >
                                       <option value="">Select value</option>
-                                      <option value="na">NA</option>
-                                      <option value="yes">Yes</option>
+                                      <option value="0">NA</option>
+                                      <option value="1">Yes</option>
                                     </select>
                                   </div>
                                 </div>
@@ -2189,20 +2534,32 @@ export default function RightDashboard() {
                                 </div>
                                 <div className="col-9">
                                   <div className="dropdown">
-                                    <select
-                                      name="amenities"
-                                      className="custom-select"
-                                      value={locationFilters.LFAmenities}
-                                      onChange={(e) => {
-                                        const value = e.target.value;
+                                    <InfiniteDropdown
+                                      options={
+                                        locationFilters.LFAmenities[0]
+                                          ?.options || []
+                                      } // Dropdown options
+                                      selectedValue={
+                                        locationFilters.LFAmenities[0]
+                                          ?.selectedValue || ""
+                                      } // Current selected value
+                                      onChange={(selectedOption) => {
                                         setlocationFilters((prevFilters) => ({
                                           ...prevFilters,
-                                          LFAmenities: value,
+                                          LFAmenities:
+                                            prevFilters.LFAmenities.map(
+                                              (amenity, index) =>
+                                                index === 0 // Assuming the first amenity is the one being updated
+                                                  ? {
+                                                      ...amenity,
+                                                      selectedValue:
+                                                        selectedOption,
+                                                    }
+                                                  : amenity
+                                            ),
                                         }));
                                       }}
-                                    >
-                                      <option value="">Select value</option>
-                                    </select>
+                                    />
                                   </div>
                                 </div>
                               </div>
@@ -2212,7 +2569,7 @@ export default function RightDashboard() {
                         <Modal.Footer>
                           <Button
                             className="filter-reset-btn"
-                            onClick={handleCloseLocationFilterModal}
+                            onClick={handleResetLocationFilterModal}
                           >
                             Reset
                           </Button>
