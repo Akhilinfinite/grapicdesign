@@ -1,43 +1,48 @@
 // src/store/slices/authSlice.js
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import axios from "axios";
 
 // Async thunk to handle login
 export const login = createAsyncThunk(
-  'auth/login',
-  async ({ username, password }, { rejectWithValue }) => {
+  "auth/login",
+  async ({ username, password }, { getState, rejectWithValue }) => {
     try {
-      const response = await axios.post(
-        'http://192.168.0.65:8500/rest/gvRestApi/master/chkLogin',
-        { frmUserID: username, frmPassword: password }
-      );
+      const clientname = getState().client.clientname;
+      const apiUrl = `http://192.168.0.65:8500/rest/gvRestApi/master/chkLogin`;
+      const response = await axios.post(apiUrl, {
+        frmUserID: username,
+        frmPassword: password,
+        clientname: clientname,
+      });
       if (response.data.RESULT === 1) {
-        return response.data; // Return entire response data if successful
+        return response.data;
       } else {
-        return rejectWithValue('Invalid login credentials.');
+        return rejectWithValue("Invalid login credentials.");
       }
     } catch (error) {
-      console.error('Login API error:', error);
-      return rejectWithValue('Server error. Please try again later.');
+      console.error("Login API error:", error);
+      return rejectWithValue("Server error. Please try again later.");
     }
   }
 );
 
 // Check if session data exists and parse it, or default to null
-const savedSessionData = localStorage.getItem('sessionData');
-const initialSessionData = savedSessionData ? JSON.parse(savedSessionData) : null;
+const savedSessionData = localStorage.getItem("sessionData");
+const initialSessionData = savedSessionData
+  ? JSON.parse(savedSessionData)
+  : null;
 
 const authSlice = createSlice({
-  name: 'auth',
+  name: "auth",
   initialState: {
-    sessionData: initialSessionData, // Load parsed data or null
+    sessionData: initialSessionData,
     loading: false,
     error: null,
   },
   reducers: {
     logout: (state) => {
       state.sessionData = null;
-      localStorage.removeItem('sessionData');
+      localStorage.removeItem("sessionData");
     },
   },
   extraReducers: (builder) => {
@@ -48,8 +53,8 @@ const authSlice = createSlice({
       })
       .addCase(login.fulfilled, (state, action) => {
         state.loading = false;
-        state.sessionData = action.payload; // Store full response data
-        localStorage.setItem('sessionData', JSON.stringify(action.payload));
+        state.sessionData = action.payload;
+        localStorage.setItem("sessionData", JSON.stringify(action.payload));
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;

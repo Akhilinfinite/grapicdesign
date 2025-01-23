@@ -28,10 +28,10 @@ import CustomDateTimePicker from "./components/customDateTimeInput";
 import { fetchDefaultValues } from "../../redux/slices/sampleSlice.js";
 
 import { useSelector, useDispatch } from "react-redux";
-import IntervalType from "./components/intervalType/index.jsx";
 
 export default function RightDashboard() {
   const baseURL = "http://192.168.0.65:8500/rest/gvRestApi/";
+  const clientname = useSelector((state) => state.client.clientname);
   const [isOpen1, setIsOpen1] = useState(true);
   const [isOpen2, setIsOpen2] = useState(true);
   const [isOpen3, setIsOpen3] = useState(true);
@@ -48,41 +48,18 @@ export default function RightDashboard() {
   const [Site, setSite] = useState([]);
   const [Loctype, setLoctype] = useState("0,0,0,0,0,0,0");
   const [Count, setCount] = useState(0);
+  const [Count2, setCount2] = useState(0);
 
   const [locationData, setLocationData] = useState([]);
   const [selectedLocationType, setSelectedLocationType] = useState("indoor");
 
   const [locationFilters, setlocationFilters] = useState({
-    levels: [
-      {
-        id: 1,
-        label: "District",
-        selectedValue: null,
-        options: [],
-      },
-      {
-        id: 2,
-        label: "School",
-        selectedValue: null,
-        options: [],
-      },
-      { id: 3, label: "Floor", selectedValue: null, options: [] },
-      { id: 4, label: "Room", selectedValue: null, options: [] },
-      { id: 5, label: "Site", selectedValue: null, options: [] },
-      {
-        id: 6,
-        label: "Site Amenity",
-        title: "dis",
-        selectedValue: null,
-        options: [],
-      },
-    ],
+    levels: [],
     LFCapacity: null,
     LFHandicap: "",
     LFAmenities: [
       { id: 1, lable: "Amenities", options: null, selectedValue: null },
     ],
-    displayLevels: [],
   });
   const [LFvalues, setLFvalues] = useState({
     levels: [],
@@ -92,99 +69,84 @@ export default function RightDashboard() {
   });
 
   useEffect(() => {
-    const fetchLocationData = async (levelId) => {
-      try {
-        const response = await axios.get(
-          `${baseURL}schedule/getLevelType/${levelId}`,
-          {
-            label_id: 1,
-          }
-        );
-        const res = await axios.get(`${baseURL}master/getAmenityList/1`);
-        const Amenitydata = [
-          { id: "", value: "", label: "---Select---" },
-          ...res.data.DATA.map((e) => ({
-            id: e[0],
-            value: e[0],
-            label: e[1],
-          })),
-        ];
-        const data = [
-          { id: "0", value: "0", label: "---Select---" },
-          ...response.data.DATA.map((e) => ({
-            id: e[0],
-            value: e[0],
-            label: e[1],
-          })),
-        ];
+    if (Count2 && locationFilters.levels && locationFilters.levels.length > 0) {
+      const fetchLocationData = async (levelId) => {
+        try {
+          const response = await axios.post(`${baseURL}schedule/getLevelType`, {
+            clientname: clientname,
+            label_id: levelId,
+          });
 
-        // Update the options for the level
-        setlocationFilters((prevFilters) => ({
-          ...prevFilters,
-          levels: prevFilters.levels.map((level) =>
-            level.id === levelId
-              ? { ...level, options: data, selectedValue: null } // Update options based on API response
-              : level
-          ),
-          LFAmenities: prevFilters.LFAmenities.map((amenity) => ({
-            ...amenity,
-            options: Amenitydata,
-            selectedValue: null,
+          const res = await axios.post(`${baseURL}master/getAmenityList`, {
+            clientname: clientname,
+            OWNER_ID: "1",
+          });
+
+          const Amenitydata = [
+            { id: "", value: "", label: "---Select---" },
+            ...res.data.DATA.map((e) => ({
+              id: e[0],
+              value: e[0],
+              label: e[1],
+            })),
+          ];
+
+          const data = [
+            { id: "0", value: "0", label: "---Select---" },
+            ...response.data.DATA.map((e) => ({
+              id: e[0],
+              value: e[0],
+              label: e[1],
+            })),
+          ];
+
+          // Update the options for the level
+          setlocationFilters((prevFilters) => ({
+            ...prevFilters,
+            levels: prevFilters.levels.map((level) =>
+              level.id === levelId
+                ? { ...level, options: data, selectedValue: null }
+                : level
+            ),
+            LFAmenities: prevFilters.LFAmenities.map((amenity) => ({
+              ...amenity,
+              options: Amenitydata,
+              selectedValue: null,
+            })),
+          }));
+        } catch (error) {
+          console.error(`Error fetching data for level ${levelId}:`, error);
+        }
+      };
+
+      const levelIds = locationFilters.levels.map((level) => level.id);
+
+      // Fetch data for each level
+      Promise.all(levelIds.map(fetchLocationData)).then(() => {
+        setLFvalues(() => ({
+          levels: locationFilters.levels.map((level) => ({
+            id: level.id,
+            label: level.label,
+            selectedValue: level.selectedValue,
+            options: level.options,
           })),
+          LFCapacity: locationFilters.LFCapacity,
+          LFHandicap: locationFilters.LFHandicap,
+          LFAmenities: locationFilters.LFAmenities,
         }));
-      } catch (error) {
-        console.error(`Error fetching data for level ${levelId}:`, error);
-      }
-    };
-    const levelIds = locationFilters.levels.map((level) => level.id);
-    Promise.all(levelIds.map(fetchLocationData)).then(() => {
-      setlocationFilters((prevFilters) => {
-        const updatedDisplayLevels =
-          selectedLocationType === "indoor"
-            ? prevFilters.levels.filter((level) =>
-                [1, 2, 3, 4].includes(level.id)
-              )
-            : prevFilters.levels.filter((level) =>
-                [1, 5, 6].includes(level.id)
-              );
-
-        return {
-          ...prevFilters,
-          displayLevels: updatedDisplayLevels,
-        };
       });
-
-      // Sync LFvalues with levels after fetching
-      setLFvalues(() => ({
-        levels: locationFilters.levels.map((level) => ({
-          id: level.id,
-          label: level.label,
-          selectedValue: level.selectedValue,
-          options: level.options,
-        })),
-        LFCapacity: locationFilters.LFCapacity,
-        LFHandicap: locationFilters.LFHandicap,
-        LFAmenities: locationFilters.LFAmenities,
-      }));
-    });
-  }, [selectedLocationType]);
+    }
+  }, [Count2, clientname]);
 
   const handleSelectChange = (selectedOption, levelId) => {
-    setlocationFilters((prevFilters) => {
-      return {
-        ...prevFilters,
-        levels: prevFilters.levels.map((level) =>
-          level.id === levelId
-            ? { ...level, selectedValue: selectedOption } // Update the selected value
-            : level
-        ),
-        displayLevels: prevFilters.displayLevels.map((level) =>
-          level.id === levelId
-            ? { ...level, selectedValue: selectedOption }
-            : level
-        ),
-      };
-    });
+    setlocationFilters((prevFilters) => ({
+      ...prevFilters,
+      levels: prevFilters.levels.map((level) =>
+        level.id === levelId
+          ? { ...level, selectedValue: selectedOption }
+          : level
+      ),
+    }));
   };
 
   const [isLocationFilterModalVisible, setLocationFilterModalVisibility] =
@@ -199,18 +161,17 @@ export default function RightDashboard() {
       const resetLevels = (levels) =>
         levels.map((level) => ({
           ...level,
-          selectedValue: null, // Clear selected values
+          selectedValue: null,
         }));
 
       return {
         ...prevFilters,
         levels: resetLevels(prevFilters.levels),
-        displayLevels: resetLevels(prevFilters.displayLevels),
-        LFCapacity: null, // Reset capacity
-        LFHandicap: "", // Reset handicap
+        LFCapacity: null,
+        LFHandicap: "",
         LFAmenities: prevFilters.LFAmenities.map((amenity) => ({
           ...amenity,
-          selectedValue: null, // Clear selected amenity
+          selectedValue: null,
         })),
       };
     });
@@ -218,18 +179,18 @@ export default function RightDashboard() {
     setLFvalues({
       levels: locationFilters.levels.map((level) => ({
         ...level,
-        selectedValue: null, // Clear selected values
-        options: level.options, // Retain options
+        selectedValue: null,
+        options: level.options,
       })),
-      LFCapacity: null, // Reset capacity
-      LFHandicap: "", // Reset handicap
+      LFCapacity: null,
+      LFHandicap: "",
       LFAmenities: locationFilters.LFAmenities.map((amenity) => ({
         ...amenity,
-        selectedValue: null, // Clear selected amenity
+        selectedValue: null,
       })),
     });
 
-    setLoctype("0,0,0,0,0,0,0"); // Reset loctype
+    setLoctype("0,0,0,0,0,0,0");
     setCount(0);
   };
   const handleCloseLocationFilterModal = () => {
@@ -245,7 +206,6 @@ export default function RightDashboard() {
       return {
         ...prevFilters,
         levels: updateSelectedValues(prevFilters.levels),
-        displayLevels: updateSelectedValues(prevFilters.displayLevels),
         LFCapacity: LFvalues.LFCapacity,
         LFHandicap: LFvalues.LFHandicap,
         LFAmenities: LFvalues.LFAmenities,
@@ -256,6 +216,7 @@ export default function RightDashboard() {
   const CriteriaLookup = async (ctype_value, ctype, loctype) => {
     try {
       const response = await axios.post(`${baseURL}schedule/CriteriaLookup/`, {
+        clientname: clientname,
         h_value: "0,1,0",
         clabel: "0",
         h_cvalue: "0",
@@ -275,9 +236,9 @@ export default function RightDashboard() {
   const handleApplyLocationFilterModal = async () => {
     try {
       const results = [];
-      for (const displayLevel of locationFilters.displayLevels) {
-        const ctype_value = displayLevel.selectedValue?.value || "0";
-        const ctype = `type${displayLevel.id}`;
+      for (const level of locationFilters.levels) {
+        const ctype_value = level.selectedValue?.value || "0";
+        const ctype = `type${level.id}`;
         const loctype =
           results.length > 0
             ? results[results.length - 1].data[2]
@@ -286,11 +247,9 @@ export default function RightDashboard() {
         const res = await CriteriaLookup(ctype_value, ctype, loctype);
         results.push(res);
       }
-      // console.log(results[3].data[2])
       setLoctype(results[results.length - 1].data[2]);
       setCount(1);
 
-      // Update LFvalues with the current data
       setLFvalues({
         levels: locationFilters.levels.map((level) => ({
           id: level.id,
@@ -309,6 +268,7 @@ export default function RightDashboard() {
       console.error("Error while applying location filters:", error);
     }
   };
+
   useEffect(() => {
     const resetLocationData = async () => {
       try {
@@ -325,14 +285,12 @@ export default function RightDashboard() {
           "2",
           "0,2",
           "2",
-          selectedLocationType === "indoor" ? "2" : "5" // quickloc
+          selectedLocationType === "indoor" ? "2" : "5"
         );
 
-        // Update locationData based on selectedLocationType
         setLocationData((prevLocationData) => {
           const updatedData = prevLocationData.map((location) => {
             if (location.id === 1) {
-              // Update District
               return {
                 ...location,
                 options: districtResponse.data,
@@ -346,14 +304,12 @@ export default function RightDashboard() {
               (selectedLocationType === "indoor" && location.id === 2) ||
               (selectedLocationType === "outdoor" && location.id === 5)
             ) {
-              // Update School or Site
               return {
                 ...location,
                 options: schoolOrSiteResponse.data,
                 selectedOption: null,
               };
             } else {
-              // Clear data for other levels
               return { ...location, options: [], selectedValue: null };
             }
           });
@@ -445,7 +401,7 @@ export default function RightDashboard() {
   useEffect(() => {
     const getOwner = () => {
       axios
-        .post(`${baseURL}schedule/getOwners/`)
+        .post(`${baseURL}schedule/getOwners/`, { clientname: clientname })
         .then(function (response) {
           const data = response.data.DATA.map((e) => ({
             id: e[33],
@@ -476,11 +432,11 @@ export default function RightDashboard() {
         });
     };
     getOwner();
-  }, []);
+  }, [clientname]);
   useEffect(() => {
     const getScheduler = () => {
       axios
-        .post(`${baseURL}schedule/getRequestors/`)
+        .post(`${baseURL}schedule/getRequestors/`, { clientname: clientname })
         .then(function (response) {
           const data = response.data.DATA.map((e) => ({
             id: e[0],
@@ -497,13 +453,13 @@ export default function RightDashboard() {
         });
     };
     getScheduler();
-  }, []);
+  }, [clientname]);
 
   //customer API Implementation
   useEffect(() => {
     const getCustomer = () => {
       axios
-        .post(`${baseURL}schedule/getCustomers/`)
+        .post(`${baseURL}schedule/getCustomers/`, { clientname: clientname })
         .then(function (response) {
           const data = response.data.DATA.map((e) => ({
             id: e[0],
@@ -519,7 +475,7 @@ export default function RightDashboard() {
         });
     };
     getCustomer();
-  }, []);
+  }, [clientname]);
 
   const handleCustomerClick = (selectedOption) => {
     const variable = selectedOption.value;
@@ -531,6 +487,7 @@ export default function RightDashboard() {
     setSelectedContact([]);
     axios
       .post(`${baseURL}schedule/getContacts/`, {
+        clientname: clientname,
         customer_id: data1[0].value,
         CUSTOMER_STATUS: 1,
       })
@@ -554,6 +511,7 @@ export default function RightDashboard() {
     const getContact = () => {
       axios
         .post(`${baseURL}schedule/getContacts/`, {
+          clientname: clientname,
           customer_id: 22,
           CUSTOMER_STATUS: 1,
         })
@@ -573,7 +531,7 @@ export default function RightDashboard() {
         });
     };
     getContact();
-  }, []);
+  }, [clientname]);
 
   const handleClickPeopleSearch = () => {
     const option = document.getElementById("people_input_Select").value;
@@ -591,6 +549,7 @@ export default function RightDashboard() {
       case "4":
         axios
           .post(`${baseURL}schedule/getContacts/`, {
+            clientname: clientname,
             search_filter: data1,
           })
           .then(function (response) {
@@ -618,6 +577,7 @@ export default function RightDashboard() {
     const getDistrict = () => {
       axios
         .post(`${baseURL}master/getLocation/`, {
+          clientname: clientname,
           loc_id: "10000000",
           loc_parentid: "00000000",
         })
@@ -634,12 +594,13 @@ export default function RightDashboard() {
         });
     };
     getDistrict();
-  }, []);
+  }, [clientname]);
   //API School
   useEffect(() => {
     const getSchool = () => {
       axios
         .post(`${baseURL}master/getLocation/`, {
+          clientname: clientname,
           label_id: "2",
           loc_parentid: "10000000",
         })
@@ -656,12 +617,13 @@ export default function RightDashboard() {
         });
     };
     getSchool();
-  }, []);
+  }, [clientname]);
 
   useEffect(() => {
     const getSite = () => {
       axios
         .post(`${baseURL}master/getLocation/`, {
+          clientname: clientname,
           label_id: "5",
           loc_parentid: "10000000",
         })
@@ -678,7 +640,7 @@ export default function RightDashboard() {
         });
     };
     getSite();
-  }, []);
+  }, [clientname]);
 
   const handleLocationTypeChange = (e) => {
     const selectedValue = e.target.value;
@@ -693,7 +655,8 @@ export default function RightDashboard() {
       const loctype_kir = loctype_kir1;
       axios
         .post("http://192.168.0.65:8500/rest/gvRestApi/schedule/getLabels/", {
-          owner_id: "",
+          clientname: clientname,
+          owner_id: "1",
           loctype_kir: loctype_kir,
         })
         .then(function (response) {
@@ -711,7 +674,19 @@ export default function RightDashboard() {
             selectedOption: e[0] === 1 ? District[0] : [],
             dropdownSelected: false,
           }));
+          const data1 = response.data.DATA.map((e) => ({
+            id: e[0],
+            label: e[1],
+            options: [],
+            selectedValue: [],
+          }));
+
           setLocationData(data);
+          setlocationFilters((prevFilters) => ({
+            ...prevFilters,
+            levels: data1, // Updating levels in locationFilters with data1
+          }));
+          setCount2(1);
         })
         .catch(function (error) {
           console.error("Error fetching labels:", error);
@@ -720,20 +695,17 @@ export default function RightDashboard() {
     if (District.length !== 0 || School.length !== 0) {
       handleLocationRadioBtnData();
     }
-  }, [District, School, Site, selectedLocationType]);
+  }, [District, School, Site, selectedLocationType, clientname]);
 
   const handleSchoolClick = (selectedOption) => {
     const variable = selectedOption.value;
     if (locationData.find((loc) => loc.id === 1)?.options.length === 0) {
-      // Fetch District, School, and Floor using fetchLocationData function
-
       Promise.all([
-        fetchLocationData(variable, 1, "0,2", 2), // District
-        fetchLocationData(variable, 2, "0,2", 2), // School
-        fetchLocationData(variable, 3, "0,2", 2), // Floor
+        fetchLocationData(variable, 1, "0,2", 2),
+        fetchLocationData(variable, 2, "0,2", 2),
+        fetchLocationData(variable, 3, "0,2", 2),
       ])
         .then(([districtRes, schoolRes, floorRes]) => {
-          // Update locationData with new values
           setLocationData((prevLocationData) =>
             prevLocationData.map((location) => {
               if (location.id === 1) {
@@ -781,7 +753,6 @@ export default function RightDashboard() {
           return location;
         })
       );
-      // Fetch Floor data from API
       fetchLocationData(variable, 3, "0,2", 2)
         .then(({ data: floorData }) => {
           setLocationData((prevLocationData) =>
@@ -861,9 +832,7 @@ export default function RightDashboard() {
         .then(({ data }) => {
           setLocationData((prevLocationData) =>
             prevLocationData.map((location) =>
-              location.id === 4
-                ? { ...location, options: data } // Set fetched Room data
-                : location
+              location.id === 4 ? { ...location, options: data } : location
             )
           );
         })
@@ -936,9 +905,9 @@ export default function RightDashboard() {
 
     if (locationData.find((loc) => loc.id === 1)?.options.length === 0) {
       Promise.all([
-        fetchLocationData(variable, 1, "0,2", 2, 1), //District
-        fetchLocationData(variable, 2, "0,2", 2, 5), // Site
-        fetchLocationData(variable, 3, "0,2", 2, 6), // Site Amenities
+        fetchLocationData(variable, 1, "0,2", 2, 1),
+        fetchLocationData(variable, 2, "0,2", 2, 5),
+        fetchLocationData(variable, 3, "0,2", 2, 6),
       ])
         .then(([districtRes, siteRes, siteAmenityRes]) => {
           setLocationData((prevLocationData) =>
@@ -983,10 +952,9 @@ export default function RightDashboard() {
         })
       );
 
-      // Fetch Site Amenity data
       axios
         .post(`${baseURL}master/getLocation/`, {
-          label_id: "6", // For Site Amenities
+          label_id: "6",
           loc_parentid: variable,
         })
         .then((response) => {
@@ -1021,9 +989,9 @@ export default function RightDashboard() {
 
     if (locationData.find((loc) => loc.id === 1)?.options.length === 0) {
       Promise.all([
-        fetchLocationData(variable, 1, "0,3", 3, 1), //District
-        fetchLocationData(variable, 2, "0,3", 3, 5), // Site
-        fetchLocationData(variable, 3, "0,3", 3, 6), // Site Amenities
+        fetchLocationData(variable, 1, "0,3", 3, 1),
+        fetchLocationData(variable, 2, "0,3", 3, 5),
+        fetchLocationData(variable, 3, "0,3", 3, 6),
       ])
         .then(([districtRes, siteRes, siteAmenityRes]) => {
           setLocationData((prevLocationData) =>
@@ -1187,6 +1155,7 @@ export default function RightDashboard() {
 
     axios
       .post(`${baseURL}schedule/quickLocationLookup/`, {
+        clientname: clientname,
         vlabel: id,
         owner: 1,
         loctype_kir: 0,
@@ -1219,14 +1188,13 @@ export default function RightDashboard() {
   const handleClickLocationSearch = () => {
     const option = document.getElementById("location_input_Select").value;
     const data = document.getElementById("location_input_Search").value;
-    document.getElementById("location_input_Search").value = "";
+    // document.getElementById("location_input_Search").value = "";
     setLocationData((prevLocationData) =>
       prevLocationData.map((location) => ({
         ...location,
         dropdownSelected: location.id.toString() === option,
       }))
     );
-    // document.getElementById("location_input_Search").value = "";
     switch (option) {
       case "0":
       case "1":
@@ -1278,6 +1246,7 @@ export default function RightDashboard() {
   ) => {
     try {
       const response = await axios.post(`${baseURL}schedule/LocationLookup/`, {
+        clientname: clientname,
         h_value: h_value,
         h_cvalue: variable,
         clabel: clabel,
@@ -1311,7 +1280,6 @@ export default function RightDashboard() {
     setIsOpen3(!isOpen3);
   };
 
-  
   const [isIntervalTypeModalVisible, setIntervalTypeModalVisible] =
     useState(false);
   const [intervalType, setIntervalType] = useState("");
@@ -2372,10 +2340,10 @@ export default function RightDashboard() {
                       </Col>
                     </Row>
                     <Row>
-                      <Col xs={12} sm={4} className="col-4 mb-3">
+                      <Col md={3} sm={6} xs={12} className="col-3 mb-3">
                         <div className="content">
                           <div className="title">Choose field to Search</div>
-                          <div className="dropdown">
+                          <div className="dropdown-wrapper">
                             <select
                               name="days"
                               className="custom-select"
@@ -2454,7 +2422,7 @@ export default function RightDashboard() {
                           <div className="row">
                             {/* Dynamic Dropdowns */}
                             <div className="col-md-6">
-                              {locationFilters.displayLevels.map((level) => (
+                              {locationFilters.levels.map((level) => (
                                 <div
                                   className="row mb-3 filtersrow"
                                   key={level.id}

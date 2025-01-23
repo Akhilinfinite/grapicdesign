@@ -1,9 +1,17 @@
 /* Basic reset */
+.header {
+  padding: 10px 10px;
+  font-size: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-bottom: 5px solid #fa783c;
+}
 .login_main {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  height: 90vh;
 
   .login-container {
     max-width: 21.25em;
@@ -47,7 +55,7 @@
         color: white;
         border: none;
         font-size: 0.75em;
-        border-radius: 0.25em; 
+        border-radius: 0.25em;
         cursor: pointer;
 
         &:hover {

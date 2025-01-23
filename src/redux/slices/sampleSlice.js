@@ -7,9 +7,7 @@ export const fetchDefaultValues = createAsyncThunk(
   async () => {
     const response = await axios.post(
       "http://192.168.0.65:8500/rest/gvRestApi/master/getAppVariable/",
-      {
-        owner_id: "1",
-      }
+      { clientname: "charlotte", owner_id: "1" }
     );
     return response.data.DATA;
   }

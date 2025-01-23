@@ -169,6 +169,9 @@
                   padding: 0.5rem !important;
                   width: 33.33333333%;
                   margin-top: 0.5rem !important;
+                  display: flex;
+                  flex-direction: column;
+                  justify-content: center;
                   .dropdown {
                     select {
                       font-size: 1rem;
@@ -252,9 +255,8 @@
 }
 .btn-search {
   background-color: #0d139d !important;
-  border: 1px solid #0d139d !important; 
+  border: 1px solid #0d139d !important;
 }
-
 
 @media (max-width: 767px) {
   .search-footer {
@@ -285,7 +287,6 @@
   margin-left: 8px;
   margin-bottom: 5px;
 }
-
 
 @media (max-width: 767px) {
   .location-radio-btn .list {
