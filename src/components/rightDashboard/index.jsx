@@ -43,14 +43,12 @@ export default function RightDashboard() {
   const [Contact, setContact] = useState([]);
   const [SelectedContact, setSelectedContact] = useState([]);
 
-  const [District, setDistrict] = useState([]);
-  const [School, setSchool] = useState([]);
-  const [Site, setSite] = useState([]);
   const [Loctype, setLoctype] = useState("0,0,0,0,0,0,0");
   const [Count, setCount] = useState(0);
   const [Count2, setCount2] = useState(0);
 
   const [locationData, setLocationData] = useState([]);
+  const [intialDataLoad, setintialDataLoad] = useState(0);
   const [selectedLocationType, setSelectedLocationType] = useState("indoor");
 
   const [locationFilters, setlocationFilters] = useState({
@@ -69,7 +67,11 @@ export default function RightDashboard() {
   });
 
   useEffect(() => {
-    if (Count2 && locationFilters.levels && locationFilters.levels.length > 0) {
+    if (
+      Count2 === 1 &&
+      locationFilters.levels &&
+      locationFilters.levels.length > 0
+    ) {
       const fetchLocationData = async (levelId) => {
         try {
           const response = await axios.post(`${baseURL}schedule/getLevelType`, {
@@ -81,6 +83,7 @@ export default function RightDashboard() {
             clientname: clientname,
             OWNER_ID: "1",
           });
+          console.log(response, res, "responce triggered");
 
           const Amenitydata = [
             { id: "", value: "", label: "---Select---" },
@@ -135,6 +138,7 @@ export default function RightDashboard() {
           LFAmenities: locationFilters.LFAmenities,
         }));
       });
+      setCount2(0);
     }
   }, [Count2, clientname]);
 
@@ -218,7 +222,7 @@ export default function RightDashboard() {
       const response = await axios.post(`${baseURL}schedule/CriteriaLookup/`, {
         clientname: clientname,
         h_value: "0,1,0",
-        clabel: "0",
+        clabel: "1",
         h_cvalue: "0",
         h_chkvalue: "1",
         ctype_value: ctype_value,
@@ -238,7 +242,10 @@ export default function RightDashboard() {
       const results = [];
       for (const level of locationFilters.levels) {
         const ctype_value = level.selectedValue?.value || "0";
-        const ctype = `type${level.id}`;
+        const levelIndex = locationFilters.levels.findIndex(
+          (l) => l.id === level.id
+        );
+        const ctype = `type${levelIndex + 1}`;
         const loctype =
           results.length > 0
             ? results[results.length - 1].data[2]
@@ -272,50 +279,36 @@ export default function RightDashboard() {
   useEffect(() => {
     const resetLocationData = async () => {
       try {
-        const districtResponse = await fetchLocationData(
-          "10000000",
-          "1",
-          "0,1",
-          "1",
-          "1"
-        );
-
-        const schoolOrSiteResponse = await fetchLocationData(
-          "10000000",
-          "2",
-          "0,2",
-          "2",
-          selectedLocationType === "indoor" ? "2" : "5"
-        );
-
-        setLocationData((prevLocationData) => {
-          const updatedData = prevLocationData.map((location) => {
-            if (location.id === 1) {
-              return {
-                ...location,
-                options: districtResponse.data,
-                selectedOption:
-                  districtResponse.data.length > 0
-                    ? districtResponse.selected
-                    : null,
-              };
-            }
-            if (
-              (selectedLocationType === "indoor" && location.id === 2) ||
-              (selectedLocationType === "outdoor" && location.id === 5)
-            ) {
-              return {
-                ...location,
-                options: schoolOrSiteResponse.data,
-                selectedOption: null,
-              };
-            } else {
-              return { ...location, options: [], selectedValue: null };
-            }
+        Promise.all([
+          fetchLocationData("00000000", locationData[0].id, "0,2", 2),
+          selectedLocationType === "outdoor"
+            ? fetchLocationData("10000000", 2, "0,2", 2, locationData[1].id)
+            : fetchLocationData("10000000", 2, "0,2", 2),
+        ])
+          .then(([firstObjRes, secondObjRes]) => {
+            setLocationData((prevLocationData) =>
+              prevLocationData.map((location, index) => {
+                if (index === 0) {
+                  return {
+                    ...location,
+                    options: firstObjRes.data,
+                    selectedOption: firstObjRes.data[0],
+                  };
+                }
+                if (index === 1) {
+                  return {
+                    ...location,
+                    options: secondObjRes.data,
+                    selectedOption: [],
+                  };
+                }
+                return { ...location, options: [], selectedOption: null };
+              })
+            );
+          })
+          .catch((error) => {
+            console.error("Error in Promise.all:", error);
           });
-
-          return updatedData;
-        });
       } catch (error) {
         console.error("Error resetting location data:", error);
       }
@@ -570,108 +563,37 @@ export default function RightDashboard() {
     }
   };
 
-  //Location
-
-  //API District
-  useEffect(() => {
-    const getDistrict = () => {
-      axios
-        .post(`${baseURL}master/getLocation/`, {
-          clientname: clientname,
-          loc_id: "10000000",
-          loc_parentid: "00000000",
-        })
-        .then(function (response) {
-          const data = response.data.DATA.map((e) => ({
-            id: e[0],
-            value: e[0],
-            label: e[16],
-          }));
-          setDistrict(data);
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-    };
-    getDistrict();
-  }, [clientname]);
-  //API School
-  useEffect(() => {
-    const getSchool = () => {
-      axios
-        .post(`${baseURL}master/getLocation/`, {
-          clientname: clientname,
-          label_id: "2",
-          loc_parentid: "10000000",
-        })
-        .then(function (response) {
-          const data = response.data.DATA.map((e) => ({
-            id: e[0],
-            value: e[14],
-            label: e[16],
-          }));
-          setSchool(data);
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-    };
-    getSchool();
-  }, [clientname]);
-
-  useEffect(() => {
-    const getSite = () => {
-      axios
-        .post(`${baseURL}master/getLocation/`, {
-          clientname: clientname,
-          label_id: "5",
-          loc_parentid: "10000000",
-        })
-        .then(function (response) {
-          const data = response.data.DATA.map((e) => ({
-            id: e[0],
-            value: e[14],
-            label: e[16],
-          }));
-          setSite(data);
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-    };
-    getSite();
-  }, [clientname]);
-
   const handleLocationTypeChange = (e) => {
     const selectedValue = e.target.value;
     setSelectedLocationType(selectedValue);
     setLoctype("0,0,0,0,0,0,0");
   };
 
+  //Location
+  //420
   useEffect(() => {
-    const handleLocationRadioBtnData = () => {
-      const loctype_kir1 =
-        selectedLocationType === "indoor" ? 0 : "outdoor" ? 1 : "equip" ? 2 : 3;
-      const loctype_kir = loctype_kir1;
+    const fetchLocationData = () => {
+      const loctype_kir =
+        selectedLocationType === "indoor"
+          ? 0
+          : selectedLocationType === "outdoor"
+          ? 1
+          : selectedLocationType === "equip"
+          ? 2
+          : 3;
+
       axios
         .post("http://192.168.0.65:8500/rest/gvRestApi/schedule/getLabels/", {
           clientname: clientname,
           owner_id: "1",
           loctype_kir: loctype_kir,
         })
-        .then(function (response) {
+        .then((response) => {
           const data = response.data.DATA.map((e) => ({
             id: e[0],
             value: e[1],
-            options:
-              e[0] === 1
-                ? District
-                : e[0] === 2
-                ? School
-                : e[0] === 5
-                ? Site
-                : [],
-            selectedOption: e[0] === 1 ? District[0] : [],
+            options: [],
+            selectedOption: null,
             dropdownSelected: false,
           }));
           const data1 = response.data.DATA.map((e) => ({
@@ -680,52 +602,44 @@ export default function RightDashboard() {
             options: [],
             selectedValue: [],
           }));
-
           setLocationData(data);
           setlocationFilters((prevFilters) => ({
             ...prevFilters,
-            levels: data1, // Updating levels in locationFilters with data1
+            levels: data1,
           }));
+          setintialDataLoad(1);
           setCount2(1);
         })
-        .catch(function (error) {
-          console.error("Error fetching labels:", error);
+        .catch((error) => {
+          console.error("Error fetching location data:", error);
         });
     };
-    if (District.length !== 0 || School.length !== 0) {
-      handleLocationRadioBtnData();
-    }
-  }, [District, School, Site, selectedLocationType, clientname]);
 
-  const handleSchoolClick = (selectedOption) => {
-    const variable = selectedOption.value;
-    if (locationData.find((loc) => loc.id === 1)?.options.length === 0) {
+    fetchLocationData();
+  }, [selectedLocationType, clientname]);
+  //421
+  const intialdata = () => {
+    if (locationData && locationData.length >= 2) {
       Promise.all([
-        fetchLocationData(variable, 1, "0,2", 2),
-        fetchLocationData(variable, 2, "0,2", 2),
-        fetchLocationData(variable, 3, "0,2", 2),
+        fetchLocationData("00000000", locationData[0].id, "0,2", 2),
+        selectedLocationType === "outdoor"
+          ? fetchLocationData("10000000", 2, "0,2", 2, locationData[1].id)
+          : fetchLocationData("10000000", 2, "0,2", 2),
       ])
-        .then(([districtRes, schoolRes, floorRes]) => {
+        .then(([firstObjRes, secondObjRes]) => {
           setLocationData((prevLocationData) =>
-            prevLocationData.map((location) => {
-              if (location.id === 1) {
+            prevLocationData.map((location, index) => {
+              if (index === 0) {
                 return {
                   ...location,
-                  options: districtRes.data,
-                  selectedOption: districtRes.data[0],
+                  options: firstObjRes.data,
+                  selectedOption: firstObjRes.data[0],
                 };
               }
-              if (location.id === 2) {
+              if (index === 1) {
                 return {
                   ...location,
-                  options: schoolRes.data,
-                  selectedOption: schoolRes.selected,
-                };
-              }
-              if (location.id === 3) {
-                return {
-                  ...location,
-                  options: floorRes.data,
+                  options: secondObjRes.data,
                   selectedOption: [],
                 };
               }
@@ -734,16 +648,78 @@ export default function RightDashboard() {
           );
         })
         .catch((error) => {
-          console.log(error);
+          console.error("Error in Promise.all:", error);
+        });
+    }
+  };
+  useEffect(() => {
+    if (locationData && locationData.length > 0 && intialDataLoad === 1) {
+      intialdata();
+      setintialDataLoad(0);
+    }
+  }, [locationData]);
+
+  //422
+  const handleOptionSelect = (locationId, selectedOption) => {
+    const variable = selectedOption.value;
+    const locationOne = locationData.find((loc) => loc.id === 1);
+    if (
+      !locationOne ||
+      !locationOne.options ||
+      locationOne.options.length === 0
+    ) {
+      const currentIndex = locationData.findIndex(
+        (loc) => loc.id === locationId
+      );
+      if (currentIndex === -1) return;
+      const objectsToFetch = locationData.slice(0, currentIndex + 2);
+      const fetchPromises = objectsToFetch.map((location, index) => {
+        const range = `0,${currentIndex + 1}`;
+        return fetchLocationData(
+          variable,
+          index + 1,
+          range,
+          index + 1,
+          location.id
+        );
+      });
+
+      // Handle API responses
+      Promise.all(fetchPromises)
+        .then((responses) => {
+          setLocationData((prevLocationData) =>
+            prevLocationData.map((location) => {
+              const responseIndex = objectsToFetch.findIndex(
+                (obj) => obj.id === location.id
+              );
+              if (responseIndex !== -1) {
+                const response = responses[responseIndex];
+                return {
+                  ...location,
+                  options: response.data,
+                  selectedOption: response.selected ?? null,
+                };
+              }
+              return location;
+            })
+          );
+        })
+        .catch((error) => {
+          console.error("Error in Promise.all:", error);
         });
     } else {
+      const currentIndex = locationData.findIndex(
+        (loc) => loc.id === locationId
+      );
+      const isLastObject = currentIndex + 1 === locationData.length;
       setLocationData((prevLocationData) =>
-        prevLocationData.map((location) => {
-          if (location.id === 2) {
-            return { ...location, selectedOption: selectedOption };
-          } else if (location.id === 3) {
-            return { ...location, options: [], selectedOption: [] };
-          } else if (location.id === 4) {
+        prevLocationData.map((location, index) => {
+          if (location.id === locationId) {
+            return {
+              ...location,
+              selectedOption: [selectedOption],
+            };
+          } else if (index > locationId - 1) {
             return {
               ...location,
               options: [],
@@ -753,342 +729,39 @@ export default function RightDashboard() {
           return location;
         })
       );
-      fetchLocationData(variable, 3, "0,2", 2)
-        .then(({ data: floorData }) => {
-          setLocationData((prevLocationData) =>
-            prevLocationData.map((location) =>
-              location.id === 3
-                ? { ...location, options: floorData }
-                : location.id === 4
-                ? { ...location, options: [] }
-                : location
-            )
-          );
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-    }
-  };
 
-  const handleFloorClick = (selectedOption) => {
-    const variable = selectedOption.value;
-    if (locationData.find((loc) => loc.id === 1)?.options.length === 0) {
-      Promise.all([
-        fetchLocationData(variable, 1, "0,3", 3),
-        fetchLocationData(variable, 2, "0,3", 3),
-        fetchLocationData(variable, 3, "0,3", 3),
-        fetchLocationData(variable, 4, "0,3", 3),
-      ])
-        .then(([districtRes, schoolRes, floorRes, roomRes]) => {
-          setLocationData((prevLocationData) =>
-            prevLocationData.map((location) => {
-              if (location.id === 1) {
-                return {
-                  ...location,
-                  options: districtRes.data,
-                  selectedOption: districtRes.selected,
-                };
-              }
-              if (location.id === 2) {
-                return {
-                  ...location,
-                  options: schoolRes.data,
-                  selectedOption: schoolRes.selected,
-                };
-              }
-              if (location.id === 3) {
-                return {
-                  ...location,
-                  options: floorRes.data,
-                  selectedOption: floorRes.selected,
-                };
-              }
-              if (location.id === 4) {
-                return {
-                  ...location,
-                  options: roomRes.data,
-                };
-              }
-              return location;
-            })
-          );
-        })
-        .catch((error) => {
-          console.log(error);
-        });
-    } else {
-      setLocationData((prevLocationData) =>
-        prevLocationData.map((location) => {
-          if (location.id === 3) {
-            return { ...location, selectedOption: selectedOption };
-          } else if (location.id === 4) {
-            return { ...location, options: [], selectedOption: [] };
-          }
-          return location;
-        })
-      );
-      fetchLocationData(variable, 4, "0,3", 3)
-        .then(({ data }) => {
-          setLocationData((prevLocationData) =>
-            prevLocationData.map((location) =>
-              location.id === 4 ? { ...location, options: data } : location
-            )
-          );
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-    }
-  };
-
-  const handleRoomClick = (selectedOption) => {
-    const variable = selectedOption.value;
-    setLocationData((prevLocationData) =>
-      prevLocationData.map((location) =>
-        location.id === 4
-          ? { ...location, selectedOption: [selectedOption] }
-          : location
-      )
-    );
-
-    if (locationData.find((loc) => loc.id === 1)?.options.length === 0) {
-      Promise.all([
-        fetchLocationData(variable, 1, "0,4", 1),
-        fetchLocationData(variable, 2, "0,4", 2),
-        fetchLocationData(variable, 3, "0,4", 3),
-        fetchLocationData(variable, 4, "0,4", 4),
-      ])
-        .then(([districtRes, schoolRes, floorRes, roomRes]) => {
-          setLocationData((prevLocationData) =>
-            prevLocationData.map((location) => {
-              if (location.id === 1) {
-                return {
-                  ...location,
-                  options: districtRes.data,
-                  selectedOption: districtRes.data[0],
-                };
-              }
-              if (location.id === 2) {
-                return {
-                  ...location,
-                  options: schoolRes.data,
-                  selectedOption: schoolRes.selected,
-                };
-              }
-              if (location.id === 3) {
-                return {
-                  ...location,
-                  options: floorRes.data,
-                  selectedOption: floorRes.selected,
-                };
-              }
-              if (location.id === 4) {
-                return {
-                  ...location,
-                  options: roomRes.data,
-                  selectedOption: roomRes.selected,
-                };
-              }
-              return location;
-            })
-          );
-        })
-        .catch((error) => {
-          console.log(error);
-        });
-    }
-  };
-
-  const handleSiteClick = (selectedOption) => {
-    const variable = selectedOption.value;
-
-    if (locationData.find((loc) => loc.id === 1)?.options.length === 0) {
-      Promise.all([
-        fetchLocationData(variable, 1, "0,2", 2, 1),
-        fetchLocationData(variable, 2, "0,2", 2, 5),
-        fetchLocationData(variable, 3, "0,2", 2, 6),
-      ])
-        .then(([districtRes, siteRes, siteAmenityRes]) => {
-          setLocationData((prevLocationData) =>
-            prevLocationData.map((location) => {
-              if (location.id === 1) {
-                return {
-                  ...location,
-                  options: districtRes.data,
-                  selectedOption: districtRes.data[0],
-                };
-              }
-              if (location.id === 5) {
-                return {
-                  ...location,
-                  options: siteRes.data,
-                  selectedOption: siteRes.selected,
-                };
-              }
-              if (location.id === 6) {
-                return {
-                  ...location,
-                  options: siteAmenityRes.data,
-                  selectedOption: [],
-                };
-              }
-              return location;
-            })
-          );
-        })
-        .catch((error) => {
-          console.error("Error fetching site or site amenities data:", error);
-        });
-    } else {
-      setLocationData((prevLocationData) =>
-        prevLocationData.map((location) => {
-          if (location.id === 5) {
-            return { ...location, selectedOption };
-          } else if (location.id === 6) {
-            return { ...location, options: [], selectedOption: [] };
-          }
-          return location;
-        })
-      );
-
-      axios
-        .post(`${baseURL}master/getLocation/`, {
-          label_id: "6",
-          loc_parentid: variable,
-        })
-        .then((response) => {
-          const siteAmenityData = response.data.DATA.map((e) => ({
-            id: e[0],
-            value: e[14],
-            label: e[16],
-          }));
-
-          setLocationData((prevLocationData) =>
-            prevLocationData.map((location) =>
-              location.id === 6
-                ? { ...location, options: siteAmenityData }
-                : location
-            )
-          );
-        })
-        .catch((error) => {
-          console.error("Error fetching site amenities:", error);
-        });
-    }
-  };
-
-  const handleSiteAmenityClick = (selectedOption) => {
-    const variable = selectedOption.value;
-
-    setLocationData((prevLocationData) =>
-      prevLocationData.map((location) =>
-        location.id === 6 ? { ...location, selectedOption } : location
-      )
-    );
-
-    if (locationData.find((loc) => loc.id === 1)?.options.length === 0) {
-      Promise.all([
-        fetchLocationData(variable, 1, "0,3", 3, 1),
-        fetchLocationData(variable, 2, "0,3", 3, 5),
-        fetchLocationData(variable, 3, "0,3", 3, 6),
-      ])
-        .then(([districtRes, siteRes, siteAmenityRes]) => {
-          setLocationData((prevLocationData) =>
-            prevLocationData.map((location) => {
-              if (location.id === 1) {
-                return {
-                  ...location,
-                  options: districtRes.data,
-                  selectedOption: districtRes.data[0],
-                };
-              }
-              if (location.id === 5) {
-                return {
-                  ...location,
-                  options: siteRes.data,
-                  selectedOption: siteRes.selected,
-                };
-              }
-              if (location.id === 6) {
-                return {
-                  ...location,
-                  options: siteAmenityRes.data,
-                  selectedOption: siteAmenityRes.selected,
-                };
-              }
-              return location;
-            })
-          );
-        })
-        .catch((error) => {
-          console.log(error);
-        });
-    }
-  };
-
-  const handleOptionSelect = (locationId, selectedOption) => {
-    switch (locationId) {
-      case 1: // District
-        break;
-      case 2: // School
-        handleSchoolClick(selectedOption);
-        break;
-      case 3: // Floor
-        handleFloorClick(selectedOption);
-        break;
-      case 4: // Room
-        handleRoomClick(selectedOption);
-        break;
-      case 5: // Site
-        handleSiteClick(selectedOption);
-        break;
-      case 6: // SiteAmenity
-        handleSiteAmenityClick(selectedOption);
-        break;
-      default:
-        setLocationData((prevLocationData) =>
-          prevLocationData.map((location) => {
-            if (location.id === locationId) {
-              return { ...location, selectedOption: selectedOption };
-            }
-            return location;
+      if (!isLastObject) {
+        const currentID = locationData[currentIndex + 1].id;
+        const range = `0,${currentIndex + 1}`;
+        fetchLocationData(
+          variable,
+          currentIndex + 2,
+          range,
+          currentIndex + 2,
+          currentID
+        )
+          .then((response) => {
+            console.log(response);
+            setLocationData((prevLocationData) =>
+              prevLocationData.map((location) =>
+                location.id === currentID
+                  ? {
+                      ...location,
+                      options: response.data,
+                      selectedOption: [],
+                    }
+                  : location
+              )
+            );
           })
-        );
-        break;
+          .catch((error) => {
+            console.error(
+              `Error fetching data for indoor location ${currentIndex + 1}:`,
+              error
+            );
+          });
+      }
     }
-  };
-
-  const handledefaltselect = () => {
-    setLocationData((prevLocationData) =>
-      prevLocationData.map((location) => {
-        if (location.id === 1) {
-          return {
-            ...location,
-            options: District,
-            selectedOption: District[0],
-          };
-        } else if (location.id === 2) {
-          return {
-            ...location,
-            options: School,
-            selectedOption: [],
-          };
-        } else if (location.id === 5) {
-          return {
-            ...location,
-            options: Site,
-            selectedOption: [],
-          };
-        } else {
-          return {
-            ...location,
-            options: [],
-            selectedOption: [],
-          };
-        }
-      })
-    );
   };
 
   const handelLocationSearchDropDown = (e) => {
@@ -1107,7 +780,7 @@ export default function RightDashboard() {
     switch (option) {
       case "0":
       case "1":
-        handledefaltselect();
+        intialdata();
         break;
 
       case "2":
@@ -1145,6 +818,15 @@ export default function RightDashboard() {
   };
 
   const fetchLocationDataDefault = (id, labelText, additionalParams = {}) => {
+    const loctype_kir =
+        selectedLocationType === "indoor"
+          ? 0
+          : selectedLocationType === "outdoor"
+          ? 1
+          : selectedLocationType === "equip"
+          ? 2
+          : 3;
+
     setLocationData((prevLocationData) =>
       prevLocationData.map((location) => ({
         ...location,
@@ -1158,7 +840,7 @@ export default function RightDashboard() {
         clientname: clientname,
         vlabel: id,
         owner: 1,
-        loctype_kir: 0,
+        loctype_kir: loctype_kir,
         label_text: labelText,
         is_DefLocation: 0,
         loctype: Loctype,
@@ -1198,7 +880,7 @@ export default function RightDashboard() {
     switch (option) {
       case "0":
       case "1":
-        handledefaltselect();
+        intialdata();
         break;
 
       case "2":
@@ -1216,7 +898,6 @@ export default function RightDashboard() {
       case "5":
         fetchLocationDataDefault(5, "Site", {
           vlabel: "2",
-          loctype_kir: "1",
           label_text: "Site",
           loc_name: data,
         });
@@ -1236,7 +917,7 @@ export default function RightDashboard() {
         break;
     }
   };
-
+  //423
   const fetchLocationData = async (
     variable,
     clabel,
@@ -1245,6 +926,7 @@ export default function RightDashboard() {
     label_id
   ) => {
     try {
+      const lblcount = locationData.length;
       const response = await axios.post(`${baseURL}schedule/LocationLookup/`, {
         clientname: clientname,
         h_value: h_value,
@@ -1253,9 +935,21 @@ export default function RightDashboard() {
         loctype: Loctype,
         labelid: label_id ? label_id : clabel.toString(),
         quickloc: quickloc,
-        lblcount: "4",
+        lblcount: lblcount,
         deflab: 0,
       });
+      const data1 = {
+        clientname: clientname,
+        h_value: h_value,
+        h_cvalue: variable,
+        clabel: clabel,
+        loctype: Loctype,
+        labelid: label_id ? label_id : clabel.toString(),
+        quickloc: quickloc,
+        lblcount: lblcount,
+        deflab: 0,
+      };
+      console.log(data1);
       const data = response.data.slice(2).map((e) => ({
         id: e.KEY,
         value: e.KEY,
@@ -1263,6 +957,9 @@ export default function RightDashboard() {
       }));
       const selectedKey = response.data[1].VALUE;
       const selected = data.find((item) => item.value === selectedKey);
+      console.log(response.data, "response");
+      console.log(data, "data");
+      console.log(selected, "selected");
       return { data, selected };
     } catch (error) {
       console.log(error);
