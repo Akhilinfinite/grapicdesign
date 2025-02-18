@@ -1,14 +1,21 @@
-// src/store/slices/sampleSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
 export const fetchDefaultValues = createAsyncThunk(
   "defaults/fetchDefaultValues",
-  async () => {
+  async (_, { getState }) => {
+    const clientname = getState().client.clientname;
+    const ownerID = getState().owner.ownerID;
+    
+    if (!clientname || ownerID === null) {
+      throw new Error("Client name or owner ID is missing");
+    }
+
     const response = await axios.post(
       "http://192.168.0.65:8500/rest/gvRestApi/master/getAppVariable/",
-      { clientname: "charlotte", owner_id: "1" }
+      { clientname: clientname, owner_id: String(ownerID) }
     );
+
     return response.data.DATA;
   }
 );
