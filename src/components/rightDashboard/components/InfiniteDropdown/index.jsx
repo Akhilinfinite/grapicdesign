@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import Select from 'react-select';
+import React, { useState, useEffect, useRef } from "react";
+import Select from "react-select";
 
 const InfiniteDropdown = ({ options, selectedValue, onChange }) => {
   const [visibleData, setVisibleData] = useState([]);
@@ -26,7 +26,8 @@ const InfiniteDropdown = ({ options, selectedValue, onChange }) => {
 
   const handleMenuScroll = (event) => {
     const menuList = event.target;
-    const bottom = menuList.scrollHeight - menuList.scrollTop === menuList.clientHeight;
+    const bottom =
+      menuList.scrollHeight - menuList.scrollTop === menuList.clientHeight;
 
     if (bottom) {
       scrollPositionRef.current = menuList.scrollTop;
@@ -43,14 +44,14 @@ const InfiniteDropdown = ({ options, selectedValue, onChange }) => {
   const customStyles = {
     menuList: (provided) => ({
       ...provided,
-      height: '200px',
-      overflowY: 'auto',
+      height: "200px",
+      overflowY: "auto",
     }),
   };
 
   const handleInputChange = (inputValue) => {
     if (inputValue) {
-      const newFilteredOptions = options.filter(option =>
+      const newFilteredOptions = options.filter((option) =>
         option.label.toLowerCase().includes(inputValue.toLowerCase())
       );
       setFilteredOptions(newFilteredOptions);
@@ -66,11 +67,14 @@ const InfiniteDropdown = ({ options, selectedValue, onChange }) => {
   return (
     <div className="dropdown">
       <Select
+        inputId="infiniteDropdown"
         options={visibleData}
         value={selectedValue}
         onChange={onChange}
         onInputChange={handleInputChange}
         styles={customStyles}
+        aria-live="polite"
+        aria-label="Infinite scrolling dropdown"
         components={{
           MenuList: (props) => (
             <div
@@ -80,7 +84,9 @@ const InfiniteDropdown = ({ options, selectedValue, onChange }) => {
                 props.innerRef(ref);
               }}
               onScroll={handleMenuScroll}
-              style={{ height: '200px', overflowY: 'auto' }}
+              style={{ height: "200px", overflowY: "auto" }}
+              role="listbox"
+              aria-label="Dropdown menu with infinite scrolling"
             ></div>
           ),
         }}

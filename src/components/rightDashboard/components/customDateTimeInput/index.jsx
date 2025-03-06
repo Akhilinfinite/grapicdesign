@@ -1,12 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
-import './index.scss';
+import React, { useState, useEffect, useRef } from "react";
+import "./index.scss";
 
 const CustomDateTimePicker = ({ value, onChange, interval }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(value ? new Date(value) : new Date());
-  const [hour, setHour] = useState('12');
-  const [minute, setMinute] = useState('00');
-  const [ampm, setAmpm] = useState('AM');
+  const [selectedDate, setSelectedDate] = useState(
+    value ? new Date(value) : new Date()
+  );
+  const [hour, setHour] = useState("12");
+  const [minute, setMinute] = useState("00");
+  const [ampm, setAmpm] = useState("AM");
   const pickerRef = useRef(null);
 
   useEffect(() => {
@@ -14,9 +16,9 @@ const CustomDateTimePicker = ({ value, onChange, interval }) => {
       const date = new Date(value);
       setSelectedDate(date);
       const hours = date.getHours();
-      setHour((hours % 12 || 12).toString().padStart(2, '0'));
-      setMinute(date.getMinutes().toString().padStart(2, '0'));
-      setAmpm(hours >= 12 ? 'PM' : 'AM');
+      setHour((hours % 12 || 12).toString().padStart(2, "0"));
+      setMinute(date.getMinutes().toString().padStart(2, "0"));
+      setAmpm(hours >= 12 ? "PM" : "AM");
     }
   }, [value]);
 
@@ -42,13 +44,13 @@ const CustomDateTimePicker = ({ value, onChange, interval }) => {
     let newMinute = minute;
     let newAmpm = ampm;
 
-    if (type === 'hour') {
+    if (type === "hour") {
       newHour = value;
       setHour(value);
-    } else if (type === 'minute') {
+    } else if (type === "minute") {
       newMinute = value;
       setMinute(value);
-    } else if (type === 'ampm') {
+    } else if (type === "ampm") {
       newAmpm = value;
       setAmpm(value);
     }
@@ -57,76 +59,62 @@ const CustomDateTimePicker = ({ value, onChange, interval }) => {
   };
 
   const handleDateTimeChange = (date, hour, minute, ampm) => {
-    const hours = ampm === 'AM' ? parseInt(hour) % 12 : (parseInt(hour) % 12) + 12;
+    const hours =
+      ampm === "AM" ? parseInt(hour) % 12 : (parseInt(hour) % 12) + 12;
     const newDate = new Date(date);
     newDate.setHours(hours);
     newDate.setMinutes(parseInt(minute));
     onChange(newDate.toISOString());
   };
 
-  const handleClear = () => {
-    const now = new Date();
-    setSelectedDate(now);
-    const currentHour = now.getHours() % 12 || 12;
-    const currentMinute = now.getMinutes().toString().padStart(2, '0');
-    const currentAmpm = now.getHours() >= 12 ? 'PM' : 'AM';
-
-    setHour(currentHour.toString());
-    setMinute(currentMinute);
-    setAmpm(currentAmpm);
-
-    handleDateTimeChange(now, currentHour.toString(), currentMinute, currentAmpm);
-  };
-
-  const handleToday = () => {
-    const now = new Date();
-    setSelectedDate(now);
-    const currentHour = now.getHours() % 12 || 12;
-    const currentMinute = now.getMinutes().toString().padStart(2, '0');
-    const currentAmpm = now.getHours() >= 12 ? 'PM' : 'AM';
-
-    setHour(currentHour.toString());
-    setMinute(currentMinute);
-    setAmpm(currentAmpm);
-
-    handleDateTimeChange(now, currentHour.toString(), currentMinute, currentAmpm);
-  };
-
-  const handleMonthChange = (e) => {
-    const newDate = new Date(selectedDate);
-    newDate.setMonth(e.target.value);
-    setSelectedDate(newDate);
-  };
-
-  const handleYearChange = (e) => {
-    const newDate = new Date(selectedDate);
-    newDate.setFullYear(e.target.value);
-    setSelectedDate(newDate);
-  };
-
   const renderCalendar = () => {
-    const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
-    const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
-    const daysInMonth = [];
-    for (let i = 1; i <= endOfMonth.getDate(); i++) {
-      daysInMonth.push(i);
-    }
-    const firstDayIndex = startOfMonth.getDay();
-    const weekdays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
-
-    const emptyDays = Array(firstDayIndex).fill(null);
+    const startOfMonth = new Date(
+      selectedDate.getFullYear(),
+      selectedDate.getMonth(),
+      1
+    );
+    const endOfMonth = new Date(
+      selectedDate.getFullYear(),
+      selectedDate.getMonth() + 1,
+      0
+    );
+    const weekdays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+    const emptyDays = Array(startOfMonth.getDay()).fill(null);
 
     return (
       <div className="calendar-container">
         <div className="calendar-header">
-          <select value={selectedDate.getMonth()} onChange={handleMonthChange}>
+          <label htmlFor="monthSelect" className="sr-only">
+            Select Month
+          </label>
+          <select
+            id="monthSelect"
+            value={selectedDate.getMonth()}
+            onChange={(e) =>
+              setSelectedDate(new Date(selectedDate.setMonth(e.target.value)))
+            }
+            aria-label="Select Month"
+          >
             {Array.from({ length: 12 }, (_, i) => (
               <option key={i} value={i}>
-                {new Date(0, i).toLocaleString('default', { month: 'long' })}
+                {new Date(0, i).toLocaleString("default", { month: "long" })}
               </option>
             ))}
           </select>
-          <select value={selectedDate.getFullYear()} onChange={handleYearChange}>
+
+          <label htmlFor="yearSelect" className="sr-only">
+            Select Year
+          </label>
+          <select
+            id="yearSelect"
+            value={selectedDate.getFullYear()}
+            onChange={(e) =>
+              setSelectedDate(
+                new Date(selectedDate.setFullYear(e.target.value))
+              )
+            }
+            aria-label="Select Year"
+          >
             {Array.from({ length: 100 }, (_, i) => (
               <option key={i} value={selectedDate.getFullYear() - 50 + i}>
                 {selectedDate.getFullYear() - 50 + i}
@@ -134,6 +122,7 @@ const CustomDateTimePicker = ({ value, onChange, interval }) => {
             ))}
           </select>
         </div>
+
         <div className="weekdays">
           {weekdays.map((day) => (
             <div key={day} className="weekday">
@@ -141,76 +130,104 @@ const CustomDateTimePicker = ({ value, onChange, interval }) => {
             </div>
           ))}
         </div>
+
         <div className="calendar-grid">
           {emptyDays.map((_, i) => (
             <div key={`empty-${i}`} className="calendar-day"></div>
           ))}
-          {daysInMonth.map((day) => (
-            <div
-              key={day}
-              className={`calendar-day ${
-                selectedDate.getDate() === day ? 'selected' : ''
-              } ${
-                new Date().getDate() === day &&
-                new Date().getMonth() === selectedDate.getMonth() &&
-                new Date().getFullYear() === selectedDate.getFullYear()
-                  ? 'today'
-                  : ''
-              }`}
-              onClick={() => handleDateClick(day)}
-            >
-              {day}
-            </div>
-          ))}
+          {Array.from({ length: endOfMonth.getDate() }, (_, i) => i + 1).map(
+            (day) => (
+              <button
+                key={day}
+                className={`calendar-day ${
+                  selectedDate.getDate() === day ? "selected" : ""
+                }`}
+                onClick={() => handleDateClick(day)}
+                aria-label={`Select ${day}`}
+              >
+                {day}
+              </button>
+            )
+          )}
         </div>
+
         <div className="calendar-buttons">
-          <button className="link-button" onClick={handleToday}>Today</button>
-          <button className="link-button" onClick={handleClear}>Clear</button>
+          <button
+            onClick={() => setSelectedDate(new Date())}
+            className="link-button"
+            aria-label="Select Today"
+          >
+            Today
+          </button>
+          <button
+            onClick={() => setSelectedDate(new Date())}
+            className="link-button"
+            aria-label="Clear Date Selection"
+          >
+            Clear
+          </button>
         </div>
       </div>
     );
   };
 
   const renderTime = () => {
-    const hours = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'));
-    const minutes = Array.from({ length: 60 }, (_, i) => (i % interval === 0 ? i.toString().padStart(2, '0') : null)).filter(Boolean);
-
     return (
       <div className="time-container">
-        <div className="time-header">
-          <select value={ampm} onChange={(e) => handleTimeChange('ampm', e.target.value)}>
-            <option value="AM">AM</option>
-            <option value="PM">PM</option>
-          </select>
-        </div>
+        <label htmlFor="ampmSelect" className="sr-only">
+          Select AM or PM
+        </label>
+        <select
+          id="ampmSelect"
+          value={ampm}
+          onChange={(e) => handleTimeChange("ampm", e.target.value)}
+          aria-label="Select AM or PM"
+        >
+          <option value="AM">AM</option>
+          <option value="PM">PM</option>
+        </select>
+
         <div className="time-body">
           <div className="time-section">
-            <div className="time-label">Hr</div>
-            <div className="time-list">
-              {hours.map((h) => (
-                <div
-                  key={h}
-                  className={`time-item ${h === hour ? 'selected' : ''}`}
-                  onClick={() => handleTimeChange('hour', h)}
-                >
+            <label htmlFor="hourSelect" className="sr-only">
+              Select Hour
+            </label>
+            <select
+              id="hourSelect"
+              value={hour}
+              onChange={(e) => handleTimeChange("hour", e.target.value)}
+              aria-label="Select Hour"
+            >
+              {Array.from({ length: 12 }, (_, i) =>
+                (i + 1).toString().padStart(2, "0")
+              ).map((h) => (
+                <option key={h} value={h}>
                   {h}
-                </div>
+                </option>
               ))}
-            </div>
+            </select>
           </div>
+
           <div className="time-section">
-            <div className="time-label">Mn</div>
-            <div className="time-list">
-              {minutes.map((m) => (
-                <div
-                  key={m}
-                  className={`time-item ${m === minute ? 'selected' : ''}`}
-                  onClick={() => handleTimeChange('minute', m)}
-                >
-                  {m} 
-                </div>
-              ))}
-            </div>
+            <label htmlFor="minuteSelect" className="sr-only">
+              Select Minute
+            </label>
+            <select
+              id="minuteSelect"
+              value={minute}
+              onChange={(e) => handleTimeChange("minute", e.target.value)}
+              aria-label="Select Minute"
+            >
+              {Array.from({ length: 60 }, (_, i) =>
+                i % interval === 0 ? i.toString().padStart(2, "0") : null
+              )
+                .filter(Boolean)
+                .map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+            </select>
           </div>
         </div>
       </div>
@@ -218,26 +235,34 @@ const CustomDateTimePicker = ({ value, onChange, interval }) => {
   };
 
   return (
-    <div className="custom-date-time-picker" ref={pickerRef} tabIndex={-1} onBlur={handleBlur}>
+    <div
+      className="custom-date-time-picker"
+      ref={pickerRef}
+      tabIndex={-1}
+      onBlur={handleBlur}
+    >
       <input
+        id="dateTimeInput"
         type="text"
         className="date-time-input"
-        value={selectedDate.toLocaleString('en-US', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
+        value={selectedDate.toLocaleString("en-US", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
           hour12: true,
         })}
         onClick={handleInputClick}
         readOnly
+        aria-label="Date and Time Picker"
       />
+
       {isOpen && (
         <div className="date-time-picker-popup">
           <div className="calendar-time-container">
-            <div className="calendar-part">{renderCalendar()}</div>
-            <div className="time-part">{renderTime()}</div>
+            {renderCalendar()}
+            {renderTime()}
           </div>
         </div>
       )}

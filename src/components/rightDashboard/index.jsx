@@ -26,22 +26,308 @@ import Up from "../../asserts/images/Icons/up_arrow.png";
 import InfiniteDropdown from "./components/InfiniteDropdown";
 import CustomDateTimePicker from "./components/customDateTimeInput";
 import { fetchDefaultValues } from "../../redux/slices/sampleSlice.js";
+import { fetchOwnerData, setownerID } from "../../redux/slices/ownerSlice";
 
 import { useSelector, useDispatch } from "react-redux";
+import CustomCalendar from "./components/custumCalender/index.jsx";
 
 export default function RightDashboard() {
+  const dispatch = useDispatch();
   const baseURL = "http://192.168.0.65:8500/rest/gvRestApi/";
+
+  const [Owners, setOwners] = useState([]);
+  const [OwnerID, setOwnerID] = useState();
+  const data = useSelector((state) => state.sample.data);
+  const loading = useSelector((state) => state.sample.loading);
   const clientname = useSelector((state) => state.client.clientname);
+  const owner = useSelector((state) => state.owner.owner);
+  const ownerID = useSelector((state) => state.owner.ownerID);
+  const ownerLoad = useSelector((state) => state.owner.loading);
+
+  useEffect(() => {
+    if (clientname) {
+      dispatch(fetchOwnerData());
+    }
+  }, [clientname, dispatch]);
+  const setDefaultData = (selectedOwner) => {
+    if (selectedOwner) {
+      const startDateTime = new Date(
+        `${new Date().toISOString().split("T")[0]}T${
+          selectedOwner.start.split(" ")[3]
+        }`
+      );
+      const endDateTime = new Date(
+        `${new Date().toISOString().split("T")[0]}T${
+          selectedOwner.end.split(" ")[3]
+        }`
+      );
+
+      setStartTime(startDateTime);
+      setEndTime(endDateTime);
+      setIntervalTime(selectedOwner.EVENTSLOTTIME);
+    }
+  };
+
+  useEffect(() => {
+    if (!ownerLoad && Array.isArray(owner) && owner.length > 0) {
+      setOwners(owner);
+      const selectedOwner = owner.find((o) => o.id === ownerID);
+      setDefaultData(selectedOwner);
+      setOwnerID(ownerID);
+      dispatch(fetchDefaultValues());
+    }
+  }, [owner, dispatch, ownerID, ownerLoad]);
+
+  useEffect(() => {
+    dispatch(fetchDefaultValues());
+  }, [dispatch]);
+  const handleOwnerChange = (selectedOption) => {
+    if (selectedOption.length > 0) {
+      dispatch(setownerID(selectedOption?.[0]?.id));
+    }
+  };
+
   const [isOpen1, setIsOpen1] = useState(true);
   const [isOpen2, setIsOpen2] = useState(true);
   const [isOpen3, setIsOpen3] = useState(true);
-  const [Owners, setOwners] = useState([]);
+
   const [Scheduler, setScheduler] = useState([]);
   const [SelectedScheduler, setSelectedScheduler] = useState([]);
   const [Customer, setCustomer] = useState([]);
   const [SelectedCustomer, setSelectedCustomer] = useState([]);
   const [Contact, setContact] = useState([]);
   const [SelectedContact, setSelectedContact] = useState([]);
+
+  const [radiobtn, setRadiobtn] = useState([]);
+
+  const [StartTime, setStartTime] = useState("");
+  const [EndTime, setEndTime] = useState("");
+  const [intervalTime, setIntervalTime] = useState();
+
+  useEffect(() => {
+    if (!loading && Array.isArray(data)) {
+      const labelData = [
+        {
+          id: 0,
+          value: "indoor",
+          label: "Indoor",
+          enable: "",
+        },
+        {
+          id: 1,
+          value: "outdoor",
+          label: "Outdoor",
+          enable: "",
+        },
+        {
+          id: 2,
+          value: "equip",
+          label: "Equip",
+          enable: "",
+        },
+        {
+          id: 3,
+          value: "people",
+          label: "People",
+          enable: "",
+        },
+      ];
+      const filteredData1 = data.map((e) => ({
+        CATEGORY: e[0],
+        DESCRIPTION: e[1],
+        OWNER_ID: e[2],
+        VARNAME: e[3],
+        VARVALUE: e[4],
+      }));
+      const filteredData = filteredData1.filter(
+        (item) =>
+          item.VARNAME.startsWith("disp_") && (item.VARVALUE === "Yes" || "No")
+      );
+      const optimisedData = filteredData.map((item, index) => ({
+        id: index + 1,
+        value: item.VARVALUE === "Yes" ? 1 : 0,
+        lable: item.VARNAME.replace("disp_", ""),
+      }));
+
+      labelData.forEach((labelItem) => {
+        const matchingItem = optimisedData.find(
+          (optItem) => optItem.lable === labelItem.value
+        );
+        if (matchingItem) {
+          labelItem.enable = matchingItem.value;
+        }
+      });
+      setRadiobtn(labelData);
+    }
+  }, [data, loading]);
+
+  //People
+
+  useEffect(() => {
+    const getScheduler = () => {
+      axios
+        .post(`${baseURL}schedule/getRequestors/`, {
+          clientname: clientname,
+          owner_id: String(OwnerID),
+        })
+        .then(function (response) {
+          const data = response.data.DATA.map((e) => ({
+            id: e[0],
+            value: e[0],
+            label: e[1],
+          }));
+          const own = Owners.filter((e) => e.id === OwnerID);
+          if (own.length > 0) {
+            const selected = data.filter((e) => e.id === own[0].Def_REQUESTOR);
+            setSelectedScheduler(selected);
+            setScheduler(data);
+          } else {
+            console.warn("No matching owner found!");
+          }
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+    };
+    if (OwnerID) {
+      getScheduler();
+    }
+  }, [clientname, Owners, OwnerID]);
+
+  //customer API Implementation
+  useEffect(() => {
+    const getCustomer = () => {
+      axios
+        .post(`${baseURL}schedule/getCustomers/`, {
+          clientname: clientname,
+          owner_id: String(OwnerID),
+        })
+        .then(function (response) {
+          const data = response.data.DATA.map((e) => ({
+            id: e[0],
+            value: e[0],
+            label: e[1],
+          }));
+          const own = Owners.filter((e) => e.id === OwnerID);
+          if (own.length > 0) {
+            const selected = data.filter((e) => e.id === own[0].Def_CUSTOMER);
+            setSelectedCustomer(selected);
+          } else {
+            console.warn("No matching owner found!");
+          }
+          setCustomer(data);
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+    };
+    if (OwnerID) {
+      getCustomer();
+    }
+  }, [clientname, OwnerID, Owners]);
+
+  const handleCustomerClick = (selectedOption) => {
+    const variable = selectedOption.value;
+    let data1 = Customer.filter((e) => e.value === variable);
+    if (!data1.length) {
+      data1 = SelectedCustomer.filter((e) => e.value === variable);
+    }
+    setSelectedCustomer([selectedOption]);
+    setSelectedContact([]);
+    axios
+      .post(`${baseURL}schedule/getContacts/`, {
+        clientname: clientname,
+        customer_id: data1[0].value,
+        CUSTOMER_STATUS: 1,
+      })
+      .then(function (response) {
+        const data = response.data.DATA.map((e) => ({
+          id: e[0],
+          value: e[0],
+          label: e[1],
+          primaryContact: e[2],
+        }));
+        const selected = data.filter((e) => e.primaryContact === 1);
+        setSelectedContact(selected);
+        setContact(data);
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  };
+  //API Contact
+  useEffect(() => {
+    const getContact = () => {
+      const own = Owners.filter((e) => e.id === OwnerID);
+      const customer_id = String(own[0].Def_CUSTOMER);
+      axios
+        .post(`${baseURL}schedule/getContacts/`, {
+          clientname: clientname,
+          owner_id: String(OwnerID),
+          customer_id: customer_id,
+        })
+        .then(function (response) {
+          const data = response.data.DATA.map((e) => ({
+            id: e[0],
+            value: e[0],
+            label: e[1],
+            primaryContact: e[2],
+          }));
+          const selected = data.filter((e) => e.primaryContact === 1);
+          setSelectedContact(selected);
+          setContact(data);
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+    };
+    if (OwnerID) {
+      getContact();
+    }
+  }, [clientname, Owners, OwnerID]);
+
+  const handleClickPeopleSearch = () => {
+    const option = document.getElementById("people_input_Select").value;
+    const data1 = document.getElementById("people_input_Search").value;
+    switch (option) {
+      case "1":
+        console.log(data1);
+        break;
+      case "2":
+        console.log(data1);
+        break;
+      case "3":
+        console.log(data1);
+        break;
+      case "4":
+        axios
+          .post(`${baseURL}schedule/getContacts/`, {
+            clientname: clientname,
+            search_filter: data1,
+          })
+          .then(function (response) {
+            const data = response.data.DATA.map((e) => ({
+              id: e[0],
+              value: e[0],
+              label: e[1],
+            }));
+            setContact(data);
+            setSelectedContact([]);
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleLocationTypeChange = (e) => {
+    const selectedValue = e.target.value;
+    setSelectedLocationType(selectedValue);
+    setLoctype("0,0,0,0,0,0,0");
+  };
 
   const [Loctype, setLoctype] = useState("0,0,0,0,0,0,0");
   const [Count, setCount] = useState(0);
@@ -81,9 +367,8 @@ export default function RightDashboard() {
 
           const res = await axios.post(`${baseURL}master/getAmenityList`, {
             clientname: clientname,
-            OWNER_ID: "1",
+            OWNER_ID: String(OwnerID),
           });
-          console.log(response, res, "responce triggered");
 
           const Amenitydata = [
             { id: "", value: "", label: "---Select---" },
@@ -140,7 +425,7 @@ export default function RightDashboard() {
       });
       setCount2(0);
     }
-  }, [Count2, clientname]);
+  }, [Count2, locationFilters, clientname, OwnerID]);
 
   const handleSelectChange = (selectedOption, levelId) => {
     setlocationFilters((prevFilters) => ({
@@ -277,297 +562,11 @@ export default function RightDashboard() {
   };
 
   useEffect(() => {
-    const resetLocationData = async () => {
-      try {
-        Promise.all([
-          fetchLocationData("00000000", locationData[0].id, "0,2", 2),
-          selectedLocationType === "outdoor"
-            ? fetchLocationData("10000000", 2, "0,2", 2, locationData[1].id)
-            : fetchLocationData("10000000", 2, "0,2", 2),
-        ])
-          .then(([firstObjRes, secondObjRes]) => {
-            setLocationData((prevLocationData) =>
-              prevLocationData.map((location, index) => {
-                if (index === 0) {
-                  return {
-                    ...location,
-                    options: firstObjRes.data,
-                    selectedOption: firstObjRes.data[0],
-                  };
-                }
-                if (index === 1) {
-                  return {
-                    ...location,
-                    options: secondObjRes.data,
-                    selectedOption: [],
-                  };
-                }
-                return { ...location, options: [], selectedOption: null };
-              })
-            );
-          })
-          .catch((error) => {
-            console.error("Error in Promise.all:", error);
-          });
-      } catch (error) {
-        console.error("Error resetting location data:", error);
-      }
-    };
     if (Loctype && Count === 1) {
-      resetLocationData();
+      intialdata();
+      setCount(0);
     }
-  }, [Loctype, Count, selectedLocationType]);
-
-  const [radiobtn, setRadiobtn] = useState([]);
-  const dispatch = useDispatch();
-  const data = useSelector((state) => state.sample.data);
-  const loading = useSelector((state) => state.sample.loading);
-
-  const [StartTime, setStartTime] = useState("");
-  const [EndTime, setEndTime] = useState("");
-  const [intervalTime, setIntervalTime] = useState();
-
-  useEffect(() => {
-    dispatch(fetchDefaultValues());
-  }, [dispatch]);
-
-  useEffect(() => {
-    if (!loading && Array.isArray(data)) {
-      const labelData = [
-        {
-          id: 0,
-          value: "indoor",
-          label: "Indoor",
-          enable: "",
-        },
-        {
-          id: 1,
-          value: "outdoor",
-          label: "Outdoor",
-          enable: "",
-        },
-        {
-          id: 2,
-          value: "equip",
-          label: "Equip",
-          enable: "",
-        },
-        {
-          id: 3,
-          value: "people",
-          label: "People",
-          enable: "",
-        },
-      ];
-      const filteredData1 = data.map((e) => ({
-        CATEGORY: e[0],
-        DESCRIPTION: e[1],
-        OWNER_ID: e[2],
-        VARNAME: e[3],
-        VARVALUE: e[4],
-      }));
-      const filteredData = filteredData1.filter(
-        (item) =>
-          item.VARNAME.startsWith("disp_") && (item.VARVALUE === "Yes" || "No")
-      );
-      const optimisedData = filteredData.map((item, index) => ({
-        id: index + 1,
-        value: item.VARVALUE === "Yes" ? 1 : 0,
-        lable: item.VARNAME.replace("disp_", ""),
-      }));
-
-      labelData.forEach((labelItem) => {
-        const matchingItem = optimisedData.find(
-          (optItem) => optItem.lable === labelItem.value
-        );
-        if (matchingItem) {
-          labelItem.enable = matchingItem.value;
-        }
-      });
-      setRadiobtn(labelData);
-    }
-  }, [data, loading]);
-
-  //API calls
-  //People
-
-  useEffect(() => {
-    const getOwner = () => {
-      axios
-        .post(`${baseURL}schedule/getOwners/`, { clientname: clientname })
-        .then(function (response) {
-          const data = response.data.DATA.map((e) => ({
-            id: e[33],
-            value: e[33],
-            label: e[16],
-            end: e[19],
-            start: e[24],
-            EVENTSLOTTIME: e[26],
-          }));
-          setOwners(data);
-          const startDateTime = new Date(
-            `${new Date().toISOString().split("T")[0]}T${
-              data[0].start.split(" ")[3]
-            }`
-          );
-          const endDateTime = new Date(
-            `${new Date().toISOString().split("T")[0]}T${
-              data[0].end.split(" ")[3]
-            }`
-          );
-
-          setStartTime(startDateTime);
-          setEndTime(endDateTime);
-          setIntervalTime(data[0].EVENTSLOTTIME);
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-    };
-    getOwner();
-  }, [clientname]);
-  useEffect(() => {
-    const getScheduler = () => {
-      axios
-        .post(`${baseURL}schedule/getRequestors/`, { clientname: clientname })
-        .then(function (response) {
-          const data = response.data.DATA.map((e) => ({
-            id: e[0],
-            value: e[0],
-            label: e[1],
-          }));
-          const selected = data.filter((e) => e.id === 2);
-          setSelectedScheduler(selected);
-          const updatedData = data.filter((e) => e.id !== 2);
-          setScheduler(updatedData);
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-    };
-    getScheduler();
-  }, [clientname]);
-
-  //customer API Implementation
-  useEffect(() => {
-    const getCustomer = () => {
-      axios
-        .post(`${baseURL}schedule/getCustomers/`, { clientname: clientname })
-        .then(function (response) {
-          const data = response.data.DATA.map((e) => ({
-            id: e[0],
-            value: e[0],
-            label: e[1],
-          }));
-          const selected = data.filter((e) => e.id === 22);
-          setSelectedCustomer(selected);
-          setCustomer(data);
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-    };
-    getCustomer();
-  }, [clientname]);
-
-  const handleCustomerClick = (selectedOption) => {
-    const variable = selectedOption.value;
-    let data1 = Customer.filter((e) => e.value === variable);
-    if (!data1.length) {
-      data1 = SelectedCustomer.filter((e) => e.value === variable);
-    }
-    setSelectedCustomer([selectedOption]);
-    setSelectedContact([]);
-    axios
-      .post(`${baseURL}schedule/getContacts/`, {
-        clientname: clientname,
-        customer_id: data1[0].value,
-        CUSTOMER_STATUS: 1,
-      })
-      .then(function (response) {
-        const data = response.data.DATA.map((e) => ({
-          id: e[0],
-          value: e[0],
-          label: e[1],
-          primaryContact: e[2],
-        }));
-        const selected = data.filter((e) => e.primaryContact === 1);
-        setSelectedContact(selected);
-        setContact(data);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
-  };
-  //API Contact
-  useEffect(() => {
-    const getContact = () => {
-      axios
-        .post(`${baseURL}schedule/getContacts/`, {
-          clientname: clientname,
-          customer_id: 22,
-          CUSTOMER_STATUS: 1,
-        })
-        .then(function (response) {
-          const data = response.data.DATA.map((e) => ({
-            id: e[0],
-            value: e[0],
-            label: e[1],
-            primaryContact: e[2],
-          }));
-          const selected = data.filter((e) => e.primaryContact === 1);
-          setSelectedContact(selected);
-          setContact(data);
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-    };
-    getContact();
-  }, [clientname]);
-
-  const handleClickPeopleSearch = () => {
-    const option = document.getElementById("people_input_Select").value;
-    const data1 = document.getElementById("people_input_Search").value;
-    switch (option) {
-      case "1":
-        console.log(data1);
-        break;
-      case "2":
-        console.log(data1);
-        break;
-      case "3":
-        console.log(data1);
-        break;
-      case "4":
-        axios
-          .post(`${baseURL}schedule/getContacts/`, {
-            clientname: clientname,
-            search_filter: data1,
-          })
-          .then(function (response) {
-            const data = response.data.DATA.map((e) => ({
-              id: e[0],
-              value: e[0],
-              label: e[1],
-            }));
-            setContact(data);
-            setSelectedContact([]);
-          })
-          .catch(function (error) {
-            console.log(error);
-          });
-        break;
-      default:
-        break;
-    }
-  };
-
-  const handleLocationTypeChange = (e) => {
-    const selectedValue = e.target.value;
-    setSelectedLocationType(selectedValue);
-    setLoctype("0,0,0,0,0,0,0");
-  };
+  }, [Loctype, Count, selectedLocationType, locationData]);
 
   //Location
   //420
@@ -585,7 +584,7 @@ export default function RightDashboard() {
       axios
         .post("http://192.168.0.65:8500/rest/gvRestApi/schedule/getLabels/", {
           clientname: clientname,
-          owner_id: "1",
+          owner_id: String(OwnerID),
           loctype_kir: loctype_kir,
         })
         .then((response) => {
@@ -596,12 +595,14 @@ export default function RightDashboard() {
             selectedOption: null,
             dropdownSelected: false,
           }));
+
           const data1 = response.data.DATA.map((e) => ({
             id: e[0],
             label: e[1],
             options: [],
             selectedValue: [],
           }));
+
           setLocationData(data);
           setlocationFilters((prevFilters) => ({
             ...prevFilters,
@@ -616,40 +617,59 @@ export default function RightDashboard() {
     };
 
     fetchLocationData();
-  }, [selectedLocationType, clientname]);
+  }, [selectedLocationType, clientname, OwnerID]);
   //421
-  const intialdata = () => {
+  const intialdata = async () => {
     if (locationData && locationData.length >= 2) {
-      Promise.all([
-        fetchLocationData("00000000", locationData[0].id, "0,2", 2),
-        selectedLocationType === "outdoor"
-          ? fetchLocationData("10000000", 2, "0,2", 2, locationData[1].id)
-          : fetchLocationData("10000000", 2, "0,2", 2),
-      ])
-        .then(([firstObjRes, secondObjRes]) => {
-          setLocationData((prevLocationData) =>
-            prevLocationData.map((location, index) => {
-              if (index === 0) {
-                return {
-                  ...location,
-                  options: firstObjRes.data,
-                  selectedOption: firstObjRes.data[0],
-                };
-              }
-              if (index === 1) {
-                return {
-                  ...location,
-                  options: secondObjRes.data,
-                  selectedOption: [],
-                };
-              }
-              return location;
-            })
-          );
+      const firstObjRes = await fetchLocationData(
+        "00000000",
+        1,
+        "0,1",
+        1,
+        locationData[0].id
+      );
+
+      const selectedValueId =
+        firstObjRes?.data?.length > 0 ? firstObjRes.data[0].id : null;
+
+      if (!selectedValueId) {
+        console.warn("No valid selected value ID found, skipping second call");
+        return;
+      }
+      const secondObjRes = await fetchLocationData(
+        String(selectedValueId),
+        2,
+        "0,2",
+        2,
+        locationData[1].id
+      );
+      setLocationData((prevLocationData) =>
+        prevLocationData.map((location, index) => {
+          if (index === 0) {
+            return {
+              ...location,
+              options: firstObjRes.data,
+              selectedOption:
+                firstObjRes.data.length > 0 ? firstObjRes.data[0] : null,
+            };
+          }
+          if (index === 1) {
+            return {
+              ...location,
+              options: secondObjRes.data,
+              selectedOption: [],
+            };
+          }
+          if (index !== 1 && index !== 0) {
+            return {
+              ...location,
+              options: [],
+              selectedOption: null,
+            };
+          }
+          return { ...location };
         })
-        .catch((error) => {
-          console.error("Error in Promise.all:", error);
-        });
+      );
     }
   };
   useEffect(() => {
@@ -663,6 +683,7 @@ export default function RightDashboard() {
   const handleOptionSelect = (locationId, selectedOption) => {
     const variable = selectedOption.value;
     const locationOne = locationData.find((loc) => loc.id === 1);
+
     if (
       !locationOne ||
       !locationOne.options ||
@@ -672,6 +693,24 @@ export default function RightDashboard() {
         (loc) => loc.id === locationId
       );
       if (currentIndex === -1) return;
+      setLocationData((prevLocationData) =>
+        prevLocationData.map((location, index) => {
+          if (location.id === locationId) {
+            return {
+              ...location,
+              selectedOption: [selectedOption], // Set selected option for the current location
+            };
+          } else if (index > currentIndex) {
+            return {
+              ...location,
+              options: [], // Clear options for all locations after the current selection
+              selectedOption: [], // Clear selected options for all locations after the current selection
+            };
+          }
+          return location;
+        })
+      );
+
       const objectsToFetch = locationData.slice(0, currentIndex + 2);
       const fetchPromises = objectsToFetch.map((location, index) => {
         const range = `0,${currentIndex + 1}`;
@@ -684,7 +723,6 @@ export default function RightDashboard() {
         );
       });
 
-      // Handle API responses
       Promise.all(fetchPromises)
         .then((responses) => {
           setLocationData((prevLocationData) =>
@@ -711,7 +749,8 @@ export default function RightDashboard() {
       const currentIndex = locationData.findIndex(
         (loc) => loc.id === locationId
       );
-      const isLastObject = currentIndex + 1 === locationData.length;
+      if (currentIndex === -1) return;
+
       setLocationData((prevLocationData) =>
         prevLocationData.map((location, index) => {
           if (location.id === locationId) {
@@ -719,36 +758,30 @@ export default function RightDashboard() {
               ...location,
               selectedOption: [selectedOption],
             };
-          } else if (index > locationId - 1) {
-            return {
-              ...location,
-              options: [],
-              selectedOption: [],
-            };
           }
           return location;
         })
       );
 
-      if (!isLastObject) {
-        const currentID = locationData[currentIndex + 1].id;
+      if (currentIndex + 1 < locationData.length) {
+        const nextLocationId = locationData[currentIndex + 1].id;
         const range = `0,${currentIndex + 1}`;
+
         fetchLocationData(
           variable,
           currentIndex + 2,
           range,
           currentIndex + 2,
-          currentID
+          nextLocationId
         )
           .then((response) => {
-            console.log(response);
             setLocationData((prevLocationData) =>
               prevLocationData.map((location) =>
-                location.id === currentID
+                location.id === nextLocationId
                   ? {
                       ...location,
                       options: response.data,
-                      selectedOption: [],
+                      selectedOption: [], // Ensure selected option is empty
                     }
                   : location
               )
@@ -756,7 +789,7 @@ export default function RightDashboard() {
           })
           .catch((error) => {
             console.error(
-              `Error fetching data for indoor location ${currentIndex + 1}:`,
+              `Error fetching data for location ${currentIndex + 1}:`,
               error
             );
           });
@@ -777,55 +810,40 @@ export default function RightDashboard() {
   };
 
   const handleLocationOption = (option) => {
-    switch (option) {
-      case "0":
-      case "1":
-        intialdata();
-        break;
-
-      case "2":
-        fetchLocationDataDefault(2, "School");
-        break;
-
-      case "3":
-        fetchLocationDataDefault(3, "Floor");
-        break;
-
-      case "4":
-        fetchLocationDataDefault(4, "Room");
-        break;
-
-      case "5":
-        fetchLocationDataDefault(5, "Site", {
-          vlabel: "2",
-          loctype_kir: "1",
-          label_text: "Site",
-        });
-        break;
-
-      case "6":
-        fetchLocationDataDefault(6, "Site Amenity", {
-          vlabel: "3",
-          loctype_kir: "1",
-          label_text: "Site Amenity",
-        });
-        break;
-
-      default:
-        console.warn("Invalid option:", option);
-        break;
+    setLocationData((prevLocationData) =>
+      prevLocationData.map((location) => ({
+        ...location,
+        options: [],
+        selectedOption: null,
+      }))
+    );
+    if (option === "0" || option === "1") {
+      intialdata();
+    } else {
+      const selectElement = document.getElementById("location_input_Select");
+      const optionId = selectElement.value;
+      const index = locationData.findIndex(
+        (loc) => loc.id === Number(optionId)
+      );
+      const vlabel = index + 1;
+      const label = selectElement.options[selectElement.selectedIndex].text;
+      fetchLocationDataDefault(vlabel, label);
     }
   };
 
-  const fetchLocationDataDefault = (id, labelText, additionalParams = {}) => {
+  const fetchLocationDataDefault = (
+    vlabel,
+    labelText,
+    additionalParams = {}
+  ) => {
     const loctype_kir =
-        selectedLocationType === "indoor"
-          ? 0
-          : selectedLocationType === "outdoor"
-          ? 1
-          : selectedLocationType === "equip"
-          ? 2
-          : 3;
+      selectedLocationType === "indoor"
+        ? 0
+        : selectedLocationType === "outdoor"
+        ? 1
+        : selectedLocationType === "equip"
+        ? 2
+        : 3;
 
     setLocationData((prevLocationData) =>
       prevLocationData.map((location) => ({
@@ -838,8 +856,8 @@ export default function RightDashboard() {
     axios
       .post(`${baseURL}schedule/quickLocationLookup/`, {
         clientname: clientname,
-        vlabel: id,
-        owner: 1,
+        vlabel: vlabel,
+        owner: String(OwnerID),
         loctype_kir: loctype_kir,
         label_text: labelText,
         is_DefLocation: 0,
@@ -856,6 +874,7 @@ export default function RightDashboard() {
           value: e.KEY,
           label: e.VALUE,
         }));
+        const id = locationData[vlabel - 1].id;
         setLocationData((prevLocationData) =>
           prevLocationData.map((location) =>
             location.id === id
@@ -870,51 +889,24 @@ export default function RightDashboard() {
   const handleClickLocationSearch = () => {
     const option = document.getElementById("location_input_Select").value;
     const data = document.getElementById("location_input_Search").value;
-    // document.getElementById("location_input_Search").value = "";
     setLocationData((prevLocationData) =>
       prevLocationData.map((location) => ({
         ...location,
-        dropdownSelected: location.id.toString() === option,
+        options: [],
+        selectedOption: null,
       }))
     );
-    switch (option) {
-      case "0":
-      case "1":
-        intialdata();
-        break;
-
-      case "2":
-        fetchLocationDataDefault(2, "School", { loc_name: data });
-        break;
-
-      case "3":
-        fetchLocationDataDefault(3, "Floor", { loc_name: data });
-        break;
-
-      case "4":
-        fetchLocationDataDefault(4, "Room", { loc_name: data });
-        break;
-
-      case "5":
-        fetchLocationDataDefault(5, "Site", {
-          vlabel: "2",
-          label_text: "Site",
-          loc_name: data,
-        });
-        break;
-
-      case "6":
-        fetchLocationDataDefault(6, "Site Amenity", {
-          vlabel: "3",
-          loctype_kir: "1",
-          label_text: "Site Amenity",
-          loc_name: data,
-        });
-        break;
-
-      default:
-        console.warn("Invalid option:", option);
-        break;
+    if (option === "0" || option === "1") {
+      intialdata();
+    } else {
+      const selectElement = document.getElementById("location_input_Select");
+      const optionId = selectElement.value;
+      const index = locationData.findIndex(
+        (loc) => loc.id === Number(optionId)
+      );
+      const vlabel = index + 1;
+      const label = selectElement.options[selectElement.selectedIndex].text;
+      fetchLocationDataDefault(vlabel, label, { loc_name: data });
     }
   };
   //423
@@ -938,18 +930,6 @@ export default function RightDashboard() {
         lblcount: lblcount,
         deflab: 0,
       });
-      const data1 = {
-        clientname: clientname,
-        h_value: h_value,
-        h_cvalue: variable,
-        clabel: clabel,
-        loctype: Loctype,
-        labelid: label_id ? label_id : clabel.toString(),
-        quickloc: quickloc,
-        lblcount: lblcount,
-        deflab: 0,
-      };
-      console.log(data1);
       const data = response.data.slice(2).map((e) => ({
         id: e.KEY,
         value: e.KEY,
@@ -957,9 +937,6 @@ export default function RightDashboard() {
       }));
       const selectedKey = response.data[1].VALUE;
       const selected = data.find((item) => item.value === selectedKey);
-      console.log(response.data, "response");
-      console.log(data, "data");
-      console.log(selected, "selected");
       return { data, selected };
     } catch (error) {
       console.log(error);
@@ -981,39 +958,47 @@ export default function RightDashboard() {
     useState(false);
   const [intervalType, setIntervalType] = useState("");
   const [intervalState, setIntervalState] = useState({
-    // Common properties
     intervalType: "",
     repeatEvery: "",
     endDate: "",
-
-    // Weekly modal specific
     weeklyOnDay: "",
     weeklyOnTheOccurrence: "",
+    selectedDays: [],
     weeklyOnTheDay: "",
-
-    // Monthly modal specific
     monthlyOnDay: "",
     monthlyOccurrence: "",
     monthlyWeekDay: "",
-
-    // Recurring modal specific
     recurringInterval: "Day(s)",
-    recurringDaysSelected: [],
+    recurringDaysSelected: [], // <-- This will store the selected dates
   });
+
+  // Function to update selected dates
+  const updateSelectedDates = (newDates) => {
+    setIntervalState((prevState) => ({
+      ...prevState,
+      recurringDaysSelected: newDates, // Update selected dates in the state
+    }));
+  };
+
+  // Function to clear selected dates
+  const handleClearDates = () => {
+    setIntervalState((prevState) => ({
+      ...prevState,
+      recurringDaysSelected: [],
+    }));
+  };
 
   const [selectedIntervalState, setSelectedIntervalState] = useState({
     ...intervalState,
   });
   const handleSave = () => {
     setSelectedIntervalState({ ...intervalState });
-    console.log("Saved State:", selectedIntervalState);
 
     setIntervalTypeModalVisible(false);
   };
 
   const handleClose = () => {
     setIntervalState({ ...selectedIntervalState });
-    console.log("State reverted to saved values:", selectedIntervalState);
     setIntervalTypeModalVisible(false);
   };
 
@@ -1169,6 +1154,7 @@ export default function RightDashboard() {
                               <select
                                 name="intervalType"
                                 className="custom-select"
+                                aria-label="interval Type"
                                 onChange={handleIntervalTypeChange}
                               >
                                 <option value="">select value</option>
@@ -1177,7 +1163,6 @@ export default function RightDashboard() {
                                 <option value="Recurring">Recurring</option>
                               </select>
                             </div>
-                            {/* {intervalType !== "" && ( */}
                             <div onClick={handlePopUpOpen}>
                               <img
                                 src={Edit}
@@ -1186,8 +1171,6 @@ export default function RightDashboard() {
                                 height={35}
                               />
                             </div>
-                            {/* )} */}
-
                             {/* Weekly Interval Modal */}
                             {intervalType === "Weekly" && (
                               <Modal
@@ -1203,15 +1186,21 @@ export default function RightDashboard() {
                                 </Modal.Header>
                                 <Modal.Body>
                                   <div className="row intervalType-row1">
-                                    <div className="col-sm-6 mb-2">
-                                      <label className="mr-2">
-                                        Repeat every
-                                      </label>
+                                    <div
+                                      className="col-sm-10 mb-2"
+                                      style={{
+                                        display: "flex",
+                                        justifyContent: "space-evenly",
+                                        alignItems: "center",
+                                      }}
+                                    >
+                                      <label className="mr-2">Every</label>
                                       <input
                                         type="number"
                                         className="form-control repeat-every-value"
+                                        aria-label="every week"
                                         style={{
-                                          width: "30%",
+                                          width: "20%",
                                           display: "inline-block",
                                           marginLeft: "5px",
                                         }}
@@ -1219,130 +1208,59 @@ export default function RightDashboard() {
                                         value={intervalState.repeatEvery}
                                         onChange={handleInputChange}
                                       />
-                                    </div>
-                                    <div className="col-sm-6">
-                                      <div className="dropdown-wrapper">
-                                        <select
-                                          name="intervalType"
-                                          className="custom-select"
-                                          value={intervalState.intervalType}
-                                          onChange={handleInputChange}
-                                        >
-                                          <option value="">select value</option>
-                                          <option value="Weekly">weekly</option>
-                                          <option value="Monthly">
-                                            Monthly
-                                          </option>
-                                          <option value="Recurring">
-                                            Recurring
-                                          </option>
-                                        </select>
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  <div className="row intervalType-row2 mt-3 one">
-                                    <div className="col-sm-3"></div>
-                                    <div className="col-sm-6">
-                                      <div className="d-flex align-items-center justify-content-center">
-                                        <input
-                                          type="radio"
-                                          className="onday-radio"
-                                          style={{
-                                            height: "20px",
-                                            width: "20px",
-                                          }}
-                                          name="onDayRadio"
-                                          checked={
-                                            intervalState.onDayRadio === true
-                                          }
-                                          onChange={(e) =>
-                                            handleInputChange({
-                                              target: {
-                                                name: "onDayRadio",
-                                                value: true,
-                                              },
-                                            })
-                                          }
-                                        />
-                                        <label className="onDay-section">
-                                          On Day
-                                        </label>
-                                        <input
-                                          type="number"
-                                          className="form-control onday-value"
-                                          style={{
-                                            width: "30%",
-                                            display: "inline-block",
-                                            marginRight: "10px",
-                                          }}
-                                          name="weeklyOnDay"
-                                          value={intervalState.weeklyOnDay}
-                                          onChange={handleInputChange}
-                                        />
-                                      </div>
-                                    </div>
-                                    <div className="col-sm-3"></div>
-                                  </div>
-
-                                  <div className="row intervalType-row3 mt-3">
-                                    <div className="col-sm-4 mb-2 intervalType-row3-col1">
+                                      <span className="ml-2">Weeks for</span>
                                       <input
-                                        type="radio"
-                                        className="onday-radio"
+                                        type="number"
+                                        className="form-control repeat-every-value"
+                                        aria-label=" weeks"
                                         style={{
-                                          height: "20px",
-                                          width: "20px",
+                                          width: "20%",
+                                          display: "inline-block",
+                                          marginLeft: "5px",
                                         }}
-                                        name="onTheRadio"
-                                        checked={
-                                          intervalState.onTheRadio === true
-                                        }
-                                        onChange={(e) =>
-                                          handleInputChange({
-                                            target: {
-                                              name: "onTheRadio",
-                                              value: true,
-                                            },
-                                          })
-                                        }
+                                        name="repeatDuration"
+                                        value={intervalState.repeatDuration}
+                                        onChange={handleInputChange}
                                       />
-                                      <label className="ml-2">On the</label>
+                                      <span className="ml-2">Weeks</span>
                                     </div>
-                                    <div className="col-sm-4 mb-2">
-                                      <div className="dropdown-wrapper">
-                                        <select
-                                          name="weeklyOnTheOccurrence"
-                                          className="custom-select"
-                                          value={
-                                            intervalState.weeklyOnTheOccurrence
-                                          }
-                                          onChange={handleInputChange}
-                                        >
-                                          <option value="">select value</option>
-                                          <option value="First">First</option>
-                                          <option value="Second">Second</option>
-                                          <option value="Third">Third</option>
-                                        </select>
-                                      </div>
-                                    </div>
-                                    <div className="col-sm-4 mb-2">
-                                      <div className="dropdown-wrapper">
-                                        <select
-                                          name="weeklyOnTheDay"
-                                          className="custom-select"
-                                          value={intervalState.weeklyOnTheDay}
-                                          onChange={handleInputChange}
-                                        >
-                                          <option value="">select value</option>
-                                          <option value="Monday">Monday</option>
-                                          <option value="Tuesday">
-                                            Tuesday
-                                          </option>
-                                          <option value="Wednesday">
-                                            Wednesday
-                                          </option>
-                                        </select>
+                                  </div>
+
+                                  <div className="row intervalType-row2 mt-3 three">
+                                    <div className="col-sm-12">
+                                      <div className="d-flex justify-content-between">
+                                        {[
+                                          "Monday",
+                                          "Tuesday",
+                                          "Wednesday",
+                                          "Thursday",
+                                          "Friday",
+                                          "Saturday",
+                                          "Sunday",
+                                        ].map((day) => (
+                                          <div
+                                            key={day}
+                                            className="custom-control custom-checkbox"
+                                          >
+                                            <input
+                                              type="checkbox"
+                                              className="custom-control-input"
+                                              aria-label="calender"
+                                              id={`check${day}`}
+                                              name={day}
+                                              checked={intervalState.recurringDaysSelected.includes(
+                                                day
+                                              )}
+                                              onChange={handleInputChange}
+                                            />
+                                            <label
+                                              className="custom-control-label"
+                                              htmlFor={`check${day}`}
+                                            >
+                                              {day}
+                                            </label>
+                                          </div>
+                                        ))}
                                       </div>
                                     </div>
                                   </div>
@@ -1354,6 +1272,7 @@ export default function RightDashboard() {
                                         type="datetime-local"
                                         name="endDate"
                                         className="form-control time"
+                                        aria-label="end date "
                                         style={{
                                           width: "70%",
                                           display: "inline-block",
@@ -1395,7 +1314,6 @@ export default function RightDashboard() {
                                 </Modal.Footer>
                               </Modal>
                             )}
-
                             {/* Monthly Interval Modal */}
                             {intervalType === "Monthly" && (
                               <Modal
@@ -1425,6 +1343,7 @@ export default function RightDashboard() {
                                       <input
                                         type="number"
                                         className="form-control repeat-every-value"
+                                        aria-label="Repeat every"
                                         style={{
                                           width: "30%",
                                           display: "inline-block",
@@ -1453,6 +1372,7 @@ export default function RightDashboard() {
                                         type="radio"
                                         name="monthlyOption"
                                         className="onday-radio"
+                                        aria-label="months"
                                         style={{
                                           height: "20px",
                                           width: "20px",
@@ -1474,6 +1394,7 @@ export default function RightDashboard() {
                                       <input
                                         type="number"
                                         className="form-control onday-value"
+                                        aria-label="days"
                                         style={{
                                           width: "30%",
                                           display: "inline-block",
@@ -1496,6 +1417,7 @@ export default function RightDashboard() {
                                         type="radio"
                                         name="monthlyOption"
                                         className="onday-radio"
+                                        aria-label="monthlyOption"
                                         style={{
                                           height: "20px",
                                           width: "20px",
@@ -1530,6 +1452,7 @@ export default function RightDashboard() {
                                         <select
                                           name="monthlyOccurrence"
                                           className="custom-select mb-2"
+                                          aria-label="monthlyOccurrence"
                                           style={{ marginRight: "5px" }}
                                           value={
                                             intervalState.monthlyOccurrence
@@ -1546,6 +1469,7 @@ export default function RightDashboard() {
                                         <select
                                           name="monthlyWeekday"
                                           className="custom-select"
+                                          aria-label="monthlyWeekday"
                                           value={intervalState.monthlyWeekday}
                                           onChange={handleInputChange}
                                         >
@@ -1577,6 +1501,7 @@ export default function RightDashboard() {
                                         type="datetime-local"
                                         name="monthlyEndDate"
                                         className="form-control time"
+                                        aria-label="monthlyEndDate"
                                         style={{
                                           width: "70%",
                                           display: "inline-block",
@@ -1618,7 +1543,6 @@ export default function RightDashboard() {
                                 </Modal.Footer>
                               </Modal>
                             )}
-
                             {/* Recurring Interval Modal */}
                             {intervalType === "Recurring" && (
                               <Modal
@@ -1632,130 +1556,98 @@ export default function RightDashboard() {
                                     Recurring Interval Type
                                   </Modal.Title>
                                 </Modal.Header>
-                                <Modal.Body>
-                                  <div className="row intervalType-row1">
-                                    <div className="col-sm-6 mb-2">
-                                      <label className="mr-2">
-                                        Repeat every
-                                      </label>
-                                      <input
-                                        type="number"
-                                        name="repeatEvery"
-                                        value={intervalState.repeatEvery}
-                                        onChange={handleInputChange}
-                                        className="form-control repeat-every-value"
-                                        style={{
-                                          width: "30%",
-                                          display: "inline-block",
-                                          marginLeft: "5px",
-                                        }}
-                                      />
-                                    </div>
-                                    <div className="col-sm-6">
-                                      <div className="dropdown-wrapper">
-                                        <select
-                                          name="interval"
-                                          value={intervalState.interval}
-                                          onChange={handleInputChange}
-                                          className="custom-select"
+
+                                <Modal.Body className="pt-3">
+                                  <div className="container">
+                                    <h5 className="text-center">
+                                      Random Date Selection
+                                    </h5>
+                                    <div className="d-flex mt-3">
+                                      <div style={{ width: "50%" }}>
+                                        <CustomCalendar
+                                          selectedDates={
+                                            intervalState.recurringDaysSelected
+                                          }
+                                          setSelectedDates={updateSelectedDates}
+                                        />
+                                      </div>
+                                      <div
+                                        className="ms-3 border p-3 rounded shadow-sm d-flex flex-column"
+                                        style={{ width: "50%", height: "100%" }}
+                                      >
+                                        <h6 className="text-center">
+                                          Selected Dates
+                                        </h6>
+
+                                        <textarea
+                                          className="form-control flex-grow-1"
+                                          style={{ maxHeight: "12em" }}
+                                          rows="10"
+                                          readOnly
+                                          value={intervalState.recurringDaysSelected.join(
+                                            "\n"
+                                          )}
+                                        />
+
+                                        <button
+                                          className="btn btn-danger mt-2 w-100"
+                                          onClick={handleClearDates}
                                         >
-                                          <option value="Day(s)">Day(s)</option>
-                                          <option value="Week(s)">
-                                            Week(s)
-                                          </option>
-                                          <option value="Month(s)">
-                                            Month(s)
-                                          </option>
-                                          <option value="Year(s)">
-                                            Year(s)
-                                          </option>
-                                        </select>
+                                          Clear Dates
+                                        </button>
                                       </div>
                                     </div>
-                                  </div>
 
-                                  <div className="row intervalType-row2 mt-3 three">
-                                    <div className="col-sm-12">
-                                      <div className="d-flex justify-content-between">
-                                        {[
-                                          "Monday",
-                                          "Tuesday",
-                                          "Wednesday",
-                                          "Thursday",
-                                          "Friday",
-                                          "Saturday",
-                                          "Sunday",
-                                        ].map((day) => (
-                                          <div
-                                            key={day}
-                                            className="custom-control custom-checkbox"
-                                          >
-                                            <input
-                                              type="checkbox"
-                                              className="custom-control-input"
-                                              id={`check${day}`}
-                                              name={day}
-                                              checked={intervalState.recurringDaysSelected.includes(
-                                                day
-                                              )}
-                                              onChange={handleInputChange}
-                                            />
-                                            <label
-                                              className="custom-control-label"
-                                              htmlFor={`check${day}`}
-                                            >
-                                              {day}
-                                            </label>
-                                          </div>
-                                        ))}
+                                    {/* End Date Section */}
+                                    <div className="row mt-4">
+                                      <div className="col-8">
+                                        <label>End Date</label>
+                                        <input
+                                          type="datetime-local"
+                                          name="endDate"
+                                          aria-label="endDate"
+                                          value={intervalState.endDate}
+                                          onChange={handleInputChange}
+                                          className="form-control time"
+                                          style={{
+                                            width: "70%",
+                                            display: "inline-block",
+                                            marginLeft: "5px",
+                                          }}
+                                        />
+                                      </div>
+                                      <div className="col-4 text-center">
+                                        <div>
+                                          <a href="/"> Remove</a>
+                                        </div>
                                       </div>
                                     </div>
-                                  </div>
 
-                                  <div className="row intervalType-row3 mt-3">
-                                    <div className="col-8">
-                                      <label>End Date</label>
-                                      <input
-                                        type="datetime-local"
-                                        name="endDate"
-                                        value={intervalState.endDate}
-                                        onChange={handleInputChange}
-                                        className="form-control time"
-                                        style={{
-                                          width: "70%",
-                                          display: "inline-block",
-                                          marginLeft: "5px",
-                                        }}
-                                      />
-                                    </div>
-                                    <div className="col-4 text-center">
-                                      <div>
-                                        <a href="/"> Remove</a>
+                                    {/* Recurrence Info */}
+                                    <div className="row mt-3">
+                                      <div className="col">
+                                        <p className="text-center">
+                                          Occurs every
+                                          <span>
+                                            {intervalState.repeatEvery || 0}
+                                          </span>
+                                          {intervalState.interval} on the
+                                          selected days starting
+                                          <span>
+                                            {intervalState.startDate ||
+                                              "10/11/23"}
+                                          </span>
+                                          until
+                                          <span>
+                                            {intervalState.endDate ||
+                                              "15/11/23"}
+                                          </span>
+                                        </p>
                                       </div>
-                                    </div>
-                                  </div>
-
-                                  <div className="row intervalType-row4 mt-3">
-                                    <div className="col">
-                                      <p className="text-center">
-                                        Occurs every{" "}
-                                        <span>
-                                          {intervalState.repeatEvery || 0}
-                                        </span>{" "}
-                                        {intervalState.interval} on the selected
-                                        days starting{" "}
-                                        <span>
-                                          {intervalState.startDate ||
-                                            "10/11/23"}
-                                        </span>{" "}
-                                        until{" "}
-                                        <span>
-                                          {intervalState.endDate || "15/11/23"}
-                                        </span>
-                                      </p>
                                     </div>
                                   </div>
                                 </Modal.Body>
+
                                 <Modal.Footer>
                                   <Button
                                     className="intervalCloseBtn"
@@ -1781,6 +1673,7 @@ export default function RightDashboard() {
                             <input
                               className="checkBox m-2"
                               type="checkbox"
+                              aria-label="Conflicts"
                               style={{
                                 height: "20px",
                               }}
@@ -1839,6 +1732,7 @@ export default function RightDashboard() {
                             <select
                               name="days"
                               id="people_input_Select"
+                              aria-label="people  Select input"
                               className="custom-select"
                             >
                               <option value="">select value</option>
@@ -1857,15 +1751,18 @@ export default function RightDashboard() {
                             <input
                               type="text"
                               id="people_input_Search"
+                              aria-label="people  Search input"
                               placeholder="search key word"
                               className="form-control"
                             />
-                            <img
-                              src={SearchIcon}
-                              alt="Search Icon"
-                              className="search-icon"
-                              onClick={handleClickPeopleSearch}
-                            />
+                            <button className="button">
+                              <img
+                                src={SearchIcon}
+                                alt="Search Icon"
+                                className="search-icon"
+                                onClick={handleClickPeopleSearch}
+                              />
+                            </button>
                           </div>
                         </div>
                       </Col>
@@ -1912,7 +1809,20 @@ export default function RightDashboard() {
                             <div className="dropdown">
                               <InfiniteDropdown
                                 options={Owners}
-                                selectedValue={Owners[0] ? [Owners[0]] : []}
+                                selectedValue={
+                                  Owners.find((owner) => owner.id === OwnerID)
+                                    ? [
+                                        Owners.find(
+                                          (owner) => owner.id === OwnerID
+                                        ),
+                                      ]
+                                    : []
+                                }
+                                onChange={(selectedOption) => {
+                                  handleOwnerChange([selectedOption]);
+                                  dispatch(setownerID(selectedOption.id));
+                                  setOwnerID(selectedOption.id);
+                                }}
                               />
                             </div>
                           </div>
@@ -2021,6 +1931,7 @@ export default function RightDashboard() {
                                   type="radio"
                                   id={item.value}
                                   name="locationType"
+                                  aria-label="locationType"
                                   value={item.value}
                                   defaultChecked={index === 0} // Only check the first enabled item
                                   onChange={handleLocationTypeChange}
@@ -2045,6 +1956,7 @@ export default function RightDashboard() {
                               name="days"
                               className="custom-select"
                               id="location_input_Select"
+                              aria-label="location Select input"
                               onChange={(e) => handelLocationSearchDropDown(e)}
                             >
                               {locationData.length !== 0 && (
@@ -2066,6 +1978,7 @@ export default function RightDashboard() {
                             <input
                               type="text"
                               id="location_input_Search"
+                              aria-label="location Search input"
                               placeholder="search key word"
                               className="form-control"
                             />
@@ -2155,6 +2068,7 @@ export default function RightDashboard() {
                                   <input
                                     type="number"
                                     className="form-control"
+                                    aria-label="Capacity"
                                     value={locationFilters.LFCapacity}
                                     onChange={(e) => {
                                       const value = e.target.value;
@@ -2176,6 +2090,7 @@ export default function RightDashboard() {
                                     <select
                                       name="handicap"
                                       className="custom-select"
+                                      aria-label="handicap"
                                       value={locationFilters.LFHandicap}
                                       onChange={(e) => {
                                         const value = e.target.value;

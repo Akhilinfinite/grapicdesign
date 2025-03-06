@@ -21,6 +21,8 @@ export const fetchOwnerData = createAsyncThunk(
       end: e[columns.indexOf("DEF_ENDTIME")],
       start: e[columns.indexOf("DEF_STARTTIME")],
       EVENTSLOTTIME: e[columns.indexOf("EVENTSLOTTIME")],
+      Def_CUSTOMER: e[columns.indexOf("DEF_CUSTOMER_ID")],
+      Def_REQUESTOR: e[columns.indexOf("DEF_REQUESTOR_ID")],
     }));
 
     return data;
@@ -30,7 +32,7 @@ export const fetchOwnerData = createAsyncThunk(
 const ownerSlice = createSlice({
   name: "owner",
   initialState: {
-    ownerID: null,
+    ownerID: 1,
     owner: [],
     loading: false,
     error: null,
@@ -48,7 +50,6 @@ const ownerSlice = createSlice({
       })
       .addCase(fetchOwnerData.fulfilled, (state, action) => {
         state.owner = action.payload;
-        state.ownerID = action.payload.length > 0 ? action.payload[0].id : null;
         state.loading = false;
       })
       .addCase(fetchOwnerData.rejected, (state, action) => {

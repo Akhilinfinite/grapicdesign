@@ -42,8 +42,8 @@
         border-radius: 12px;
         color: white;
         cursor: pointer;
-        background-color: #fa783c;
-        border: 1px #fa783c;
+        background-color:  #b5562a;
+        border: 1px  #b5562a;
       }
       .btnrequest {
         cursor: pointer;
@@ -245,8 +245,8 @@
   // border: 1px solid #212529 !important;
 }
 .btn-clear {
-  background-color: #fa783c !important;
-  border: 1px solid #fa783c !important;
+  background-color:  #b5562a !important;
+  border: 1px solid  #b5562a !important;
 }
 
 .btn-schedule {
@@ -277,6 +277,28 @@
   .btn-search {
     margin-top: 10px !important;
   }
+}
+
+.react-calendar {
+  width: 100%;
+  border: none;
+}
+
+.react-calendar__tile {
+  text-align: center;
+  padding: 8px;
+  font-size: 14px;
+}
+
+.react-calendar__navigation {
+  background: #2d5f9a;
+  color: white;
+  border-radius: 5px;
+  height: 35px;
+}
+
+.bg-primary {
+  background-color: #007bff !important;
 }
 
 .location-radio-btn .list {
@@ -401,8 +423,8 @@
 }
 
 .filter-close-btn {
-  background-color: #fa783c !important;
-  border: 1px solid #fa783c !important;
+  background-color:  #b5562a !important;
+  border: 1px solid  #b5562a !important;
 }
 
 @media screen and (min-width: 450px) and (max-width: 600px) {

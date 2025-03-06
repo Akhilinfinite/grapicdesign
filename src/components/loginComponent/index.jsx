@@ -26,7 +26,7 @@ export default function LoginComponent({ onLogin, loading, error }) {
         </div>
       </header>
       <div className="login_main">
-        <div className="login-container">
+        <form className="login-container">
           <div className="login-heading">Login</div>
           <div className="login-form">
             <div className="form-group">
@@ -34,6 +34,7 @@ export default function LoginComponent({ onLogin, loading, error }) {
               <input
                 type="text"
                 value={username}
+                aria-label="username"
                 onChange={(e) => setUsername(e.target.value)}
                 disabled={loading}
               />
@@ -44,17 +45,18 @@ export default function LoginComponent({ onLogin, loading, error }) {
               <input
                 type="password"
                 value={password}
+                aria-label="password"
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
               />
             </div>
 
-            {error && <p style={{ color: "red" }}>{error}</p>}
+            {error && <p style={{ color: "#e50000" }}>{error}</p>}
             <button onClick={handleLogin} disabled={loading}>
               {loading ? "Logging in..." : "Login"}
             </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );
