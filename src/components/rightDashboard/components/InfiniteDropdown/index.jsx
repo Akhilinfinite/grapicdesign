@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Select from "react-select";
 
-const InfiniteDropdown = ({ options, selectedValue, onChange }) => {
+const InfiniteDropdown = ({ id, options, selectedValue, onChange }) => {
   const [visibleData, setVisibleData] = useState([]);
   const [filteredOptions, setFilteredOptions] = useState([]);
   const [offset, setOffset] = useState(0);
@@ -46,6 +46,24 @@ const InfiniteDropdown = ({ options, selectedValue, onChange }) => {
       ...provided,
       height: "200px",
       overflowY: "auto",
+      backgroundColor: "#FFFFFF", // High contrast background
+      fontWeight: "bold",
+    }),
+    control: (provided) => ({
+      ...provided,
+      color: "#2B2B2B", // Darker text for better contrast
+      fontWeight: "bold",
+      backgroundColor: "#FFFFFF", // Ensure contrast against border
+      border: "2px solid #000000", // Strong black border for highest contrast
+    }),
+    singleValue: (provided) => ({
+      ...provided,
+      color: "#2B2B2B", // Ensure selected text is readable
+      fontWeight: "bold",
+    }),
+    placeholder: (provided) => ({
+      ...provided,
+      color: "#2B2B2B", // Ensures placeholder text has enough contrast
     }),
   };
 
@@ -67,7 +85,7 @@ const InfiniteDropdown = ({ options, selectedValue, onChange }) => {
   return (
     <div className="dropdown">
       <Select
-        inputId="infiniteDropdown"
+        inputId={id}
         options={visibleData}
         value={selectedValue}
         onChange={onChange}
