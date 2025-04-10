@@ -41,29 +41,56 @@ const InfiniteDropdown = ({ id, options, selectedValue, onChange }) => {
     }
   }, [visibleData]);
 
+  // const customStyles = {
+  //   menuList: (provided) => ({
+  //     ...provided,
+  //     height: "200px",
+  //     overflowY: "auto",
+  // //   }),
+  //   placeholder: (provided) => ({
+  //     ...provided,
+  //     color: "#444", // Higher contrast placeholder text
+  //   }),
+  // };
+
   const customStyles = {
-    menuList: (provided) => ({
+    control: (provided, state) => ({
       ...provided,
-      height: "200px",
-      overflowY: "auto",
-      backgroundColor: "#FFFFFF", // High contrast background
-      fontWeight: "bold",
+      backgroundColor: "#f8f8f8",
+      color: "#000",
+      border: state.isFocused ? "1px solid #000" : "1px solid #222",
+      boxShadow: state.isFocused ? "0 0 6px #000" : "none",
+      "&:hover": {
+        border: "2px solid #005fcc",
+      },
+      minHeight: "40px",
     }),
-    control: (provided) => ({
+    menu: (provided) => ({
       ...provided,
-      color: "#2B2B2B", // Darker text for better contrast
-      fontWeight: "bold",
-      backgroundColor: "#FFFFFF", // Ensure contrast against border
-      border: "2px solid #000000", // Strong black border for highest contrast
+      backgroundColor: "#ffffff",
+      border: "2px solid #222",
+      boxShadow: "0px 0px 8px rgba(0, 0, 0, 0.5)",
+      minWidth: "200px",
+    }),
+    option: (provided, state) => ({
+      ...provided,
+      backgroundColor: state.isSelected
+        ? "#005fcc"
+        : state.isFocused
+        ? "#b3d7ff"
+        : "#ffffff",
+      color: state.isSelected ? "#ffffff" : "#000",
+      "&:hover": {
+        backgroundColor: "#b3d7ff",
+      },
     }),
     singleValue: (provided) => ({
       ...provided,
-      color: "#2B2B2B", // Ensure selected text is readable
-      fontWeight: "bold",
+      color: "#000",
     }),
     placeholder: (provided) => ({
       ...provided,
-      color: "#2B2B2B", // Ensures placeholder text has enough contrast
+      color: "#444",
     }),
   };
 
@@ -83,7 +110,6 @@ const InfiniteDropdown = ({ id, options, selectedValue, onChange }) => {
   };
 
   return (
-    <div className="dropdown">
       <Select
         inputId={id}
         options={visibleData}
@@ -93,6 +119,8 @@ const InfiniteDropdown = ({ id, options, selectedValue, onChange }) => {
         styles={customStyles}
         aria-live="polite"
         aria-label="Infinite scrolling dropdown"
+        aria-expanded={Boolean(visibleData.length)}
+        aria-haspopup="listbox"
         components={{
           MenuList: (props) => (
             <div
@@ -105,11 +133,11 @@ const InfiniteDropdown = ({ id, options, selectedValue, onChange }) => {
               style={{ height: "200px", overflowY: "auto" }}
               role="listbox"
               aria-label="Dropdown menu with infinite scrolling"
+              aria-activedescendant={selectedValue?.value || ""}
             ></div>
           ),
         }}
       />
-    </div>
   );
 };
 

@@ -1,187 +1,210 @@
-
-
 .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.main-modal-close {
+  text-align: end;
+}
+
+.modal-close {
+  font-size: 1.5rem; // Increased size for better accessibility
+  cursor: pointer;
+  &:focus,
+  &:hover {
+    outline: 2px solid #005fcc; // Visible focus indicator
   }
-  
-  // .modal-content {
-  //   background-color: white;
-  //   padding: 20px;
-  //   border-radius: 5px;
-  //   width: 80%;
-  //   max-width: 500px;
-  //   max-height: 80vh;
-  //   overflow-y: auto;
-  //   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-  // }
-  
-  .main-modal-close {
-    text-align: end;
+}
+
+.modal-body {
+  padding-bottom: 1.25rem;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.col {
+  flex-basis: 45%; // Adjusted width for two columns
+}
+
+.field-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.625rem;
+}
+
+.field-group label {
+  flex-basis: 30%;
+  margin-right: 0.625rem;
+  font-weight: bold; // Improve readability
+}
+
+.field-group .dropdown,
+.field-group input {
+  flex-basis: 70%;
+  height: 2.5rem;
+  font-size: 1rem;
+  padding: 0.4375rem;
+  border-radius: 0.1875rem;
+  background: #fafafa;
+  border: 1px solid #6c757d; // Ensuring contrast
+}
+
+.dropdown select {
+  width: 100%;
+  height: 2.5rem;
+  font-size: 1rem;
+}
+
+.fieldValue {
+  flex-basis: 70%;
+  height: 2.5rem;
+  font-size: 1rem;
+  padding: 0.4375rem;
+  border-radius: 0.1875rem;
+  background: #fafafa;
+}
+
+.fieldValue input {
+  width: 100%;
+  height: 2rem;
+  border: 2px solid #000; // Stronger contrast for visibility
+}
+
+.filter-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0.75rem;
+  border-top: 1px solid #dee2e6;
+}
+
+.reset-btn,
+.close-btn,
+.apply-btn {
+  width: 7.375rem !important;
+  padding: 0.4375rem 2.5625rem !important;
+  border: 1px solid;
+  border-radius: 0.75rem;
+  color: #ffffff;
+  font-family: Lato, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: center;
+  &:focus,
+  &:hover {
+    outline: 2px solid #005fcc; // Ensuring focus visibility
   }
-  
-  .modal-close {
-    font-size: 24px;
-    cursor: pointer;
+}
+
+.reset-btn {
+  color: #000;
+}
+
+.close-btn {
+  background-color: #fa783c;
+  color: #fff;
+  margin: 0.3125rem;
+}
+
+.apply-btn {
+  background-color: #0d139d;
+  color: #fff;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #dee2e6;
+  margin-bottom: 1.875rem;
+}
+
+/* ✅ 1. Focus Styles for Accessibility */
+:focus {
+  outline: 2px solid #005fcc; 
+  outline-offset: 2px;
+}
+
+/* ✅ 2. High Contrast for Buttons & Text */
+.btn-danger {
+  background-color: #c82333;
+  color: #fff;
+}
+
+.apply-btn {
+  background-color: #005fcc;
+  color: #fff;
+}
+
+/* ✅ 3. Accessible Dropdown Styling */
+.custom-select {
+  height: 35px;
+  font-size: 16px;
+  border-radius: 3px;
+  background: #fafafa;
+  border: 2px solid #6c757d; // Improved contrast
+}
+
+/* Media Queries for Mobile Devices */
+@media (max-width: 600px) {
+  .modal-content {
+    width: 90%;
+    padding: 0.9375rem;
   }
-  
-  .modal-body {
-    padding-bottom: 20px;
+
+  .fieldValue {
+    width: 90%;
   }
-  
-  .row {
-    display: flex;
-    justify-content: space-between;
-  }
-  
+
   .col {
-    flex-basis: 45%; /* Adjusted width for two columns */
+    flex-basis: 100%;
   }
-  
+
   .field-group {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
+    flex-direction: column;
+    align-items: flex-start;
   }
-  
-  .field-group label {
-    flex-basis: 30%; /* Adjust based on your preference */
-    margin-right: 10px;
-  }
-  
+
+  .field-group label,
   .field-group .dropdown,
   .field-group input {
-    flex-basis: 70%;
-    height: 35px;
-    font-size: 16px;
-    padding: 7px;
-     border-radius: 3px;
-    background: #fafafa;
-  }
-  .dropdown select{
+    flex-basis: 100%;
     width: 100%;
-    height: 40px;
+    margin-bottom: 0.625rem;
   }
-  .fieldValue{
-    flex-basis: 70%;
-    height: 35px;
-    font-size: 16px;
-    padding: 7px;
-    border-radius: 3px;
-    background: #fafafa;
-  }
-  .fieldValue input{
-    width: 93%;
-    height: 23px;
-    border: 1px solid black;
-  }
+
   .filter-footer {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: flex-end;
-    padding: 0.75rem;
-    border-top: 1px solid #dee2e6;
+    flex-direction: column;
+    align-items: stretch;
   }
-  
+
+  .filter-footer button {
+    padding: 0.3125rem !important;
+  }
+
   .reset-btn,
   .close-btn,
   .apply-btn {
-    width: 118px !important;
-    padding: 7px 41px 7px 41px !important;
-    border: 1px solid;
-    border-radius: 12px;
-    color: #FFFFFF;
-    font-family: Lato;
-    font-size: 14px;
-    font-weight: 600;
-    line-height: 17px;
-    letter-spacing: 0.02em;
-    text-align: center;
+    margin-right: 0;
+    margin-bottom: 0.625rem;
+    width: 100%;
+    margin: 0.3125rem !important;
   }
-  
-  .reset-btn {
-    color: #000;
+
+  .reset-btn:last-child,
+  .close-btn:last-child,
+  .apply-btn:last-child {
+    margin-bottom: 0;
   }
-  
-  .close-btn {
-    background-color: #fa783c;
-    color: #fff;
-    margin: 5px;
-  }
-  
-  .apply-btn {
-    background-color: #0d139d;
-    color: #fff;
-  }
-  
-  .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #dee2e6;
-    margin-bottom: 30px;
-  }
-  
-  /* Media Queries for Mobile Devices */
-  @media (max-width: 600px) {
-    .modal-content {
-      width: 90%;
-      padding: 15px;
-    }
-    .fieldValue{
-      width: 90%;
-    }
-  
-  
-  
-    .col {
-      flex-basis: 100%;
-    }
-  
-    .field-group {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-  
-    .field-group label,
-    .field-group .dropdown,
-    .field-group input {
-      flex-basis: 100%;
-      width: 100%;
-      margin-bottom: 10px;
-    }
-  
-    .filter-footer {
-      flex-direction: column;
-      align-items: stretch;
-    }
-    .filter-footer button{
-      padding: 5px !important;
-    }
-  
-    .reset-btn,
-    .close-btn,
-    .apply-btn {
-      margin-right: 0;
-      margin-bottom: 10px;
-      width: 100%;
-      margin: 5px !important;
-  
-    }
-  
-    .reset-btn:last-child,
-    .close-btn:last-child,
-    .apply-btn:last-child {
-      margin-bottom: 0;
-    }
-  }
-  
-  
+}

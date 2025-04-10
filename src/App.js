@@ -3,10 +3,9 @@ import { useSelector, useDispatch } from "react-redux";
 import { login, logout } from "./redux/slices/authSlice";
 import { setClientName } from "./redux/slices/clientSlice";
 import {
-  BrowserRouter as Router,
+  HashRouter as Router,
   Routes,
   Route,
-  Navigate,
   useParams,
 } from "react-router-dom";
 import Searchschedule from "./components/searchschedule";
@@ -15,7 +14,7 @@ import LandingPage from "./components/landingPage";
 
 function App() {
   const dispatch = useDispatch();
-  const { sessionData, loading, error } = useSelector((state) => state.auth);
+  const { loading, error } = useSelector((state) => state.auth);
   const { clientname } = useSelector((state) => state.client);
 
   const handleLogin = (username, password) => {
@@ -25,45 +24,37 @@ function App() {
   // Component to handle dynamic routes
   const DynamicRouteHandler = () => {
     const { apiType } = useParams();
+    const dispatch = useDispatch();
+    const { sessionData } = useSelector((state) => state.auth);
+    const { clientname } = useSelector((state) => state.client);
 
     useEffect(() => {
-      if (apiType === "charlotte" || apiType === "untcom"|| apiType === "dps") {
+      if (
+        apiType === "charlotte" ||
+        apiType === "untcom" ||
+        apiType === "dps"
+      ) {
         if (apiType !== clientname) {
           dispatch(setClientName(apiType));
-          dispatch(logout()); // Logout if the clientname changes
+          dispatch(logout()); // Logout only if client name changes
         }
-        dispatch(setClientName(apiType)); // Update clientname
-      } else {
-        dispatch(setClientName(null)); // Reset if invalid
       }
     }, [apiType, clientname, dispatch]);
 
-    // Render based on session data and apiType
-    if (apiType === "charlotte" || apiType === "untcom"|| apiType === "dps") {
-      return sessionData ? (
-        <Searchschedule />
-      ) : (
-        <LoginComponent onLogin={handleLogin} loading={loading} error={error} />
-      );
-    }
-
-    return <Navigate to="/" />;
+    // Redirect user based on sessionData
+    return sessionData ? (
+      <Searchschedule />
+    ) : (
+      <LoginComponent onLogin={handleLogin} loading={loading} error={error} />
+    );
   };
 
   return (
     <div className="App">
       <Router>
         <Routes>
-          {/* Landing Page */}
-          <Route path="/graphicDesign/" element={<LandingPage />} />
-
-          {/* Dynamic Route */}
-          <Route
-            path="/graphicDesign/:apiType"
-            element={<DynamicRouteHandler />}
-          />
-
-          {/* Redirect unknown routes to landing page */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/:apiType" element={<DynamicRouteHandler />} />
         </Routes>
       </Router>
     </div>

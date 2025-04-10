@@ -42,8 +42,8 @@
         border-radius: 12px;
         color: white;
         cursor: pointer;
-        background-color:  #b5562a;
-        border: 1px  #b5562a;
+        background-color: #b5562a;
+        border: 1px #b5562a;
       }
       .btnrequest {
         cursor: pointer;
@@ -205,9 +205,7 @@
                 }
               }
               .selectedField-dropdown {
-                background-color: #f1f1f1;
                 margin-top: -16px;
-                color: #585b58;
                 padding: 8px;
               }
             }
@@ -245,8 +243,8 @@
   // border: 1px solid #212529 !important;
 }
 .btn-clear {
-  background-color:  #b5562a !important;
-  border: 1px solid  #b5562a !important;
+  background-color: #b5562a !important;
+  border: 1px solid #b5562a !important;
 }
 
 .btn-schedule {
@@ -423,8 +421,8 @@
 }
 
 .filter-close-btn {
-  background-color:  #b5562a !important;
-  border: 1px solid  #b5562a !important;
+  background-color: #b5562a !important;
+  border: 1px solid #b5562a !important;
 }
 
 @media screen and (min-width: 450px) and (max-width: 600px) {
@@ -442,15 +440,44 @@
   margin-right: 10px;
 }
 
-.selectedSearchField input {
-  border-right: none;
-}
+.selectedSearchField {
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  background-color: #fff; // ✅ Ensure strong contrast with text
+  padding: 5px;
 
-.selectedSearchField .search-icon {
-  width: 20px;
-  height: 35px;
-  border: var(--bs-border-width) solid var(--bs-border-color);
-  border-left: none;
+  input {
+    flex: 1;
+    border: 2px solid #333; // ✅ Strong contrast border (at least 3:1)
+    background-color: #fff;
+    color: #000; // ✅ Ensure text is readable
+    padding: 8px;
+    border-radius: 4px;
+    outline: none;
+    font-size: 16px;
+
+    &::placeholder {
+      color: #555; // ✅ Slightly darker placeholder for better contrast
+    }
+
+    &:focus {
+      border-color: #0056b3; // ✅ High-contrast focus color
+      outline: 3px solid #0056b3; // ✅ Better focus visibility
+    }
+  }
+
+  .search-icon {
+    cursor: pointer;
+    padding: 5px;
+    border-left: 2px solid #000; // ✅ Strong contrast border for separation
+    background-color: #e0e0e0; // ✅ Ensures contrast with the input field
+    border-radius: 0 4px 4px 0;
+
+    &:hover {
+      background-color: #ccc; // ✅ High contrast on hover
+    }
+  }
 }
 
 .selectedField-header {

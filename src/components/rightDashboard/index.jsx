@@ -27,6 +27,16 @@ import InfiniteDropdown from "./components/InfiniteDropdown";
 import CustomDateTimePicker from "./components/customDateTimeInput";
 import { fetchDefaultValues } from "../../redux/slices/sampleSlice.js";
 import { fetchOwnerData, setownerID } from "../../redux/slices/ownerSlice";
+import {
+  setEndDateF,
+  setIntervalStateF,
+  setLocationDataF,
+  setOwnerF,
+  setSelectedContactF,
+  setSelectedCustomerF,
+  setSelectedSchedulerF,
+  setStartDateF,
+} from "../../redux/slices/intervalSlice.js";
 
 import { useSelector, useDispatch } from "react-redux";
 import CustomCalendar from "./components/custumCalender/index.jsx";
@@ -43,32 +53,147 @@ export default function RightDashboard() {
   const owner = useSelector((state) => state.owner.owner);
   const ownerID = useSelector((state) => state.owner.ownerID);
   const ownerLoad = useSelector((state) => state.owner.loading);
+  const [isOpen1, setIsOpen1] = useState(true);
+  const [isOpen2, setIsOpen2] = useState(true);
+  const [isOpen3, setIsOpen3] = useState(true);
+  const intervalState1 = useSelector((state) => state.interval);
 
+  const [isScheduleSummaryVisible, setScheduleSummaryVisible] = useState(false);
+  const [formattedScheduleSummary, setFormattedScheduleSummary] = useState("");
+
+  const handleScheduleClick = () => {
+    const intervalState = intervalState1;
+
+    const formatData = (data) => {
+      if (!data || data.length === 0) return "Not Selected";
+      return Array.isArray(data)
+        ? data.map((item) => ` **${item.label}**`).join(", ")
+        : `**${data.label}**`;
+    };
+
+    const formatLocationData = () => {
+      if (!intervalState.locationData.length) return "No locations selected.";
+      return intervalState.locationData
+        .map(({ label, selectedValue }) => {
+          if (!selectedValue) return `**${label}**: Not Selected`;
+          return `**${label}**: **(${selectedValue.id})** — **${selectedValue.label}**`;
+        })
+        .join("\n");
+    };
+
+    const formatIntervalSettings = () => {
+      const { intervalState: dates } = intervalState;
+      if (!Array.isArray(dates) || dates.length === 0)
+        return "No interval dates selected.";
+      return `**Scheduled Dates**:\n${dates.join(", ")}`;
+    };
+
+    const formattedText = `
+  **Owner**: ${formatData(intervalState.owner)}
+  **Scheduler**: ${formatData(intervalState.selectedScheduler)}
+  **Customer**: ${formatData(intervalState.selectedCustomer)}
+  **Contact**: ${formatData(intervalState.selectedContact)}
+  **Start Date**: ${intervalState.startDate || "Not Set"}
+  **End Date**: ${intervalState.endDate || "Not Set"}
+  
+  ${formatIntervalSettings()}
+  
+  **Location Data**:
+  ${formatLocationData()}
+    `;
+
+    setFormattedScheduleSummary(formattedText);
+    setScheduleSummaryVisible(true);
+  };
+
+  const [Scheduler, setScheduler] = useState([]);
+  const [SelectedScheduler, setSelectedScheduler] = useState([]);
+  const [Customer, setCustomer] = useState([]);
+  const [SelectedCustomer, setSelectedCustomer] = useState([]);
+  const [Contact, setContact] = useState([]);
+  const [SelectedContact, setSelectedContact] = useState([]);
+
+  const [radiobtn, setRadiobtn] = useState([]);
+
+  const [StartTime, setStartTime] = useState("");
+  const [EndTime, setEndTime] = useState("");
+  const [intervalTime, setIntervalTime] = useState();
+  useEffect(() => {
+    dispatch(setStartDateF(String(StartTime)));
+  }, [StartTime, dispatch]);
+  useEffect(() => {
+    dispatch(setEndDateF(String(EndTime)));
+  }, [EndTime, dispatch]);
   useEffect(() => {
     if (clientname) {
       dispatch(fetchOwnerData());
     }
   }, [clientname, dispatch]);
-  const setDefaultData = (selectedOwner) => {
-    if (selectedOwner) {
-      const startDateTime = new Date(
-        `${new Date().toISOString().split("T")[0]}T${
-          selectedOwner.start.split(" ")[3]
-        }`
-      );
-      const endDateTime = new Date(
-        `${new Date().toISOString().split("T")[0]}T${
-          selectedOwner.end.split(" ")[3]
-        }`
-      );
-
-      setStartTime(startDateTime);
-      setEndTime(endDateTime);
-      setIntervalTime(selectedOwner.EVENTSLOTTIME);
-    }
-  };
 
   useEffect(() => {
+    const setDefaultData = (selectedOwner) => {
+      if (selectedOwner) {
+        const extractTime = (dateTimeStr) => {
+          if (!dateTimeStr || typeof dateTimeStr !== "string") {
+            console.error("Invalid dateTimeStr:", dateTimeStr);
+            return null;
+          }
+          const match = dateTimeStr.match(/(\d{2}:\d{2}:\d{2})/);
+          if (!match) {
+            console.error("Invalid time format:", dateTimeStr);
+            return null;
+          }
+
+          return match[1];
+        };
+        const convertToUTC = (timeStr) => {
+          if (!timeStr) {
+            console.error("convertToUTC received invalid timeStr:", timeStr);
+            return null;
+          }
+
+          const [hours, minutes, seconds] = timeStr.split(":").map(Number);
+
+          if (isNaN(hours) || isNaN(minutes) || isNaN(seconds)) {
+            console.error(
+              "convertToUTC received invalid time format:",
+              timeStr
+            );
+            return null;
+          }
+          const now = new Date();
+          const localDate = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+            hours,
+            minutes,
+            seconds
+          );
+          const utcDate = new Date(
+            localDate.getTime() - localDate.getTimezoneOffset() * 60000
+          );
+
+          return utcDate.toISOString();
+        };
+        const startTimeRaw = extractTime(selectedOwner.start);
+        const endTimeRaw = extractTime(selectedOwner.end);
+
+        if (!startTimeRaw || !endTimeRaw) {
+          console.error("Invalid extracted time:", startTimeRaw, endTimeRaw);
+        } else {
+          const startTime = convertToUTC(startTimeRaw);
+          const endTime = convertToUTC(endTimeRaw);
+          if (startTime && endTime) {
+            setStartTime(startTime);
+            setEndTime(endTime);
+            dispatch(setStartDateF(startTime));
+            dispatch(setEndDateF(endTime));
+            setIntervalTime(selectedOwner.EVENTSLOTTIME);
+          }
+        }
+      }
+    };
     if (!ownerLoad && Array.isArray(owner) && owner.length > 0) {
       setOwners(owner);
       const selectedOwner = owner.find((o) => o.id === ownerID);
@@ -86,23 +211,6 @@ export default function RightDashboard() {
       dispatch(setownerID(selectedOption?.[0]?.id));
     }
   };
-
-  const [isOpen1, setIsOpen1] = useState(true);
-  const [isOpen2, setIsOpen2] = useState(true);
-  const [isOpen3, setIsOpen3] = useState(true);
-
-  const [Scheduler, setScheduler] = useState([]);
-  const [SelectedScheduler, setSelectedScheduler] = useState([]);
-  const [Customer, setCustomer] = useState([]);
-  const [SelectedCustomer, setSelectedCustomer] = useState([]);
-  const [Contact, setContact] = useState([]);
-  const [SelectedContact, setSelectedContact] = useState([]);
-
-  const [radiobtn, setRadiobtn] = useState([]);
-
-  const [StartTime, setStartTime] = useState("");
-  const [EndTime, setEndTime] = useState("");
-  const [intervalTime, setIntervalTime] = useState();
 
   useEffect(() => {
     if (!loading && Array.isArray(data)) {
@@ -181,6 +289,8 @@ export default function RightDashboard() {
             const selected = data.filter((e) => e.id === own[0].Def_REQUESTOR);
             setSelectedScheduler(selected);
             setScheduler(data);
+            dispatch(setOwnerF(own));
+            dispatch(setSelectedSchedulerF(selected));
           } else {
             console.warn("No matching owner found!");
           }
@@ -192,7 +302,7 @@ export default function RightDashboard() {
     if (OwnerID) {
       getScheduler();
     }
-  }, [clientname, Owners, OwnerID]);
+  }, [clientname, Owners, OwnerID, dispatch]);
 
   //customer API Implementation
   useEffect(() => {
@@ -211,6 +321,7 @@ export default function RightDashboard() {
           const own = Owners.filter((e) => e.id === OwnerID);
           if (own.length > 0) {
             const selected = data.filter((e) => e.id === own[0].Def_CUSTOMER);
+            dispatch(setSelectedCustomerF(selected));
             setSelectedCustomer(selected);
           } else {
             console.warn("No matching owner found!");
@@ -224,13 +335,14 @@ export default function RightDashboard() {
     if (OwnerID) {
       getCustomer();
     }
-  }, [clientname, OwnerID, Owners]);
+  }, [clientname, OwnerID, Owners, dispatch]);
 
   const handleCustomerClick = (selectedOption) => {
     const variable = selectedOption.value;
     let data1 = Customer.filter((e) => e.value === variable);
     if (!data1.length) {
       data1 = SelectedCustomer.filter((e) => e.value === variable);
+      dispatch(setSelectedCustomerF(data1));
     }
     setSelectedCustomer([selectedOption]);
     setSelectedContact([]);
@@ -249,6 +361,7 @@ export default function RightDashboard() {
         }));
         const selected = data.filter((e) => e.primaryContact === 1);
         setSelectedContact(selected);
+        dispatch(setSelectedContactF(selected));
         setContact(data);
       })
       .catch(function (error) {
@@ -275,6 +388,7 @@ export default function RightDashboard() {
           }));
           const selected = data.filter((e) => e.primaryContact === 1);
           setSelectedContact(selected);
+          dispatch(setSelectedContactF(selected));
           setContact(data);
         })
         .catch(function (error) {
@@ -284,7 +398,7 @@ export default function RightDashboard() {
     if (OwnerID) {
       getContact();
     }
-  }, [clientname, Owners, OwnerID]);
+  }, [clientname, Owners, OwnerID, dispatch]);
 
   const handleClickPeopleSearch = () => {
     const option = document.getElementById("people_input_Select").value;
@@ -313,6 +427,7 @@ export default function RightDashboard() {
             }));
             setContact(data);
             setSelectedContact([]);
+            dispatch(setSelectedContactF([]));
           })
           .catch(function (error) {
             console.log(error);
@@ -643,6 +758,15 @@ export default function RightDashboard() {
         2,
         locationData[1].id
       );
+      dispatch(
+        setLocationDataF([
+          {
+            label: locationData[0].value,
+            selectedValue:
+              firstObjRes.data.length > 0 ? firstObjRes.data[0] : null,
+          },
+        ])
+      );
       setLocationData((prevLocationData) =>
         prevLocationData.map((location, index) => {
           if (index === 0) {
@@ -683,7 +807,6 @@ export default function RightDashboard() {
   const handleOptionSelect = (locationId, selectedOption) => {
     const variable = selectedOption.value;
     const locationOne = locationData.find((loc) => loc.id === 1);
-
     if (
       !locationOne ||
       !locationOne.options ||
@@ -795,6 +918,17 @@ export default function RightDashboard() {
           });
       }
     }
+
+    const selectedLocation = locationData.find((loc) => loc.id === locationId);
+    if (!selectedLocation) return;
+    dispatch(
+      setLocationDataF([
+        {
+          label: selectedLocation.value,
+          selectedValue: selectedOption,
+        },
+      ])
+    );
   };
 
   const handelLocationSearchDropDown = (e) => {
@@ -960,23 +1094,31 @@ export default function RightDashboard() {
   const [intervalState, setIntervalState] = useState({
     intervalType: "",
     repeatEvery: "",
+    repeatDuration: "",
     endDate: "",
     weeklyOnDay: "",
     weeklyOnTheOccurrence: "",
-    selectedDays: [],
+    selectedDates: [],
     weeklyOnTheDay: "",
     monthlyOnDay: "",
     monthlyOccurrence: "",
     monthlyWeekDay: "",
     recurringInterval: "Day(s)",
-    recurringDaysSelected: [], // <-- This will store the selected dates
+    recurringDaysSelected: [],
   });
+  const [GeneratedDates, setGeneratedDates] = useState([]);
+  const [selectedIntervalState, setSelectedIntervalState] = useState({
+    ...intervalState,
+  });
+  useEffect(() => {
+    dispatch(setIntervalStateF(GeneratedDates));
+  }, [GeneratedDates, dispatch]);
 
   // Function to update selected dates
   const updateSelectedDates = (newDates) => {
     setIntervalState((prevState) => ({
       ...prevState,
-      recurringDaysSelected: newDates, // Update selected dates in the state
+      selectedDates: newDates, // Update selected dates in the state
     }));
   };
 
@@ -984,16 +1126,115 @@ export default function RightDashboard() {
   const handleClearDates = () => {
     setIntervalState((prevState) => ({
       ...prevState,
-      recurringDaysSelected: [],
+      selectedDates: [],
     }));
   };
+  const getDayNumber = (dayName) => {
+    const dayMap = {
+      Sunday: 1,
+      Monday: 2,
+      Tuesday: 3,
+      Wednesday: 4,
+      Thursday: 5,
+      Friday: 6,
+      Saturday: 7,
+    };
+    return dayMap[dayName];
+  };
+  const getMonthPartNumber = (part) => {
+    const map = {
+      First: 1,
+      Second: 2,
+      Third: 3,
+      Fourth: 4,
+      Last: 5,
+    };
+    return map[part] || 0;
+  };
+  const formatDateMMDDYYYY = (isoStr) => {
+    if (!isoStr) return "";
+    const date = new Date(isoStr);
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    const yyyy = date.getFullYear();
+    return `${mm}/${dd}/${yyyy}`;
+  };
 
-  const [selectedIntervalState, setSelectedIntervalState] = useState({
-    ...intervalState,
-  });
+  const formatTimeHHMM = (isoStr) => {
+    if (!isoStr) return "";
+    const date = new Date(isoStr);
+    return date.toISOString().substr(11, 5); // Gets "HH:MM"
+  };
   const handleSave = () => {
     setSelectedIntervalState({ ...intervalState });
+    const { intervalType } = intervalState;
 
+    switch (intervalType) {
+      case "Weekly": {
+        const daysArray = (intervalState.recurringDaysSelected || []).map(
+          getDayNumber
+        );
+        const requestBody1 = {
+          clientname: clientname,
+          start_date: formatDateMMDDYYYY(StartTime),
+          start_time: formatTimeHHMM(StartTime),
+          enddate: formatDateMMDDYYYY(EndTime),
+          end_time: formatTimeHHMM(EndTime),
+          rptype: 1,
+          DAYS: daysArray.join(","),
+          EVERY_X_WEEKS: intervalState.repeatEvery,
+          FOR_X_WEEKS: intervalState.repeatDuration,
+        };
+        axios
+          .post(`${baseURL}schedule/getEventDates/`, requestBody1)
+          .then((response) => {
+            if (response.status === 200 && Array.isArray(response.data)) {
+              setGeneratedDates(response.data);
+              console.log("Dates stored:", response.data);
+            } else {
+              console.error("Unexpected response format:", response);
+            }
+          })
+          .catch((error) => {
+            console.error("API call failed:", error);
+          });
+        break;
+      }
+
+      case "Monthly":
+        const requestBody2 = {
+          clientname: clientname,
+          start_date: formatDateMMDDYYYY(StartTime),
+          start_time: formatTimeHHMM(StartTime),
+          enddate: formatDateMMDDYYYY(EndTime),
+          end_time: formatTimeHHMM(EndTime),
+          rptype: 2,
+          nummonth: intervalState.repeatEvery,
+          monthpart: getMonthPartNumber(intervalState.monthlyOccurrence),
+          weekpart: getDayNumber(intervalState.monthlyWeekDay),
+        };
+        axios
+          .post(`${baseURL}schedule/getEventDates/`, requestBody2)
+          .then((response) => {
+            if (response.status === 200 && Array.isArray(response.data)) {
+              setGeneratedDates(response.data);
+            } else {
+              console.error("Unexpected response format:", response);
+            }
+          })
+          .catch((error) => {
+            console.error("API call failed:", error);
+          });
+        break;
+
+      case "Recurring":
+        setGeneratedDates(intervalState.selectedDates);
+        break;
+
+      default:
+        console.warn("Unknown interval type – no action taken.");
+        break;
+    }
     setIntervalTypeModalVisible(false);
   };
 
@@ -1013,14 +1254,16 @@ export default function RightDashboard() {
 
   // Function to handle dropdown change
   const handleIntervalTypeChange = (e) => {
+    const selectedValue = e.target.value;
     setIntervalState({
-      intervalType: "",
+      intervalType: selectedValue,
       repeatEvery: "",
       endDate: "",
       weeklyOnDay: "",
       weeklyOnTheOccurrence: "",
       weeklyOnTheDay: "",
       monthlyOnDay: "",
+      selectedDates: [],
       monthlyOccurrence: "",
       monthlyWeekDay: "",
       recurringInterval: "Day(s)",
@@ -1028,11 +1271,12 @@ export default function RightDashboard() {
     });
 
     setSelectedIntervalState({
-      intervalType: "",
+      intervalType: selectedValue,
       repeatEvery: "",
       endDate: "",
       weeklyOnDay: "",
       weeklyOnTheOccurrence: "",
+      selectedDates: [],
       weeklyOnTheDay: "",
       monthlyOnDay: "",
       monthlyOccurrence: "",
@@ -1040,7 +1284,7 @@ export default function RightDashboard() {
       recurringInterval: "Day(s)",
       recurringDaysSelected: [],
     });
-    setIntervalType(e.target.value);
+    setIntervalType(selectedValue);
     setIntervalTypeModalVisible(true);
   };
 
@@ -1123,6 +1367,7 @@ export default function RightDashboard() {
                           <div className="heading">Start Date and Time</div>
                           <div className="time">
                             <CustomDateTimePicker
+                              id="startDateTimePicker"
                               value={StartTime}
                               onChange={setStartTime}
                               interval={intervalTime}
@@ -1137,6 +1382,7 @@ export default function RightDashboard() {
                           </div>
                           <div className="time">
                             <CustomDateTimePicker
+                              id="endDateTimePicker"
                               value={EndTime}
                               onChange={setEndTime}
                               interval={intervalTime}
@@ -1178,32 +1424,29 @@ export default function RightDashboard() {
                                 onHide={closeIntervalTypeModal}
                                 backdrop={false}
                                 keyboard={true}
+                                role="dialog"
+                                aria-labelledby="weekly-modal-title"
                               >
                                 <Modal.Header closeButton>
-                                  <Modal.Title>
+                                  <Modal.Title id="weekly-modal-title">
                                     Weekly Interval Type
                                   </Modal.Title>
                                 </Modal.Header>
                                 <Modal.Body>
                                   <div className="row intervalType-row1">
-                                    <div
-                                      className="col-sm-10 mb-2"
-                                      style={{
-                                        display: "flex",
-                                        justifyContent: "space-evenly",
-                                        alignItems: "center",
-                                      }}
-                                    >
-                                      <label className="mr-2">Every</label>
+                                    <div className="col-sm-10 mb-2 d-flex align-items-center">
+                                      <label
+                                        htmlFor="repeatEvery"
+                                        className="mr-2"
+                                      >
+                                        Every
+                                      </label>
                                       <input
+                                        id="repeatEvery"
                                         type="number"
                                         className="form-control repeat-every-value"
-                                        aria-label="every week"
-                                        style={{
-                                          width: "20%",
-                                          display: "inline-block",
-                                          marginLeft: "5px",
-                                        }}
+                                        aria-label="Repeat every week"
+                                        style={{ width: "20%" }}
                                         name="repeatEvery"
                                         value={intervalState.repeatEvery}
                                         onChange={handleInputChange}
@@ -1212,12 +1455,8 @@ export default function RightDashboard() {
                                       <input
                                         type="number"
                                         className="form-control repeat-every-value"
-                                        aria-label=" weeks"
-                                        style={{
-                                          width: "20%",
-                                          display: "inline-block",
-                                          marginLeft: "5px",
-                                        }}
+                                        aria-label="Weeks duration"
+                                        style={{ width: "20%" }}
                                         name="repeatDuration"
                                         value={intervalState.repeatDuration}
                                         onChange={handleInputChange}
@@ -1226,58 +1465,61 @@ export default function RightDashboard() {
                                     </div>
                                   </div>
 
-                                  <div className="row intervalType-row2 mt-3 three">
+                                  {/* Day Selection with WCAG Fixes */}
+                                  <div className="row intervalType-row2 mt-3">
                                     <div className="col-sm-12">
-                                      <div className="d-flex justify-content-between">
-                                        {[
-                                          "Monday",
-                                          "Tuesday",
-                                          "Wednesday",
-                                          "Thursday",
-                                          "Friday",
-                                          "Saturday",
-                                          "Sunday",
-                                        ].map((day) => (
-                                          <div
-                                            key={day}
-                                            className="custom-control custom-checkbox"
-                                          >
-                                            <input
-                                              type="checkbox"
-                                              className="custom-control-input"
-                                              aria-label="calender"
-                                              id={`check${day}`}
-                                              name={day}
-                                              checked={intervalState.recurringDaysSelected.includes(
-                                                day
-                                              )}
-                                              onChange={handleInputChange}
-                                            />
-                                            <label
-                                              className="custom-control-label"
-                                              htmlFor={`check${day}`}
+                                      <fieldset>
+                                        <legend className="sr-only">
+                                          Select Recurring Days
+                                        </legend>
+                                        <div className="d-flex justify-content-between">
+                                          {[
+                                            "Monday",
+                                            "Tuesday",
+                                            "Wednesday",
+                                            "Thursday",
+                                            "Friday",
+                                            "Saturday",
+                                            "Sunday",
+                                          ].map((day) => (
+                                            <div
+                                              key={day}
+                                              className="custom-control custom-checkbox"
                                             >
-                                              {day}
-                                            </label>
-                                          </div>
-                                        ))}
-                                      </div>
+                                              <input
+                                                type="checkbox"
+                                                className="custom-control-input"
+                                                id={`check${day}`}
+                                                name={day}
+                                                checked={intervalState.recurringDaysSelected.includes(
+                                                  day
+                                                )}
+                                                onChange={handleInputChange}
+                                              />
+                                              <label
+                                                className="custom-control-label"
+                                                htmlFor={`check${day}`}
+                                              >
+                                                {day}
+                                              </label>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </fieldset>
                                     </div>
                                   </div>
 
+                                  {/* End Date */}
                                   <div className="row intervalType-row4 mt-3">
                                     <div className="col-8">
-                                      <label>End Date</label>
+                                      <label htmlFor="endDate">End Date</label>
                                       <input
+                                        id="endDate"
                                         type="datetime-local"
                                         name="endDate"
                                         className="form-control time"
-                                        aria-label="end date "
-                                        style={{
-                                          width: "70%",
-                                          display: "inline-block",
-                                          marginLeft: "5px",
-                                        }}
+                                        aria-label="End date"
+                                        style={{ width: "70%" }}
                                         value={intervalState.endDate}
                                         onChange={handleInputChange}
                                       />
@@ -1286,15 +1528,6 @@ export default function RightDashboard() {
                                       <div>
                                         <a href="/"> Remove</a>
                                       </div>
-                                    </div>
-                                  </div>
-                                  <div className="row intervalType-row5 mt-3">
-                                    <div className="col">
-                                      <p className="text-center">
-                                        Occurs every month on the first Monday
-                                        starting <span>10/11/23</span> until{" "}
-                                        <span>15/11/23</span>
-                                      </p>
                                     </div>
                                   </div>
                                 </Modal.Body>
@@ -1321,36 +1554,33 @@ export default function RightDashboard() {
                                 onHide={closeIntervalTypeModal}
                                 backdrop={false}
                                 keyboard={true}
+                                role="dialog"
+                                aria-labelledby="monthly-modal-title"
                               >
                                 <Modal.Header closeButton>
-                                  <Modal.Title>
+                                  <Modal.Title id="monthly-modal-title">
                                     Monthly Interval Type
                                   </Modal.Title>
                                 </Modal.Header>
+
                                 <Modal.Body>
+                                  {/* Repeat Every Section */}
                                   <div className="row intervalType-row1">
-                                    <div
-                                      className="col-sm-6 mb-2"
-                                      style={{
-                                        display: "flex",
-                                        justifyContent: "space-evenly",
-                                        alignItems: "center",
-                                      }}
-                                    >
-                                      <label className="mr-2">
+                                    <div className="col-sm-6 d-flex align-items-center">
+                                      <label
+                                        htmlFor="monthlyRepeatEvery"
+                                        className="mr-2"
+                                      >
                                         Repeat every
                                       </label>
                                       <input
+                                        id="monthlyRepeatEvery"
                                         type="number"
                                         className="form-control repeat-every-value"
-                                        aria-label="Repeat every"
-                                        style={{
-                                          width: "30%",
-                                          display: "inline-block",
-                                          marginLeft: "5px",
-                                        }}
-                                        name="monthlyRepeatEvery"
-                                        value={intervalState.monthlyRepeatEvery}
+                                        aria-label="Repeat every months"
+                                        style={{ width: "30%" }}
+                                        name="repeatEvery"
+                                        value={intervalState.repeatEvery}
                                         onChange={handleInputChange}
                                       />
                                     </div>
@@ -1359,20 +1589,21 @@ export default function RightDashboard() {
                                     </div>
                                   </div>
 
-                                  <div className="row intervalType-row2 mt-3 two">
-                                    <div
-                                      className="col-sm-5 mb-2"
-                                      style={{
-                                        display: "flex",
-                                        justifyContent: "space-evenly",
-                                        alignItems: "center",
-                                      }}
-                                    >
+                                  {/* Monthly Options - On Day or On The */}
+                                  <fieldset className="row intervalType-row2 mt-3">
+                                    <legend className="sr-only">
+                                      Select Monthly Option
+                                    </legend>
+
+                                    {/* On Day Option */}
+                                    {/* On Day Option */}
+                                    <div className="col-sm-5 d-flex align-items-center">
                                       <input
                                         type="radio"
+                                        id="onDay"
                                         name="monthlyOption"
                                         className="onday-radio"
-                                        aria-label="months"
+                                        aria-labelledby="onDayLabel"
                                         style={{
                                           height: "20px",
                                           width: "20px",
@@ -1381,7 +1612,7 @@ export default function RightDashboard() {
                                           intervalState.monthlyOption ===
                                           "onDay"
                                         }
-                                        onChange={(e) =>
+                                        onChange={() =>
                                           handleInputChange({
                                             target: {
                                               name: "monthlyOption",
@@ -1390,34 +1621,39 @@ export default function RightDashboard() {
                                           })
                                         }
                                       />
-                                      <label className="ml-2">On Day</label>
+                                      <label
+                                        id="onDayLabel"
+                                        htmlFor="onDay"
+                                        className="ml-2"
+                                      >
+                                        On Day
+                                      </label>
                                       <input
                                         type="number"
                                         className="form-control onday-value"
-                                        aria-label="days"
+                                        aria-label="Day of the month"
                                         style={{
                                           width: "30%",
-                                          display: "inline-block",
-                                          marginRight: "10px",
+                                          marginLeft: "10px",
                                         }}
                                         name="monthlyOnDay"
                                         value={intervalState.monthlyOnDay}
                                         onChange={handleInputChange}
+                                        disabled={
+                                          intervalState.monthlyOption !==
+                                          "onDay"
+                                        } // 🔐 disable when not active
                                       />
                                     </div>
-                                    <div
-                                      className="col-sm-7 mb-2"
-                                      style={{
-                                        display: "flex",
-                                        justifyContent: "space-evenly",
-                                        alignItems: "center",
-                                      }}
-                                    >
+
+                                    {/* On The Option */}
+                                    <div className="col-sm-7 d-flex align-items-center">
                                       <input
                                         type="radio"
+                                        id="onThe"
                                         name="monthlyOption"
                                         className="onday-radio"
-                                        aria-label="monthlyOption"
+                                        aria-labelledby="onTheLabel"
                                         style={{
                                           height: "20px",
                                           width: "20px",
@@ -1426,7 +1662,7 @@ export default function RightDashboard() {
                                           intervalState.monthlyOption ===
                                           "onThe"
                                         }
-                                        onChange={(e) =>
+                                        onChange={() =>
                                           handleInputChange({
                                             target: {
                                               name: "monthlyOption",
@@ -1436,44 +1672,47 @@ export default function RightDashboard() {
                                         }
                                       />
                                       <label
+                                        id="onTheLabel"
+                                        htmlFor="onThe"
                                         className="ml-2"
-                                        style={{
-                                          whiteSpace: "nowrap",
-                                          paddingRight: "10px",
-                                          paddingLeft: "5px",
-                                        }}
                                       >
                                         On the
                                       </label>
-                                      <div
-                                        className="dropdown-wrapper"
-                                        style={{ display: "inline-block" }}
-                                      >
+
+                                      <div className="dropdown-wrapper ml-2">
                                         <select
                                           name="monthlyOccurrence"
-                                          className="custom-select mb-2"
-                                          aria-label="monthlyOccurrence"
-                                          style={{ marginRight: "5px" }}
+                                          className="custom-select"
+                                          aria-label="Select occurrence of the month"
                                           value={
                                             intervalState.monthlyOccurrence
                                           }
                                           onChange={handleInputChange}
+                                          disabled={
+                                            intervalState.monthlyOption !==
+                                            "onThe"
+                                          } // 🔐 disable when not active
                                         >
-                                          <option value="">select value</option>
+                                          <option value="">Select value</option>
                                           <option value="First">First</option>
                                           <option value="Second">Second</option>
                                           <option value="Third">Third</option>
                                           <option value="Fourth">Fourth</option>
                                           <option value="Last">Last</option>
                                         </select>
+
                                         <select
-                                          name="monthlyWeekday"
-                                          className="custom-select"
-                                          aria-label="monthlyWeekday"
-                                          value={intervalState.monthlyWeekday}
+                                          name="monthlyWeekDay"
+                                          className="custom-select ml-2"
+                                          aria-label="Select day of the week"
+                                          value={intervalState.monthlyWeekDay}
                                           onChange={handleInputChange}
+                                          disabled={
+                                            intervalState.monthlyOption !==
+                                            "onThe"
+                                          } // 🔐 disable when not active
                                         >
-                                          <option value="">select value</option>
+                                          <option value="">Select value</option>
                                           <option value="Monday">Monday</option>
                                           <option value="Tuesday">
                                             Tuesday
@@ -1492,21 +1731,21 @@ export default function RightDashboard() {
                                         </select>
                                       </div>
                                     </div>
-                                  </div>
+                                  </fieldset>
 
+                                  {/* End Date Section */}
                                   <div className="row intervalType-row3 mt-3">
                                     <div className="col-8">
-                                      <label>End Date</label>
+                                      <label htmlFor="monthlyEndDate">
+                                        End Date
+                                      </label>
                                       <input
+                                        id="monthlyEndDate"
                                         type="datetime-local"
                                         name="monthlyEndDate"
                                         className="form-control time"
-                                        aria-label="monthlyEndDate"
-                                        style={{
-                                          width: "70%",
-                                          display: "inline-block",
-                                          marginLeft: "5px",
-                                        }}
+                                        aria-label="Select end date"
+                                        style={{ width: "70%" }}
                                         value={intervalState.monthlyEndDate}
                                         onChange={handleInputChange}
                                       />
@@ -1517,16 +1756,27 @@ export default function RightDashboard() {
                                       </div>
                                     </div>
                                   </div>
+
+                                  {/* Summary Section */}
                                   <div className="row intervalType-row4 mt-3">
-                                    <div className="col">
-                                      <p className="text-center">
-                                        Occurs every month on the first Monday
-                                        starting <span>10/11/23</span> until{" "}
-                                        <span>15/11/23</span>
+                                    <div className="col text-center">
+                                      <p>
+                                        Occurs every month on the{" "}
+                                        <strong>
+                                          {intervalState.monthlyOccurrence}
+                                        </strong>
+                                        <strong>
+                                          {" "}
+                                          {intervalState.monthlyWeekDay}
+                                        </strong>{" "}
+                                        starting
+                                        <span> 10/11/23</span> until{" "}
+                                        <span>15/11/23</span>.
                                       </p>
                                     </div>
                                   </div>
                                 </Modal.Body>
+
                                 <Modal.Footer>
                                   <Button
                                     className="intervalCloseBtn"
@@ -1550,9 +1800,11 @@ export default function RightDashboard() {
                                 onHide={closeIntervalTypeModal}
                                 backdrop={false}
                                 keyboard={true}
+                                role="dialog"
+                                aria-labelledby="recurring-modal-title"
                               >
                                 <Modal.Header closeButton>
-                                  <Modal.Title>
+                                  <Modal.Title id="recurring-modal-title">
                                     Recurring Interval Type
                                   </Modal.Title>
                                 </Modal.Header>
@@ -1563,86 +1815,38 @@ export default function RightDashboard() {
                                       Random Date Selection
                                     </h5>
                                     <div className="d-flex mt-3">
-                                      <div style={{ width: "50%" }}>
+                                      <div style={{ width: "60%" }}>
                                         <CustomCalendar
                                           selectedDates={
-                                            intervalState.recurringDaysSelected
+                                            intervalState.selectedDates
                                           }
                                           setSelectedDates={updateSelectedDates}
+                                          aria-label="Custom Calendar for selecting dates"
                                         />
                                       </div>
                                       <div
                                         className="ms-3 border p-3 rounded shadow-sm d-flex flex-column"
-                                        style={{ width: "50%", height: "100%" }}
+                                        style={{ width: "40%" }}
                                       >
                                         <h6 className="text-center">
                                           Selected Dates
                                         </h6>
-
                                         <textarea
                                           className="form-control flex-grow-1"
                                           style={{ maxHeight: "12em" }}
                                           rows="10"
                                           readOnly
-                                          value={intervalState.recurringDaysSelected.join(
+                                          aria-label="Selected dates list"
+                                          value={intervalState.selectedDates.join(
                                             "\n"
                                           )}
                                         />
-
                                         <button
                                           className="btn btn-danger mt-2 w-100"
                                           onClick={handleClearDates}
                                         >
                                           Clear Dates
                                         </button>
-                                      </div>
-                                    </div>
-
-                                    {/* End Date Section */}
-                                    <div className="row mt-4">
-                                      <div className="col-8">
-                                        <label>End Date</label>
-                                        <input
-                                          type="datetime-local"
-                                          name="endDate"
-                                          aria-label="endDate"
-                                          value={intervalState.endDate}
-                                          onChange={handleInputChange}
-                                          className="form-control time"
-                                          style={{
-                                            width: "70%",
-                                            display: "inline-block",
-                                            marginLeft: "5px",
-                                          }}
-                                        />
-                                      </div>
-                                      <div className="col-4 text-center">
-                                        <div>
-                                          <a href="/"> Remove</a>
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    {/* Recurrence Info */}
-                                    <div className="row mt-3">
-                                      <div className="col">
-                                        <p className="text-center">
-                                          Occurs every
-                                          <span>
-                                            {intervalState.repeatEvery || 0}
-                                          </span>
-                                          {intervalState.interval} on the
-                                          selected days starting
-                                          <span>
-                                            {intervalState.startDate ||
-                                              "10/11/23"}
-                                          </span>
-                                          until
-                                          <span>
-                                            {intervalState.endDate ||
-                                              "15/11/23"}
-                                          </span>
-                                        </p>
                                       </div>
                                     </div>
                                   </div>
@@ -1755,14 +1959,12 @@ export default function RightDashboard() {
                               placeholder="search key word"
                               className="form-control"
                             />
-                            <button className="button">
-                              <img
-                                src={SearchIcon}
-                                alt="Search Icon"
-                                className="search-icon"
-                                onClick={handleClickPeopleSearch}
-                              />
-                            </button>
+                            <img
+                              src={SearchIcon}
+                              alt="Search Icon"
+                              className="search-icon"
+                              onClick={handleClickPeopleSearch}
+                            />
                           </div>
                         </div>
                       </Col>
@@ -1806,25 +2008,24 @@ export default function RightDashboard() {
                         <Col md={3} sm={6} xs={12} className="col-3 mb-3">
                           <div className="selectedField-value">
                             <div className="title">Owner</div>
-                            <div className="dropdown">
-                              <InfiniteDropdown
-                                options={Owners}
-                                selectedValue={
-                                  Owners.find((owner) => owner.id === OwnerID)
-                                    ? [
-                                        Owners.find(
-                                          (owner) => owner.id === OwnerID
-                                        ),
-                                      ]
-                                    : []
-                                }
-                                onChange={(selectedOption) => {
-                                  handleOwnerChange([selectedOption]);
-                                  dispatch(setownerID(selectedOption.id));
-                                  setOwnerID(selectedOption.id);
-                                }}
-                              />
-                            </div>
+                            <InfiniteDropdown
+                              id="Owner"
+                              options={Owners}
+                              selectedValue={
+                                Owners.find((owner) => owner.id === OwnerID)
+                                  ? [
+                                      Owners.find(
+                                        (owner) => owner.id === OwnerID
+                                      ),
+                                    ]
+                                  : []
+                              }
+                              onChange={(selectedOption) => {
+                                handleOwnerChange([selectedOption]);
+                                dispatch(setownerID(selectedOption.id));
+                                setOwnerID(selectedOption.id);
+                              }}
+                            />
                           </div>
                         </Col>
                         <Col md={3} sm={6} xs={12} className="col-3 mb-3">
@@ -1832,6 +2033,7 @@ export default function RightDashboard() {
                             <div className="title">Scheduler</div>
                             <div className="dropdown">
                               <InfiniteDropdown
+                                id="Scheduler"
                                 options={Scheduler}
                                 selectedValue={SelectedScheduler}
                                 onChange={(selectedOption) =>
@@ -1846,6 +2048,7 @@ export default function RightDashboard() {
                             <div className="title">Customer</div>
                             <div className="dropdown">
                               <InfiniteDropdown
+                                id="Customer"
                                 options={Customer}
                                 selectedValue={SelectedCustomer}
                                 onChange={handleCustomerClick}
@@ -1858,6 +2061,7 @@ export default function RightDashboard() {
                             <div className="title">Contact</div>
                             <div className="dropdown">
                               <InfiniteDropdown
+                                id="Contact"
                                 options={Contact}
                                 selectedValue={SelectedContact}
                                 onChange={(selectedOption) =>
@@ -2045,6 +2249,7 @@ export default function RightDashboard() {
                                   <div className="col-9">
                                     <div className="dropdown">
                                       <InfiniteDropdown
+                                        id={level.label}
                                         options={level.options}
                                         selectedValue={level.selectedValue}
                                         onChange={(selectedOption) =>
@@ -2115,6 +2320,7 @@ export default function RightDashboard() {
                                 <div className="col-9">
                                   <div className="dropdown">
                                     <InfiniteDropdown
+                                      id="Amenities"
                                       options={
                                         locationFilters.LFAmenities[0]
                                           ?.options || []
@@ -2184,6 +2390,7 @@ export default function RightDashboard() {
                               <div className="title">{location.value}</div>
                               <div className="dropdown">
                                 <InfiniteDropdown
+                                  id={location.value}
                                   options={location.options}
                                   selectedValue={location.selectedOption}
                                   onChange={(selected) =>
@@ -2207,7 +2414,35 @@ export default function RightDashboard() {
         <div className="search-footer d-flex justify-content-end">
           <div className="button">
             <button className=" btn btn-clear">Clear/Reset</button>
-            <button className="btn-schedule btn">Schedule</button>
+            <button className="btn-schedule btn" onClick={handleScheduleClick}>
+              Schedule
+            </button>
+            <Modal
+              show={isScheduleSummaryVisible}
+              onHide={() => setScheduleSummaryVisible(false)}
+              backdrop="static"
+              keyboard={true}
+              aria-labelledby="schedule-summary-title"
+            >
+              <Modal.Header closeButton>
+                <Modal.Title id="schedule-summary-title">
+                  Scheduled Summary
+                </Modal.Title>
+              </Modal.Header>
+              <Modal.Body>
+                <pre style={{ whiteSpace: "pre-wrap" }}>
+                  {formattedScheduleSummary}
+                </pre>
+              </Modal.Body>
+              <Modal.Footer>
+                <Button
+                  variant="secondary"
+                  onClick={() => setScheduleSummaryVisible(false)}
+                >
+                  Close
+                </Button>
+              </Modal.Footer>
+            </Modal>
             <button className="btn-search btn">Search</button>
           </div>
         </div>

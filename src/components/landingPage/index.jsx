@@ -8,30 +8,38 @@ export default function LandingPage() {
     <div className="landing-page">
       <header className="header">
         <div className="icon">
-          <img
-            src={SFMLOGO}
-            alt="logo"
-            style={{ width: "230px", height: "40px" }}
-          />
+          <h1>
+            <img
+              src={SFMLOGO}
+              alt="ScheduleFM Logo"
+              style={{ width: "230px", height: "40px" }}
+            />
+          </h1>
         </div>
         <div className="logoText" style={{ padding: "1rem" }}>
           Search and Schedule
         </div>
       </header>
       <main className="content1">
-        <div className="card-container">
-          <Link to="/graphicDesign/charlotte" className="card">
-            <h3>CHARLOTTE</h3>
-          </Link>
-
-          <Link to="/graphicDesign/untcom" className="card">
-            <h3>UNTCOM</h3>
-          </Link>
-
-          <Link to="/graphicDesign/dps" className="card">
-            <h3>DPS</h3>
-          </Link>
-        </div>
+        <nav className="card-container" aria-label="Graphic Design Locations">
+          <ul className="card-list">
+            <li>
+              <Link to="/charlotte" className="card">
+                <h3>CHARLOTTE</h3>
+              </Link>
+            </li>
+            <li>
+              <Link to="/untcom" className="card">
+                <h3>UNTCOM</h3>
+              </Link>
+            </li>
+            <li>
+              <Link to="/dps" className="card">
+                <h3>DPS</h3>
+              </Link>
+            </li>
+          </ul>
+        </nav>
       </main>
     </div>
   );

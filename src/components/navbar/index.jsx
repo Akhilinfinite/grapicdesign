@@ -16,14 +16,16 @@ export default function Navbar() {
     dispatch(logout());
   };
   return (
-    <div className="mainNav">
+    <div className="mainNav" id="main">
       <div className="leftNav">
         <div className="logo">
-          <img
-            src={SFMLOGO}
-            alt="logo"
-            style={{ width: "230px", height: "40px" }}
-          />
+          <h1>
+            <img
+              src={SFMLOGO}
+              alt="ScheduleFM Logo"
+              style={{ width: "230px", height: "40px" }}
+            />
+          </h1>
         </div>
         <div className="logoText">Search and Schedule</div>
       </div>
@@ -31,25 +33,25 @@ export default function Navbar() {
         <div className="menu">
           <div className="submenu">
             <div className="icon">
-              <img src={Settings} alt="logo" />
+              <img src={Settings} alt="Settings" />
             </div>
             <div className="text">Settings</div>
           </div>
           <div className="submenu">
             <div className="icon">
-              <img src={Notification} alt="logo" />
+              <img src={Notification} alt="Notification" />
             </div>
             <div className="text">Notifications</div>
           </div>
           <div className="submenu">
             <div className="icon">
-              <img src={Help} alt="logo" />
+              <img src={Help} alt="Help" />
             </div>
             <div className="text">Help</div>
           </div>
           <div className="submenu">
             <div className="icon" onClick={handleLogout}>
-              <img src={Logout} alt="logo" />
+              <img src={Logout} alt="Logout" />
             </div>
             <div className="text" onClick={handleLogout}>
               Logout
@@ -57,7 +59,7 @@ export default function Navbar() {
           </div>
           <div className="submenu">
             <div className="icon">
-              <img src={User} alt="logo" />
+              <img src={User} alt="User" />
             </div>
             <div className="text">HI Vinod Kumar</div>
           </div>

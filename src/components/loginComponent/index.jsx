@@ -15,11 +15,13 @@ export default function LoginComponent({ onLogin, loading, error }) {
     <div>
       <header className="header">
         <div className="icon">
-          <img
-            src={SFMLOGO}
-            alt="logo"
-            style={{ width: "230px", height: "40px" }}
-          />
+          <h1>
+            <img
+              src={SFMLOGO}
+              alt="ScheduleFM Logo"
+              style={{ width: "230px", height: "40px" }}
+            />
+          </h1>
         </div>
         <div className="logoText" style={{ padding: "1rem" }}>
           Search and Schedule
@@ -34,9 +36,12 @@ export default function LoginComponent({ onLogin, loading, error }) {
               <input
                 type="text"
                 value={username}
+                id="username"
+                name="username"
                 aria-label="username"
                 onChange={(e) => setUsername(e.target.value)}
                 disabled={loading}
+                autoComplete="username"
               />
             </div>
 
@@ -44,17 +49,24 @@ export default function LoginComponent({ onLogin, loading, error }) {
               <label>Password</label>
               <input
                 type="password"
+                id="password"
+                name="password"
                 value={password}
                 aria-label="password"
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
+                autoComplete="current-password"
               />
             </div>
 
             {error && <p style={{ color: "#e50000" }}>{error}</p>}
-            <button onClick={handleLogin} disabled={loading}>
-              {loading ? "Logging in..." : "Login"}
-            </button>
+            <input
+              type="submit"
+              className="button"
+              value={loading ? "Logging in..." : "Login"}
+              onClick={handleLogin}
+              disabled={loading}
+            />
           </div>
         </form>
       </div>

@@ -4,6 +4,7 @@ import sampleSlice from "../slices/sampleSlice";
 import authSlice from "../slices/authSlice";
 import clientSlice from "../slices/clientSlice";
 import ownerSlice from "../slices/ownerSlice";
+import intervalSlice from "../slices/intervalSlice";
 
 const store = configureStore({
   reducer: {
@@ -11,6 +12,7 @@ const store = configureStore({
     sample: sampleSlice,
     client: clientSlice,
     owner: ownerSlice,
+    interval: intervalSlice,
   },
 });
 

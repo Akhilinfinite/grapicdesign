@@ -35,13 +35,15 @@ const initialSessionData = savedSessionData
 const authSlice = createSlice({
   name: "auth",
   initialState: {
-    sessionData: initialSessionData,
+    sessionData: initialSessionData, // Load from localStorage on start
     loading: false,
     error: null,
   },
   reducers: {
     logout: (state) => {
       state.sessionData = null;
+      state.loading = false;
+      state.error = null;
       localStorage.removeItem("sessionData");
     },
   },
@@ -54,7 +56,7 @@ const authSlice = createSlice({
       .addCase(login.fulfilled, (state, action) => {
         state.loading = false;
         state.sessionData = action.payload;
-        localStorage.setItem("sessionData", JSON.stringify(action.payload));
+        localStorage.setItem("sessionData", JSON.stringify(action.payload)); // Save session
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
