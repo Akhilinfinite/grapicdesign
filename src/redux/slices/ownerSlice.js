@@ -1,7 +1,7 @@
+// src/store/slices/owner.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-// Fetch owner data dynamically
 export const fetchOwnerData = createAsyncThunk(
   "owner/fetchOwnerData",
   async (_, { getState }) => {

@@ -6,7 +6,7 @@ export const fetchDefaultValues = createAsyncThunk(
   async (_, { getState }) => {
     const clientname = getState().client.clientname;
     const ownerID = getState().owner.ownerID;
-    
+
     if (!clientname || ownerID === null) {
       throw new Error("Client name or owner ID is missing");
     }

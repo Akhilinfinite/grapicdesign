@@ -41,17 +41,6 @@ const InfiniteDropdown = ({ id, options, selectedValue, onChange }) => {
     }
   }, [visibleData]);
 
-  // const customStyles = {
-  //   menuList: (provided) => ({
-  //     ...provided,
-  //     height: "200px",
-  //     overflowY: "auto",
-  // //   }),
-  //   placeholder: (provided) => ({
-  //     ...provided,
-  //     color: "#444", // Higher contrast placeholder text
-  //   }),
-  // };
 
   const customStyles = {
     control: (provided, state) => ({
@@ -110,34 +99,35 @@ const InfiniteDropdown = ({ id, options, selectedValue, onChange }) => {
   };
 
   return (
-      <Select
-        inputId={id}
-        options={visibleData}
-        value={selectedValue}
-        onChange={onChange}
-        onInputChange={handleInputChange}
-        styles={customStyles}
-        aria-live="polite"
-        aria-label="Infinite scrolling dropdown"
-        aria-expanded={Boolean(visibleData.length)}
-        aria-haspopup="listbox"
-        components={{
-          MenuList: (props) => (
-            <div
-              {...props}
-              ref={(ref) => {
-                menuListRef.current = ref;
-                props.innerRef(ref);
-              }}
-              onScroll={handleMenuScroll}
-              style={{ height: "200px", overflowY: "auto" }}
-              role="listbox"
-              aria-label="Dropdown menu with infinite scrolling"
-              aria-activedescendant={selectedValue?.value || ""}
-            ></div>
-          ),
-        }}
-      />
+    <Select
+      inputId={id}
+      options={visibleData}
+      value={selectedValue}
+      onChange={onChange}
+      onInputChange={handleInputChange}
+      styles={customStyles}
+      aria-live="polite"
+      aria-label="Infinite scrolling dropdown"
+      aria-expanded={Boolean(visibleData.length)}
+      aria-haspopup="listbox"
+      components={{
+        MenuList: (props) => (
+          <div
+            {...props}
+            ref={(ref) => {
+              menuListRef.current = ref;
+              props.innerRef(ref);
+            }}
+            onScroll={handleMenuScroll}
+            style={{ height: "200px", overflowY: "auto" }}
+            role="listbox"
+            aria-label="Dropdown menu with infinite scrolling"
+            aria-activedescendant={selectedValue?.value || ""}
+            tabIndex={0}
+          ></div>
+        ),
+      }}
+    />
   );
 };
 

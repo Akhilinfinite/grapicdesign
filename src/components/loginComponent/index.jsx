@@ -32,7 +32,7 @@ export default function LoginComponent({ onLogin, loading, error }) {
           <div className="login-heading">Login</div>
           <div className="login-form">
             <div className="form-group">
-              <label>Username</label>
+              <label for="username">Username</label>
               <input
                 type="text"
                 value={username}
@@ -46,7 +46,7 @@ export default function LoginComponent({ onLogin, loading, error }) {
             </div>
 
             <div className="form-group">
-              <label>Password</label>
+              <label for="password">Password</label>
               <input
                 type="password"
                 id="password"

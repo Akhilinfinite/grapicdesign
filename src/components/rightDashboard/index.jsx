@@ -43,10 +43,11 @@ import CustomCalendar from "./components/custumCalender/index.jsx";
 
 export default function RightDashboard() {
   const dispatch = useDispatch();
-  const baseURL = "http://192.168.0.65:8500/rest/gvRestApi/";
+  const baseURL = "http://192.168.0.65/rest/gvRestApi/";
 
   const [Owners, setOwners] = useState([]);
   const [OwnerID, setOwnerID] = useState();
+  const sessionData = useSelector((state) => state.auth.sessionData);
   const data = useSelector((state) => state.sample.data);
   const loading = useSelector((state) => state.sample.loading);
   const clientname = useSelector((state) => state.client.clientname);
@@ -471,7 +472,7 @@ export default function RightDashboard() {
     if (
       Count2 === 1 &&
       locationFilters.levels &&
-      locationFilters.levels.length > 0
+      locationFilters.levels.length > 1
     ) {
       const fetchLocationData = async (levelId) => {
         try {
@@ -541,6 +542,7 @@ export default function RightDashboard() {
       setCount2(0);
     }
   }, [Count2, locationFilters, clientname, OwnerID]);
+
 
   const handleSelectChange = (selectedOption, levelId) => {
     setlocationFilters((prevFilters) => ({
@@ -697,7 +699,7 @@ export default function RightDashboard() {
           : 3;
 
       axios
-        .post("http://192.168.0.65:8500/rest/gvRestApi/schedule/getLabels/", {
+        .post(`${baseURL}schedule/getLabels/`, {
           clientname: clientname,
           owner_id: String(OwnerID),
           loctype_kir: loctype_kir,
@@ -835,6 +837,7 @@ export default function RightDashboard() {
       );
 
       const objectsToFetch = locationData.slice(0, currentIndex + 2);
+      console.log(objectsToFetch);
       const fetchPromises = objectsToFetch.map((location, index) => {
         const range = `0,${currentIndex + 1}`;
         return fetchLocationData(
@@ -855,6 +858,7 @@ export default function RightDashboard() {
               );
               if (responseIndex !== -1) {
                 const response = responses[responseIndex];
+                console.log(response, "if condition");
                 return {
                   ...location,
                   options: response.data,
@@ -880,6 +884,12 @@ export default function RightDashboard() {
             return {
               ...location,
               selectedOption: [selectedOption],
+            };
+          } else if (location.id > locationId) {
+            return {
+              ...location,
+              options: [], // clear options for all future locations
+              selectedOption: [], // clear selected options for all future locations
             };
           }
           return location;
@@ -1055,14 +1065,17 @@ export default function RightDashboard() {
       const lblcount = locationData.length;
       const response = await axios.post(`${baseURL}schedule/LocationLookup/`, {
         clientname: clientname,
+        owner: ownerID,
         h_value: h_value,
-        h_cvalue: variable,
         clabel: clabel,
+        h_cvalue: variable,
         loctype: Loctype,
         labelid: label_id ? label_id : clabel.toString(),
         quickloc: quickloc,
         lblcount: lblcount,
         deflab: 0,
+        PAGE: sessionData?.PAGE,
+        REQID: sessionData?.REQID,
       });
       const data = response.data.slice(2).map((e) => ({
         id: e.KEY,
@@ -2056,6 +2069,7 @@ export default function RightDashboard() {
                             </div>
                           </div>
                         </Col>
+                        {/* //434 */}
                         <Col md={3} sm={6} xs={12} className="col-3 mb-3">
                           <div className="selectedField-value">
                             <div className="title">Contact</div>

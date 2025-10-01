@@ -25,17 +25,17 @@ export default function LandingPage() {
           <ul className="card-list">
             <li>
               <Link to="/charlotte" className="card">
-                <h3>CHARLOTTE</h3>
+                CHARLOTTE
               </Link>
             </li>
             <li>
               <Link to="/untcom" className="card">
-                <h3>UNTCOM</h3>
+                UNTCOM
               </Link>
             </li>
             <li>
               <Link to="/dps" className="card">
-                <h3>DPS</h3>
+                DPS
               </Link>
             </li>
           </ul>
