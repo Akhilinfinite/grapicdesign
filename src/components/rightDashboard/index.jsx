@@ -37,9 +37,17 @@ import {
   setSelectedSchedulerF,
   setStartDateF,
 } from "../../redux/slices/intervalSlice.js";
+import {
+  getDayNumber,
+  getMonthPartNumber,
+  formatDateMMDDYYYY,
+  formatTimeHHMM,
+} from "../../api/dateUtils";
+import { generateDates } from "../../api/getEventDates.js";
 
 import { useSelector, useDispatch } from "react-redux";
 import CustomCalendar from "./components/custumCalender/index.jsx";
+import { setUsername } from "../../redux/slices/clientSlice.js";
 
 export default function RightDashboard() {
   const dispatch = useDispatch();
@@ -83,10 +91,38 @@ export default function RightDashboard() {
     };
 
     const formatIntervalSettings = () => {
-      const { intervalState: dates } = intervalState;
-      if (!Array.isArray(dates) || dates.length === 0)
+      const dates = intervalState.intervalState; // array of { start, end }
+
+      if (!Array.isArray(dates) || dates.length === 0) {
         return "No interval dates selected.";
-      return `**Scheduled Dates**:\n${dates.join(", ")}`;
+      }
+
+      const formattedDates = dates.map((d) => {
+        if (!d || !d.start) return "";
+
+        // Extract date and time from the ISO string without converting to local
+        const startISO = d.start; // e.g. "2025-10-15T15:00:00.000Z"
+        const endISO = d.end;
+
+        const [startDatePart, startTimePart] = startISO.split("T");
+        const [endDatePart, endTimePart] = endISO.split("T");
+
+        const formatDate = (dateStr) => {
+          const [year, month, day] = dateStr.split("-");
+          return `${day}/${month}/${year}`;
+        };
+
+        const formatTime = (timeStr) => {
+          // remove seconds and milliseconds
+          return timeStr.split(":").slice(0, 2).join(":");
+        };
+
+        return `${formatDate(startDatePart)} ${formatTime(
+          startTimePart
+        )} - ${formatTime(endTimePart)}`;
+      });
+
+      return `**Scheduled Dates**:\n${formattedDates.join("\n")}`;
     };
 
     const formattedText = `
@@ -274,36 +310,49 @@ export default function RightDashboard() {
 
   useEffect(() => {
     const getScheduler = () => {
-      axios
-        .post(`${baseURL}schedule/getRequestors/`, {
-          clientname: clientname,
-          owner_id: String(OwnerID),
-        })
-        .then(function (response) {
-          const data = response.data.DATA.map((e) => ({
+      const username = sessionData?.UNAME || null;
+
+      // Prepare both requests with different parameters
+      const request1 = axios.post(`${baseURL}schedule/getRequestors/`, {
+        clientname: clientname,
+        owner_id: String(OwnerID), // first parameter set
+      });
+
+      const request2 = axios.post(`${baseURL}schedule/getRequestors/`, {
+        clientname: clientname,
+        username: username,
+      });
+
+      // Run both calls in parallel
+      Promise.all([request1, request2])
+        .then(([response1, response2]) => {
+          // --- Handle first API response ---
+          const data = response1.data.DATA.map((e) => ({
+            id: e[0],
+            value: e[0],
+            label: e[1],
+          }));
+          const selectedScheduler = response2.data.DATA.map((e) => ({
             id: e[0],
             value: e[0],
             label: e[1],
           }));
           const own = Owners.filter((e) => e.id === OwnerID);
-          if (own.length > 0) {
-            const selected = data.filter((e) => e.id === own[0].Def_REQUESTOR);
-            setSelectedScheduler(selected);
-            setScheduler(data);
-            dispatch(setOwnerF(own));
-            dispatch(setSelectedSchedulerF(selected));
-          } else {
-            console.warn("No matching owner found!");
-          }
+          dispatch(setOwnerF(own));
+
+          setSelectedScheduler(selectedScheduler);
+          setScheduler(data);
+          dispatch(setSelectedSchedulerF(selectedScheduler));
         })
-        .catch(function (error) {
-          console.log(error);
+        .catch((error) => {
+          console.error("Error in parallel getRequestors:", error);
         });
     };
+
     if (OwnerID) {
       getScheduler();
     }
-  }, [clientname, Owners, OwnerID, dispatch]);
+  }, [clientname, Owners, sessionData, OwnerID, dispatch]);
 
   //customer API Implementation
   useEffect(() => {
@@ -319,9 +368,9 @@ export default function RightDashboard() {
             value: e[0],
             label: e[1],
           }));
-          const own = Owners.filter((e) => e.id === OwnerID);
-          if (own.length > 0) {
-            const selected = data.filter((e) => e.id === own[0].Def_CUSTOMER);
+          const Def_CUSTOMER = sessionData?.V_CUS || null;
+          if (Def_CUSTOMER) {
+            const selected = data.filter((e) => e.id === Def_CUSTOMER);
             dispatch(setSelectedCustomerF(selected));
             setSelectedCustomer(selected);
           } else {
@@ -336,7 +385,7 @@ export default function RightDashboard() {
     if (OwnerID) {
       getCustomer();
     }
-  }, [clientname, OwnerID, Owners, dispatch]);
+  }, [clientname, sessionData, OwnerID, Owners, dispatch]);
 
   const handleCustomerClick = (selectedOption) => {
     const variable = selectedOption.value;
@@ -369,16 +418,16 @@ export default function RightDashboard() {
         console.log(error);
       });
   };
+
   //API Contact
   useEffect(() => {
     const getContact = () => {
-      const own = Owners.filter((e) => e.id === OwnerID);
-      const customer_id = String(own[0].Def_CUSTOMER);
+      const Def_CUSTOMER = sessionData?.V_CUS || null;
       axios
         .post(`${baseURL}schedule/getContacts/`, {
           clientname: clientname,
           owner_id: String(OwnerID),
-          customer_id: customer_id,
+          customer_id: Def_CUSTOMER,
         })
         .then(function (response) {
           const data = response.data.DATA.map((e) => ({
@@ -386,8 +435,15 @@ export default function RightDashboard() {
             value: e[0],
             label: e[1],
             primaryContact: e[2],
+            NAME_FIRST: e[8] || "",
+            NAME_LAST: e[9] || "",
           }));
-          const selected = data.filter((e) => e.primaryContact === 1);
+          const selected = data.find((e) => e.primaryContact === 1);
+          const username = selected
+            ? `${selected.NAME_FIRST} ${selected.NAME_LAST}`.trim()
+            : "";
+
+          dispatch(setUsername(username));
           setSelectedContact(selected);
           dispatch(setSelectedContactF(selected));
           setContact(data);
@@ -399,7 +455,7 @@ export default function RightDashboard() {
     if (OwnerID) {
       getContact();
     }
-  }, [clientname, Owners, OwnerID, dispatch]);
+  }, [clientname, Owners, sessionData, OwnerID, dispatch]);
 
   const handleClickPeopleSearch = () => {
     const option = document.getElementById("people_input_Select").value;
@@ -472,7 +528,8 @@ export default function RightDashboard() {
     if (
       Count2 === 1 &&
       locationFilters.levels &&
-      locationFilters.levels.length > 1
+      locationFilters.levels.length > 1 &&
+      locationFilters.levels[0].options
     ) {
       const fetchLocationData = async (levelId) => {
         try {
@@ -542,7 +599,6 @@ export default function RightDashboard() {
       setCount2(0);
     }
   }, [Count2, locationFilters, clientname, OwnerID]);
-
 
   const handleSelectChange = (selectedOption, levelId) => {
     setlocationFilters((prevFilters) => ({
@@ -1116,13 +1172,15 @@ export default function RightDashboard() {
     monthlyOnDay: "",
     monthlyOccurrence: "",
     monthlyWeekDay: "",
-    recurringInterval: "Day(s)",
-    recurringDaysSelected: [],
+    RandomInterval: "Day(s)",
+    RandomDaysSelected: [],
   });
   const [GeneratedDates, setGeneratedDates] = useState([]);
   const [selectedIntervalState, setSelectedIntervalState] = useState({
     ...intervalState,
   });
+  const [isStartDateReadonly, setStartDateReadonly] = useState(false);
+  const [isEndDateReadonly, setEndDateReadonly] = useState(false);
   useEffect(() => {
     dispatch(setIntervalStateF(GeneratedDates));
   }, [GeneratedDates, dispatch]);
@@ -1131,7 +1189,7 @@ export default function RightDashboard() {
   const updateSelectedDates = (newDates) => {
     setIntervalState((prevState) => ({
       ...prevState,
-      selectedDates: newDates, // Update selected dates in the state
+      selectedDates: newDates,
     }));
   };
 
@@ -1142,115 +1200,148 @@ export default function RightDashboard() {
       selectedDates: [],
     }));
   };
-  const getDayNumber = (dayName) => {
-    const dayMap = {
-      Sunday: 1,
-      Monday: 2,
-      Tuesday: 3,
-      Wednesday: 4,
-      Thursday: 5,
-      Friday: 6,
-      Saturday: 7,
-    };
-    return dayMap[dayName];
-  };
-  const getMonthPartNumber = (part) => {
-    const map = {
-      First: 1,
-      Second: 2,
-      Third: 3,
-      Fourth: 4,
-      Last: 5,
-    };
-    return map[part] || 0;
-  };
-  const formatDateMMDDYYYY = (isoStr) => {
-    if (!isoStr) return "";
-    const date = new Date(isoStr);
-    const mm = String(date.getMonth() + 1).padStart(2, "0");
-    const dd = String(date.getDate()).padStart(2, "0");
-    const yyyy = date.getFullYear();
-    return `${mm}/${dd}/${yyyy}`;
-  };
 
-  const formatTimeHHMM = (isoStr) => {
-    if (!isoStr) return "";
-    const date = new Date(isoStr);
-    return date.toISOString().substr(11, 5); // Gets "HH:MM"
-  };
-  const handleSave = () => {
-    setSelectedIntervalState({ ...intervalState });
+  const handleSave = async () => {
     const { intervalType } = intervalState;
 
-    switch (intervalType) {
-      case "Weekly": {
-        const daysArray = (intervalState.recurringDaysSelected || []).map(
-          getDayNumber
-        );
-        const requestBody1 = {
-          clientname: clientname,
-          start_date: formatDateMMDDYYYY(StartTime),
-          start_time: formatTimeHHMM(StartTime),
-          enddate: formatDateMMDDYYYY(EndTime),
-          end_time: formatTimeHHMM(EndTime),
-          rptype: 1,
-          DAYS: daysArray.join(","),
-          EVERY_X_WEEKS: intervalState.repeatEvery,
-          FOR_X_WEEKS: intervalState.repeatDuration,
-        };
-        axios
-          .post(`${baseURL}schedule/getEventDates/`, requestBody1)
-          .then((response) => {
-            if (response.status === 200 && Array.isArray(response.data)) {
-              setGeneratedDates(response.data);
-              console.log("Dates stored:", response.data);
-            } else {
-              console.error("Unexpected response format:", response);
-            }
-          })
-          .catch((error) => {
-            console.error("API call failed:", error);
-          });
-        break;
+    try {
+      let requestBody = {};
+      let response = [];
+
+      switch (intervalType) {
+        case "Weekly": {
+          const daysArray = (intervalState.RandomDaysSelected || []).map(
+            getDayNumber
+          );
+
+          requestBody = {
+            type: "weekly",
+            startDate: formatDateMMDDYYYY(StartTime),
+            endDate: formatDateMMDDYYYY(EndTime),
+            startTime: formatTimeHHMM(StartTime),
+            endTime: formatTimeHHMM(EndTime),
+            days: daysArray,
+            durationWeeks: intervalState.repeatDuration,
+            everyXWeeks: intervalState.repeatEvery,
+          };
+
+          response = generateDates(requestBody);
+          break;
+        }
+
+        case "Monthly": {
+          const baseParams = {
+            type: "monthly",
+            startDate: formatDateMMDDYYYY(StartTime),
+            startTime: formatTimeHHMM(StartTime),
+            endTime: formatTimeHHMM(EndTime),
+            repeatEvery: intervalState.repeatEvery,
+          };
+
+          if (intervalState.monthlyOption === "onDay") {
+            requestBody = {
+              ...baseParams,
+              mode: "daynumber",
+              dayNumber: intervalState.monthlyOnDay,
+            };
+          } else if (intervalState.monthlyOption === "onThe") {
+            requestBody = {
+              ...baseParams,
+              mode: "weekday",
+              weekNumber: getMonthPartNumber(intervalState.monthlyOccurrence),
+              weekDay: getDayNumber(intervalState.monthlyWeekDay),
+            };
+          }
+
+          response = generateDates(requestBody);
+          break;
+        }
+
+        case "Random": {
+          requestBody = {
+            type: "random",
+            randomDates: intervalState.selectedDates || [],
+            startTime: formatTimeHHMM(StartTime),
+            endTime: formatTimeHHMM(EndTime),
+          };
+
+          response = generateDates(requestBody);
+          break;
+        }
+
+        default:
+          console.warn("⚠️ Unknown interval type:", intervalType);
+          return;
       }
 
-      case "Monthly":
-        const requestBody2 = {
-          clientname: clientname,
-          start_date: formatDateMMDDYYYY(StartTime),
-          start_time: formatTimeHHMM(StartTime),
-          enddate: formatDateMMDDYYYY(EndTime),
-          end_time: formatTimeHHMM(EndTime),
-          rptype: 2,
-          nummonth: intervalState.repeatEvery,
-          monthpart: getMonthPartNumber(intervalState.monthlyOccurrence),
-          weekpart: getDayNumber(intervalState.monthlyWeekDay),
-        };
-        axios
-          .post(`${baseURL}schedule/getEventDates/`, requestBody2)
-          .then((response) => {
-            if (response.status === 200 && Array.isArray(response.data)) {
-              setGeneratedDates(response.data);
-            } else {
-              console.error("Unexpected response format:", response);
-            }
-          })
-          .catch((error) => {
-            console.error("API call failed:", error);
-          });
-        break;
+      if (Array.isArray(response) && response.length > 0) {
+        response.sort((a, b) => new Date(a.start) - new Date(b.start));
+        setGeneratedDates(response);
 
-      case "Recurring":
-        setGeneratedDates(intervalState.selectedDates);
-        break;
+        const firstDate = response[0];
+        const lastDate = response[response.length - 1];
 
-      default:
-        console.warn("Unknown interval type – no action taken.");
-        break;
+        setStartTime(firstDate.start);
+        setEndTime(lastDate.end);
+        dispatch(setStartDateF(firstDate.start));
+        dispatch(setEndDateF(lastDate.end));
+
+        // Weekly & Monthly: start editable, end readonly; Random: both readonly
+        if (intervalType === "Weekly" || intervalType === "Monthly") {
+          setStartDateReadonly(false);
+          setEndDateReadonly(true);
+        } else if (intervalType === "Random") {
+          setStartDateReadonly(true);
+          setEndDateReadonly(true);
+        }
+      } else {
+        console.warn("⚠️ No valid dates generated for type:", intervalType);
+      }
+
+      setIntervalTypeModalVisible(false);
+    } catch (error) {
+      console.error("❌ Error while generating event dates:", error);
     }
-    setIntervalTypeModalVisible(false);
   };
 
+  useEffect(() => {
+    if (intervalState.intervalType === "Single") {
+      try {
+        const today = new Date();
+        const todayStr = formatDateMMDDYYYY(today);
+
+        const singleRequest = {
+          type: "single",
+          startDate: todayStr,
+          endDate: todayStr,
+          startTime: formatTimeHHMM(StartTime),
+          endTime: formatTimeHHMM(EndTime),
+        };
+
+        const response = generateDates(singleRequest);
+
+        if (Array.isArray(response) && response.length > 0) {
+          const firstDate = response[0];
+          const lastDate = response[response.length - 1];
+
+          // Update states
+          setGeneratedDates(response);
+          setStartTime(firstDate.start);
+          setEndTime(lastDate.end);
+          dispatch(setStartDateF(firstDate.start));
+          dispatch(setEndDateF(lastDate.end));
+
+          // Single interval: both fields editable
+          setStartDateReadonly(false);
+          setEndDateReadonly(false);
+        } else {
+          console.warn("⚠️ No dates generated for Single interval");
+        }
+      } catch (error) {
+        console.error("❌ Error generating Single interval dates:", error);
+      }
+    }
+  }, [intervalState.intervalType, handleSave]);
   const handleClose = () => {
     setIntervalState({ ...selectedIntervalState });
     setIntervalTypeModalVisible(false);
@@ -1268,37 +1359,31 @@ export default function RightDashboard() {
   // Function to handle dropdown change
   const handleIntervalTypeChange = (e) => {
     const selectedValue = e.target.value;
-    setIntervalState({
-      intervalType: selectedValue,
-      repeatEvery: "",
-      endDate: "",
-      weeklyOnDay: "",
-      weeklyOnTheOccurrence: "",
-      weeklyOnTheDay: "",
-      monthlyOnDay: "",
-      selectedDates: [],
-      monthlyOccurrence: "",
-      monthlyWeekDay: "",
-      recurringInterval: "Day(s)",
-      recurringDaysSelected: [],
-    });
 
-    setSelectedIntervalState({
+    // Prepare default state
+    const newState = {
       intervalType: selectedValue,
       repeatEvery: "",
       endDate: "",
       weeklyOnDay: "",
       weeklyOnTheOccurrence: "",
-      selectedDates: [],
       weeklyOnTheDay: "",
       monthlyOnDay: "",
+      selectedDates: [],
       monthlyOccurrence: "",
       monthlyWeekDay: "",
-      recurringInterval: "Day(s)",
-      recurringDaysSelected: [],
-    });
+      RandomInterval: "Day(s)",
+      RandomDaysSelected: [],
+    };
+
+    setIntervalState(newState);
+    setSelectedIntervalState(newState);
     setIntervalType(selectedValue);
-    setIntervalTypeModalVisible(true);
+
+    // ✅ If Single, call handleSave() directly (no modal)
+    if (selectedValue !== "Single") {
+      setIntervalTypeModalVisible(true);
+    }
   };
 
   const handleInputChange = (e) => {
@@ -1307,14 +1392,14 @@ export default function RightDashboard() {
     if (type === "checkbox") {
       // Handle checkbox values
       setIntervalState((prevState) => {
-        let updatedDays = [...prevState.recurringDaysSelected];
+        let updatedDays = [...prevState.RandomDaysSelected];
         if (checked) {
           if (!updatedDays.includes(name)) updatedDays.push(name);
         } else {
           updatedDays = updatedDays.filter((day) => day !== name);
         }
 
-        return { ...prevState, recurringDaysSelected: updatedDays };
+        return { ...prevState, RandomDaysSelected: updatedDays };
       });
     } else if (type === "number") {
       // Handle number inputs (ensuring valid numeric values)
@@ -1384,6 +1469,7 @@ export default function RightDashboard() {
                               value={StartTime}
                               onChange={setStartTime}
                               interval={intervalTime}
+                              readOnly={isStartDateReadonly}
                             />
                           </div>
                         </div>
@@ -1399,6 +1485,7 @@ export default function RightDashboard() {
                               value={EndTime}
                               onChange={setEndTime}
                               interval={intervalTime}
+                              readOnly={isEndDateReadonly}
                             />
                           </div>
                         </div>
@@ -1416,13 +1503,19 @@ export default function RightDashboard() {
                                 aria-label="interval Type"
                                 onChange={handleIntervalTypeChange}
                               >
-                                <option value="">select value</option>
-                                <option value="Weekly">weekly</option>
+                                <option value="Single">Single Day</option>
+                                <option value="Weekly">Weekly</option>
                                 <option value="Monthly">Monthly</option>
-                                <option value="Recurring">Recurring</option>
+                                <option value="Random">Random</option>
                               </select>
                             </div>
-                            <div onClick={handlePopUpOpen}>
+                            <div
+                              onClick={handlePopUpOpen}
+                              style={{
+                                cursor: "pointer",
+                                marginLeft: "0.5rem",
+                              }}
+                            >
                               <img
                                 src={Edit}
                                 alt="edit"
@@ -1483,17 +1576,17 @@ export default function RightDashboard() {
                                     <div className="col-sm-12">
                                       <fieldset>
                                         <legend className="sr-only">
-                                          Select Recurring Days
+                                          Select Random Days
                                         </legend>
                                         <div className="d-flex justify-content-between">
                                           {[
-                                            "Monday",
-                                            "Tuesday",
-                                            "Wednesday",
-                                            "Thursday",
-                                            "Friday",
-                                            "Saturday",
-                                            "Sunday",
+                                            "Mon",
+                                            "Tue",
+                                            "Wed",
+                                            "Thu",
+                                            "Fri",
+                                            "Sat",
+                                            "Sun",
                                           ].map((day) => (
                                             <div
                                               key={day}
@@ -1504,7 +1597,7 @@ export default function RightDashboard() {
                                                 className="custom-control-input"
                                                 id={`check${day}`}
                                                 name={day}
-                                                checked={intervalState.recurringDaysSelected.includes(
+                                                checked={intervalState.RandomDaysSelected.includes(
                                                   day
                                                 )}
                                                 onChange={handleInputChange}
@@ -1523,7 +1616,7 @@ export default function RightDashboard() {
                                   </div>
 
                                   {/* End Date */}
-                                  <div className="row intervalType-row4 mt-3">
+                                  {/* <div className="row intervalType-row4 mt-3">
                                     <div className="col-8">
                                       <label htmlFor="endDate">End Date</label>
                                       <input
@@ -1542,7 +1635,7 @@ export default function RightDashboard() {
                                         <a href="/"> Remove</a>
                                       </div>
                                     </div>
-                                  </div>
+                                  </div> */}
                                 </Modal.Body>
                                 <Modal.Footer>
                                   <Button
@@ -1579,12 +1672,12 @@ export default function RightDashboard() {
                                 <Modal.Body>
                                   {/* Repeat Every Section */}
                                   <div className="row intervalType-row1">
-                                    <div className="col-sm-6 d-flex align-items-center">
+                                    <div className="col-sm-6 d-flex align-items-center div-month">
                                       <label
                                         htmlFor="monthlyRepeatEvery"
                                         className="mr-2"
                                       >
-                                        Repeat every
+                                        Repeat for
                                       </label>
                                       <input
                                         id="monthlyRepeatEvery"
@@ -1596,8 +1689,6 @@ export default function RightDashboard() {
                                         value={intervalState.repeatEvery}
                                         onChange={handleInputChange}
                                       />
-                                    </div>
-                                    <div className="col-sm-6">
                                       <label>Month(s)</label>
                                     </div>
                                   </div>
@@ -1609,8 +1700,7 @@ export default function RightDashboard() {
                                     </legend>
 
                                     {/* On Day Option */}
-                                    {/* On Day Option */}
-                                    <div className="col-sm-5 d-flex align-items-center">
+                                    {/* <div className="col-sm-5 d-flex align-items-center">
                                       <input
                                         type="radio"
                                         id="onDay"
@@ -1657,10 +1747,10 @@ export default function RightDashboard() {
                                           "onDay"
                                         } // 🔐 disable when not active
                                       />
-                                    </div>
+                                    </div> */}
 
                                     {/* On The Option */}
-                                    <div className="col-sm-7 d-flex align-items-center">
+                                    <div className="d-flex align-items-center">
                                       <input
                                         type="radio"
                                         id="onThe"
@@ -1692,7 +1782,7 @@ export default function RightDashboard() {
                                         On the
                                       </label>
 
-                                      <div className="dropdown-wrapper ml-2">
+                                      <div className="dropdown-wrapper ml-2 d-flex dropdown-month">
                                         <select
                                           name="monthlyOccurrence"
                                           className="custom-select"
@@ -1716,7 +1806,7 @@ export default function RightDashboard() {
 
                                         <select
                                           name="monthlyWeekDay"
-                                          className="custom-select ml-2"
+                                          className="custom-select ml-2 mr-2"
                                           aria-label="Select day of the week"
                                           value={intervalState.monthlyWeekDay}
                                           onChange={handleInputChange}
@@ -1726,28 +1816,20 @@ export default function RightDashboard() {
                                           } // 🔐 disable when not active
                                         >
                                           <option value="">Select value</option>
-                                          <option value="Monday">Monday</option>
-                                          <option value="Tuesday">
-                                            Tuesday
-                                          </option>
-                                          <option value="Wednesday">
-                                            Wednesday
-                                          </option>
-                                          <option value="Thursday">
-                                            Thursday
-                                          </option>
-                                          <option value="Friday">Friday</option>
-                                          <option value="Saturday">
-                                            Saturday
-                                          </option>
-                                          <option value="Sunday">Sunday</option>
+                                          <option value="Mon">Monday</option>
+                                          <option value="Tue">Tuesday</option>
+                                          <option value="Wed">Wednesday</option>
+                                          <option value="Thu">Thursday</option>
+                                          <option value="Fri">Friday</option>
+                                          <option value="Sat">Saturday</option>
+                                          <option value="Sun">Sunday</option>
                                         </select>
                                       </div>
                                     </div>
                                   </fieldset>
 
                                   {/* End Date Section */}
-                                  <div className="row intervalType-row3 mt-3">
+                                  {/* <div className="row intervalType-row3 mt-3">
                                     <div className="col-8">
                                       <label htmlFor="monthlyEndDate">
                                         End Date
@@ -1768,23 +1850,36 @@ export default function RightDashboard() {
                                         <a href="/"> Remove</a>
                                       </div>
                                     </div>
-                                  </div>
+                                  </div> */}
 
                                   {/* Summary Section */}
                                   <div className="row intervalType-row4 mt-3">
                                     <div className="col text-center">
                                       <p>
-                                        Occurs every month on the{" "}
+                                        Occurs every month on the
+                                        {intervalState.monthlyOccurrence ? (
+                                          <> &nbsp;</>
+                                        ) : (
+                                          <></>
+                                        )}
                                         <strong>
                                           {intervalState.monthlyOccurrence}
                                         </strong>
+                                        {intervalState.monthlyOccurrence ? (
+                                          <> &nbsp;</>
+                                        ) : (
+                                          <></>
+                                        )}
                                         <strong>
-                                          {" "}
                                           {intervalState.monthlyWeekDay}
-                                        </strong>{" "}
-                                        starting
-                                        <span> 10/11/23</span> until{" "}
-                                        <span>15/11/23</span>.
+                                        </strong>
+                                        {intervalState.monthlyWeekDay ? (
+                                          <> &nbsp;</>
+                                        ) : (
+                                          <></>
+                                        )}{" "}
+                                        starting<br></br>
+                                        <span>{StartTime}</span>
                                       </p>
                                     </div>
                                   </div>
@@ -1806,19 +1901,19 @@ export default function RightDashboard() {
                                 </Modal.Footer>
                               </Modal>
                             )}
-                            {/* Recurring Interval Modal */}
-                            {intervalType === "Recurring" && (
+                            {/* Random Interval Modal */}
+                            {intervalType === "Random" && (
                               <Modal
                                 show={isIntervalTypeModalVisible}
                                 onHide={closeIntervalTypeModal}
                                 backdrop={false}
                                 keyboard={true}
                                 role="dialog"
-                                aria-labelledby="recurring-modal-title"
+                                aria-labelledby="Random-modal-title"
                               >
                                 <Modal.Header closeButton>
-                                  <Modal.Title id="recurring-modal-title">
-                                    Recurring Interval Type
+                                  <Modal.Title id="Random-modal-title">
+                                    Random Interval Type
                                   </Modal.Title>
                                 </Modal.Header>
 
@@ -1890,6 +1985,7 @@ export default function RightDashboard() {
                             <input
                               className="checkBox m-2"
                               type="checkbox"
+                              defaultChecked
                               aria-label="Conflicts"
                               style={{
                                 height: "20px",

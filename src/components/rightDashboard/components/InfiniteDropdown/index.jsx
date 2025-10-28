@@ -41,7 +41,6 @@ const InfiniteDropdown = ({ id, options, selectedValue, onChange }) => {
     }
   }, [visibleData]);
 
-
   const customStyles = {
     control: (provided, state) => ({
       ...provided,
@@ -111,21 +110,25 @@ const InfiniteDropdown = ({ id, options, selectedValue, onChange }) => {
       aria-expanded={Boolean(visibleData.length)}
       aria-haspopup="listbox"
       components={{
-        MenuList: (props) => (
-          <div
-            {...props}
-            ref={(ref) => {
-              menuListRef.current = ref;
-              props.innerRef(ref);
-            }}
-            onScroll={handleMenuScroll}
-            style={{ height: "200px", overflowY: "auto" }}
-            role="listbox"
-            aria-label="Dropdown menu with infinite scrolling"
-            aria-activedescendant={selectedValue?.value || ""}
-            tabIndex={0}
-          ></div>
-        ),
+        MenuList: (props) => {
+          const { innerRef, children } = props; // ✅ only use what’s safe
+          return (
+            <div
+              ref={(ref) => {
+                menuListRef.current = ref;
+                innerRef?.(ref);
+              }}
+              onScroll={handleMenuScroll}
+              style={{ height: "200px", overflowY: "auto" }}
+              role="listbox"
+              aria-label="Dropdown menu with infinite scrolling"
+              aria-activedescendant={selectedValue?.value || ""}
+              tabIndex={0}
+            >
+              {children}
+            </div>
+          );
+        },
       }}
     />
   );

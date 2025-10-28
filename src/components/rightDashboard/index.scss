@@ -155,7 +155,7 @@
             width: 100%;
             .calender-setup {
               width: 100%;
-              font-size: 1rem;
+              font-size: 0.9rem;
               font-weight: 400;
               line-height: 1.5;
               color: #212529;
@@ -277,6 +277,79 @@
   }
 }
 
+.selectedSearchField {
+  display: flex;
+  align-items: center;
+}
+
+.selectedSearchField label {
+  margin-right: 10px;
+}
+.content {
+  .dropdown-wrapper {
+    padding: 5px;
+  }
+}
+
+.selectedSearchField {
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  background-color: #fff; // ✅ Ensure strong contrast with text
+  padding: 5px;
+
+  input {
+    flex: 1;
+    border: 2px solid #333; // ✅ Strong contrast border (at least 3:1)
+    background-color: #fff;
+    color: #000; // ✅ Ensure text is readable
+    padding: 5px;
+    border-radius: 4px;
+    outline: none;
+    font-size: 16px;
+    margin-right: 4px;
+
+    &::placeholder {
+      color: #555; // ✅ Slightly darker placeholder for better contrast
+    }
+
+    &:focus {
+      border-color: #0056b3; // ✅ High-contrast focus color
+      outline: 3px solid #0056b3; // ✅ Better focus visibility
+    }
+  }
+
+  .search-icon {
+    cursor: pointer;
+    padding: 5px;
+    border: 2px solid #000; // ✅ Strong contrast border for separation
+    background-color: #e0e0e0; // ✅ Ensures contrast with the input field
+    border-radius: 4px;
+
+    &:hover {
+      background-color: #ccc; // ✅ High contrast on hover
+    }
+  }
+}
+
+.selectedField-header {
+  background-color: #f4f6f8 !important;
+}
+
+@media (max-width: 575px) {
+  .calender-setup {
+    .add {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      p {
+        margin-top: 1rem;
+      }
+    }
+  }
+}
+
+//calender styles
 .react-calendar {
   width: 100%;
   border: none;
@@ -319,6 +392,7 @@
   height: 36px !important;
 }
 
+// model box styles
 @media screen and (min-width: 450px) and (max-width: 600px) {
   .intervalType-row1 input[type="number"] {
     width: 20% !important;
@@ -413,6 +487,29 @@
     width: calc(100% - 10px);
   }
 }
+.mr-2,
+.ml-2,
+.form-control {
+  margin-right: 0.5rem !important;
+}
+.dropdown-month{
+  width: 60%;
+}
+.div-month{
+  width: 100% !important;
+}
+.daysDiv {
+  flex-direction: row;
+  .custom-control {
+    display: flex;
+    justify-content: center;
+    .custom-control-input {
+      margin-right: 0.25rem;
+      display: flex;
+      justify-content: center;
+    }
+  }
+}
 
 .filter-reset-btn {
   background: none !important;
@@ -431,68 +528,4 @@
   }
 }
 
-.selectedSearchField {
-  display: flex;
-  align-items: center;
-}
-
-.selectedSearchField label {
-  margin-right: 10px;
-}
-
-.selectedSearchField {
-  display: flex;
-  align-items: center;
-  border-radius: 4px;
-  background-color: #fff; // ✅ Ensure strong contrast with text
-  padding: 5px;
-
-  input {
-    flex: 1;
-    border: 2px solid #333; // ✅ Strong contrast border (at least 3:1)
-    background-color: #fff;
-    color: #000; // ✅ Ensure text is readable
-    padding: 8px;
-    border-radius: 4px;
-    outline: none;
-    font-size: 16px;
-
-    &::placeholder {
-      color: #555; // ✅ Slightly darker placeholder for better contrast
-    }
-
-    &:focus {
-      border-color: #0056b3; // ✅ High-contrast focus color
-      outline: 3px solid #0056b3; // ✅ Better focus visibility
-    }
-  }
-
-  .search-icon {
-    cursor: pointer;
-    padding: 5px;
-    border-left: 2px solid #000; // ✅ Strong contrast border for separation
-    background-color: #e0e0e0; // ✅ Ensures contrast with the input field
-    border-radius: 0 4px 4px 0;
-
-    &:hover {
-      background-color: #ccc; // ✅ High contrast on hover
-    }
-  }
-}
-
-.selectedField-header {
-  background-color: #f4f6f8 !important;
-}
-
-@media (max-width: 575px) {
-  .calender-setup {
-    .add {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      p {
-        margin-top: 1rem;
-      }
-    }
-  }
-}
+// model box styles end

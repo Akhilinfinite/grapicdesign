@@ -23,13 +23,13 @@
     display: flex;
     flex-direction: row;
     .leftDashboard {
-      width: 17%;
+      width: 15%;
       min-height: 100vh;
       padding: 0rem 0.5rem;
       background-color: #f4f6f8;
     }
     .rightDashboard {
-      width: 83%;
+      width: 85%;
       overflow-y: hidden;
     }
   }

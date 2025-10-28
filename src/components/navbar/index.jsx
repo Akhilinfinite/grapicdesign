@@ -8,10 +8,16 @@ import User from "../../asserts/images/Icons/user.svg";
 import Logout from "../../asserts/images/Icons/logout.png";
 
 import { logout } from "../../redux/slices/authSlice";
-import { useDispatch } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 
 export default function Navbar() {
   const dispatch = useDispatch();
+
+  // ✅ Get username from Redux (or localStorage fallback)
+  const username =
+    useSelector((state) => state.client.username) ||
+    localStorage.getItem("username") ||
+    "User";
   const handleLogout = () => {
     dispatch(logout());
   };
@@ -61,7 +67,7 @@ export default function Navbar() {
             <div className="icon">
               <img src={User} alt="User" />
             </div>
-            <div className="text">HI Vinod Kumar</div>
+            <div className="text">HI {username}</div>
           </div>
         </div>
       </div>
