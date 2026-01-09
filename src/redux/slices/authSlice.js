@@ -8,12 +8,17 @@ export const login = createAsyncThunk(
   async ({ username, password }, { getState, rejectWithValue }) => {
     try {
       const clientname = getState().client.clientname;
-      const apiUrl = `http://192.168.0.65:8500/rest/gvRestApi/master/chkLogin`;
+      const apiUrl = `http://192.168.0.65/rest/gvRestApi/master/chkLogin`;
       const response = await axios.post(apiUrl, {
         frmUserID: username,
         frmPassword: password,
         clientname: clientname,
       });
+      console.log("Login API response:", apiUrl, {
+        frmUserID: username,
+        frmPassword: password,
+        clientname: clientname,
+      }, response.data);
       if (response.data.RESULT === 1) {
         return response.data;
       } else {

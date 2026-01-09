@@ -5,6 +5,9 @@ import authSlice from "../slices/authSlice";
 import clientSlice from "../slices/clientSlice";
 import ownerSlice from "../slices/ownerSlice";
 import intervalSlice from "../slices/intervalSlice";
+import eventNotesReducer from "../slices/eventNotesSlice";
+import billingItemsSlice from "../slices/billingItemsSlice";
+import scheduleReducer from "../slices/scheduleSlice";
 
 const store = configureStore({
   reducer: {
@@ -13,6 +16,9 @@ const store = configureStore({
     client: clientSlice,
     owner: ownerSlice,
     interval: intervalSlice,
+    eventNotes: eventNotesReducer,
+    billingItems: billingItemsSlice,
+    schedule: scheduleReducer,
   },
 });
 

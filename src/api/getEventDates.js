@@ -216,32 +216,24 @@ function generateMonthlyDates({
 
 // Random Dates
 function generateRandomDates({ randomDates, startTime, endTime }) {
-  const sTime24 = convertTo24Hour(startTime);
-  const eTime24 = convertTo24Hour(endTime);
-
   const results = randomDates
     .map((dateStr) => {
-      const dateObj = new Date(dateStr);
-      if (isNaN(dateObj)) {
-        console.error("Invalid random date:", dateStr);
-        return null;
-      }
+      // Normalize date string to YYYY-MM-DD
+      const [year, month, day] = dateStr.split("-").map((v) => v.padStart(2, "0"));
+      const normalizedDate = `${year}-${month}-${day}`;
 
-      // Convert to YYYY-MM-DD for consistent ISO
-      const formattedDate = dateObj.toISOString().split("T")[0];
-
-      const entry = {
-        start: `${formattedDate} ${sTime24}`,
-        end: `${formattedDate} ${eTime24}`,
-      };
+      const startISO = new Date(`${normalizedDate}T${startTime}:00`).toISOString();
+      const endISO = new Date(`${normalizedDate}T${endTime}:00`).toISOString();
 
       return {
-        start: formatDateForstart({ start: entry.start }),
-        end: formatDateForend({ end: entry.end }),
+        start: startISO,
+        end: endISO,
       };
     })
-    .filter(Boolean);
+    .filter(Boolean)
+    .sort((a, b) => new Date(a.start) - new Date(b.start));
 
-  results.sort((a, b) => new Date(a.start) - new Date(b.start));
   return results;
 }
+
+

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import Select from "react-select";
 
 const InfiniteDropdown = ({ id, options, selectedValue, onChange }) => {
@@ -82,10 +82,10 @@ const InfiniteDropdown = ({ id, options, selectedValue, onChange }) => {
     }),
   };
 
-  const handleInputChange = (inputValue) => {
-    if (inputValue) {
+  const handleInputChange = (inputvalue) => {
+    if (inputvalue) {
       const newFilteredOptions = options.filter((option) =>
-        option.label.toLowerCase().includes(inputValue.toLowerCase())
+        option.label.toLowerCase().includes(inputvalue.toLowerCase())
       );
       setFilteredOptions(newFilteredOptions);
       setVisibleData(newFilteredOptions.slice(0, batchSize));
@@ -110,25 +110,23 @@ const InfiniteDropdown = ({ id, options, selectedValue, onChange }) => {
       aria-expanded={Boolean(visibleData.length)}
       aria-haspopup="listbox"
       components={{
-        MenuList: (props) => {
-          const { innerRef, children } = props; // ✅ only use what’s safe
-          return (
-            <div
-              ref={(ref) => {
-                menuListRef.current = ref;
-                innerRef?.(ref);
-              }}
-              onScroll={handleMenuScroll}
-              style={{ height: "200px", overflowY: "auto" }}
-              role="listbox"
-              aria-label="Dropdown menu with infinite scrolling"
-              aria-activedescendant={selectedValue?.value || ""}
-              tabIndex={0}
-            >
-              {children}
-            </div>
-          );
-        },
+        MenuList: ({ children, innerRef, ...rest }) => (
+          <div
+            ref={(ref) => {
+              menuListRef.current = ref;
+              if (innerRef) innerRef(ref);
+            }}
+            onScroll={handleMenuScroll}
+            style={{ height: "200px", overflowY: "auto" }}
+            role="listbox"
+            aria-label="Dropdown menu with infinite scrolling"
+            aria-activedescendant={selectedValue?.value || ""}
+            tabIndex={0}
+            className={rest.className} // keep styling if needed
+          >
+            {children}
+          </div>
+        ),
       }}
     />
   );

@@ -7,7 +7,7 @@ const clientSlice = createSlice({
   name: "client",
   initialState: {
     clientname: savedClientName,
-    username: savedUsername, // new property for selected contact username
+    username: savedUsername,
   },
   reducers: {
     setClientName: (state, action) => {

@@ -67,7 +67,7 @@ export default function Navbar() {
             <div className="icon">
               <img src={User} alt="User" />
             </div>
-            <div className="text">HI {username}</div>
+            <div className="text">{username}</div>
           </div>
         </div>
       </div>

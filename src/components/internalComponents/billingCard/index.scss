@@ -1,0 +1,193 @@
+.billingWrapper {
+  display: flex;
+  gap: 2rem;
+  padding: 1rem;
+
+  /* Left & Right Panels */
+  .billingLeft {
+    width: 40%;
+    min-width: 300px;
+    padding: 1.5rem;
+    border: 2px solid;
+    p{
+        font-weight: bold;
+        margin-bottom: 1rem;
+        text-align: center;
+        width: 100%;
+        background-color: #0066cc;
+        color: #fff;
+    }
+  }
+
+  .billingRight {
+    padding: 1.5rem;
+    border: 2px solid;
+    width: 60%;
+  }
+
+  /* --------------------- FORM STYLING --------------------- */
+  .formGroup {
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+
+    &.inline {
+      flex-direction: row;
+      align-items: center;
+      gap: 10px;
+    }
+  }
+
+  .valueChargeRow {
+    display: flex;
+    gap: 2rem;
+
+    input {
+      width: 120px;
+    }
+    input[readonly] {
+      background-color: #f2f2f2 !important;
+      color: #666 !important;
+      border-color: #d0d0d0 !important;
+      cursor: not-allowed;
+      opacity: 0.8;
+    }
+  }
+
+  textarea {
+    resize: vertical;
+    height: 60px;
+  }
+
+  .btnRow {
+    margin-top: 15px;
+
+    .addBtn {
+      padding: 6px 15px;
+      background: #0066cc;
+      color: #fff;
+      border-radius: 4px;
+    }
+  }
+
+  /* --------------------- TABLE STYLING --------------------- */
+  .tableHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .clearBtn {
+      padding: 4px 10px;
+      border: 1px solid #d00;
+      color: #d00;
+      background: #fff;
+      border-radius: 4px;
+    }
+  }
+
+  .billingTable {
+    width: 100%;
+    margin-top: 10px;
+    border-collapse: collapse;
+
+    th,
+    td {
+      border: 1px solid #ccc;
+      padding: 6px;
+      font-size: 14px;
+      text-align: left;
+      word-break: break-word;
+    }
+
+    .defaultRow {
+      background: #f7f7f7;
+      font-weight: bold;
+    }
+  }
+
+  /* --------------------- RESPONSIVE STYLES --------------------- */
+
+  /* TABLET VIEW – Stack but keep spacing */
+  @media (max-width: 1024px) {
+    flex-direction: column;
+
+    .billingLeft,
+    .billingRight {
+      width: 100%;
+    }
+
+    .valueChargeRow {
+      gap: 1.5rem;
+
+      input {
+        width: 100%;
+      }
+    }
+  }
+
+  /* MOBILE VIEW – Full width single column */
+  @media (max-width: 768px) {
+    padding: 0.5rem;
+
+    .billingLeft,
+    .billingRight {
+      width: 100%;
+    }
+
+    .valueChargeRow {
+      flex-direction: column;
+
+      input {
+        width: 100%;
+      }
+    }
+
+    .formGroup.inline {
+      flex-direction: row;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .tableHeader {
+      flex-direction: column;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    /* Table horizontal scroll for small screens */
+    .billingTable {
+      display: block;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+  }
+
+  /* EXTRA SMALL PHONES */
+  @media (max-width: 480px) {
+    .formGroup.inline {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 5px;
+    }
+
+    .addBtn,
+    .clearBtn {
+      width: 100%;
+      text-align: center;
+    }
+
+    .valueChargeRow {
+      flex-direction: column;
+
+      input {
+        width: 100%;
+      }
+    }
+
+    .billingTable th,
+    .billingTable td {
+      padding: 8px;
+      font-size: 13px;
+    }
+  }
+}

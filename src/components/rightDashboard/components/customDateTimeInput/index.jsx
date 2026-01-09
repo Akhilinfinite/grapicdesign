@@ -281,6 +281,12 @@ const CustomDateTimePicker = ({
           </div>
         </div>
       )}
+      {/* <div className="date-time-picker-popup">
+          <div className="calendar-time-container">
+            {renderCalendar()}
+            {renderTime()}
+          </div>
+        </div> */}
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import "./index.scss";
 import "./LocationStyles.scss";
@@ -48,11 +48,17 @@ import { generateDates } from "../../api/getEventDates.js";
 import { useSelector, useDispatch } from "react-redux";
 import CustomCalendar from "./components/custumCalender/index.jsx";
 import { setUsername } from "../../redux/slices/clientSlice.js";
+import { useNavigate } from "react-router-dom";
+import {
+  setSearchResults,
+  setShowConflict,
+} from "../../redux/slices/scheduleSlice";
 
 export default function RightDashboard() {
   const dispatch = useDispatch();
-  const baseURL = "http://192.168.0.65/rest/gvRestApi/";
-
+  const [GeneratedDates, setGeneratedDates] = useState([]);
+  const navigate = useNavigate();
+  const [showConflicts, setShowConflicts] = useState(true);
   const [Owners, setOwners] = useState([]);
   const [OwnerID, setOwnerID] = useState();
   const sessionData = useSelector((state) => state.auth.sessionData);
@@ -65,82 +71,129 @@ export default function RightDashboard() {
   const [isOpen1, setIsOpen1] = useState(true);
   const [isOpen2, setIsOpen2] = useState(true);
   const [isOpen3, setIsOpen3] = useState(true);
-  const intervalState1 = useSelector((state) => state.interval);
+  const baseURL = "http://192.168.0.65/rest/gvRestApi/";
 
-  const [isScheduleSummaryVisible, setScheduleSummaryVisible] = useState(false);
-  const [formattedScheduleSummary, setFormattedScheduleSummary] = useState("");
+  const formatToApiDate = (isoString) => {
+    if (!isoString) return "";
 
-  const handleScheduleClick = () => {
-    const intervalState = intervalState1;
+    // Expecting something like "2025-12-07T17:00:00.000Z"
+    const [datePart, timePartWithMs] = isoString.split("T");
+    if (!datePart || !timePartWithMs) return "";
 
-    const formatData = (data) => {
-      if (!data || data.length === 0) return "Not Selected";
-      return Array.isArray(data)
-        ? data.map((item) => ` **${item.label}**`).join(", ")
-        : `**${data.label}**`;
-    };
+    const [yyyy, mm, dd] = datePart.split("-");
+    const timePart = timePartWithMs.split(".")[0]; // "17:00:00.000Z" -> "17:00:00"
 
-    const formatLocationData = () => {
-      if (!intervalState.locationData.length) return "No locations selected.";
-      return intervalState.locationData
-        .map(({ label, selectedValue }) => {
-          if (!selectedValue) return `**${label}**: Not Selected`;
-          return `**${label}**: **(${selectedValue.id})** — **${selectedValue.label}**`;
-        })
-        .join("\n");
-    };
+    return `${yyyy}/${mm}/${dd} ${timePart}`;
+  };
 
-    const formatIntervalSettings = () => {
-      const dates = intervalState.intervalState; // array of { start, end }
+  const buildDateLists = () => {
+    if (!GeneratedDates || GeneratedDates.length === 0) {
+      return { startList: "", endList: "" };
+    }
 
-      if (!Array.isArray(dates) || dates.length === 0) {
-        return "No interval dates selected.";
+    const startList = GeneratedDates.map((item) =>
+      formatToApiDate(item.start)
+    ).join(",");
+
+    const endList = GeneratedDates.map((item) =>
+      formatToApiDate(item.end)
+    ).join(",");
+
+    return { startList, endList };
+  };
+  const getLastSelectedLocation = () => {
+    if (!Array.isArray(locationData)) return { loclist: "", lfastopt: "" };
+
+    let result = null;
+
+    locationData.forEach((item) => {
+      const sel = item.selectedOption;
+
+      // Case 1: single select object
+      if (sel && !Array.isArray(sel) && sel.id) {
+        result = { loclist: sel.id, lfastopt: item.id };
       }
 
-      const formattedDates = dates.map((d) => {
-        if (!d || !d.start) return "";
+      // Case 2: multi-select (array)
+      if (Array.isArray(sel) && sel.length > 0 && sel[0].id) {
+        result = { loclist: sel[0].id, lfastopt: item.id };
+      }
+    });
 
-        // Extract date and time from the ISO string without converting to local
-        const startISO = d.start; // e.g. "2025-10-15T15:00:00.000Z"
-        const endISO = d.end;
+    return result || { loclist: "", lfastopt: "" };
+  };
 
-        const [startDatePart, startTimePart] = startISO.split("T");
-        const [endDatePart, endTimePart] = endISO.split("T");
+  const [searchScope, setSearchScope] = useState("");
+  const handleSearchClick = async () => {
+    const { startList, endList } = buildDateLists();
+    const { loclist, lfastopt } = getLastSelectedLocation();
+    dispatch(setShowConflict(showConflicts));
 
-        const formatDate = (dateStr) => {
-          const [year, month, day] = dateStr.split("-");
-          return `${day}/${month}/${year}`;
-        };
-
-        const formatTime = (timeStr) => {
-          // remove seconds and milliseconds
-          return timeStr.split(":").slice(0, 2).join(":");
-        };
-
-        return `${formatDate(startDatePart)} ${formatTime(
-          startTimePart
-        )} - ${formatTime(endTimePart)}`;
+    axios
+      .post(`${baseURL}schedule/searchSchedules/`, {
+        clientname: clientname?.toUpperCase() || "",
+        start_dateList: startList,
+        end_dateList: endList,
+        loclist: loclist || "",
+        owner: String(OwnerID),
+        loctype_kir:
+          selectedLocationType === "indoor"
+            ? "0"
+            : selectedLocationType === "outdoor"
+            ? "1"
+            : selectedLocationType === "equip"
+            ? "2"
+            : "3",
+        lfastopt: String(Number(lfastopt) + 2),
+        schedule: "no",
+        customer_id: SelectedCustomer?.[0]?.id || "",
+        function_id: "0",
+        showconflict: showConflicts ? "1" : "0",
+      })
+      .then(function (response) {
+        dispatch(setSearchResults(response.data));
+        console.log("Search Response:", response.data);
+        navigate(`/${clientname}/ScheduleResult`);
+      })
+      .catch(function (error) {
+        console.log(error);
       });
+  };
 
-      return `**Scheduled Dates**:\n${formattedDates.join("\n")}`;
-    };
+  const handleScheduleClick = async () => {
+    if (!showConflicts) return;
 
-    const formattedText = `
-  **Owner**: ${formatData(intervalState.owner)}
-  **Scheduler**: ${formatData(intervalState.selectedScheduler)}
-  **Customer**: ${formatData(intervalState.selectedCustomer)}
-  **Contact**: ${formatData(intervalState.selectedContact)}
-  **Start Date**: ${intervalState.startDate || "Not Set"}
-  **End Date**: ${intervalState.endDate || "Not Set"}
-  
-  ${formatIntervalSettings()}
-  
-  **Location Data**:
-  ${formatLocationData()}
-    `;
-
-    setFormattedScheduleSummary(formattedText);
-    setScheduleSummaryVisible(true);
+    const { startList, endList } = buildDateLists();
+    const { loclist, lfastopt } = getLastSelectedLocation();
+    axios
+      .post(`${baseURL}schedule/searchSchedules/`, {
+        clientname: clientname?.toUpperCase() || "",
+        start_dateList: startList,
+        end_dateList: endList,
+        loclist: loclist || "",
+        owner: String(OwnerID),
+        loctype_kir:
+          selectedLocationType === "indoor"
+            ? "0"
+            : selectedLocationType === "outdoor"
+            ? "1"
+            : selectedLocationType === "equip"
+            ? "2"
+            : "3",
+        lfastopt: String(lfastopt),
+        schedule: "yes",
+        customer_id: SelectedCustomer?.[0]?.id || "",
+        function_id: "0",
+        showconflict: showConflicts ? "1" : "0",
+      })
+      .then(function (response) {
+        console.log("Schedule Response:", response.data);
+        dispatch(setSearchResults(response.data));
+        navigate(`/${clientname}/ScheduleConfirmation`);
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
   };
 
   const [Scheduler, setScheduler] = useState([]);
@@ -227,6 +280,12 @@ export default function RightDashboard() {
             dispatch(setStartDateF(startTime));
             dispatch(setEndDateF(endTime));
             setIntervalTime(selectedOwner.EVENTSLOTTIME);
+            setGeneratedDates([
+              {
+                start: startTime,
+                end: endTime,
+              },
+            ]);
           }
         }
       }
@@ -236,19 +295,21 @@ export default function RightDashboard() {
       const selectedOwner = owner.find((o) => o.id === ownerID);
       setDefaultData(selectedOwner);
       setOwnerID(ownerID);
-      dispatch(fetchDefaultValues());
     }
   }, [owner, dispatch, ownerID, ownerLoad]);
 
   useEffect(() => {
-    dispatch(fetchDefaultValues());
-  }, [dispatch]);
+    if (OwnerID) {
+      dispatch(fetchDefaultValues());
+    }
+  }, [dispatch, OwnerID]);
   const handleOwnerChange = (selectedOption) => {
     if (selectedOption.length > 0) {
       dispatch(setownerID(selectedOption?.[0]?.id));
     }
   };
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     if (!loading && Array.isArray(data)) {
       const labelData = [
@@ -304,10 +365,10 @@ export default function RightDashboard() {
       });
       setRadiobtn(labelData);
     }
-  }, [data, loading]);
-
+  }, [loading]);
+  /* eslint-disable react-hooks/exhaustive-deps */
   //People
-
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     const getScheduler = () => {
       const username = sessionData?.UNAME || null;
@@ -348,13 +409,14 @@ export default function RightDashboard() {
           console.error("Error in parallel getRequestors:", error);
         });
     };
-
     if (OwnerID) {
       getScheduler();
     }
-  }, [clientname, Owners, sessionData, OwnerID, dispatch]);
+  }, [sessionData, OwnerID, dispatch]);
+  /* eslint-disable react-hooks/exhaustive-deps */
 
   //customer API Implementation
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     const getCustomer = () => {
       axios
@@ -385,7 +447,8 @@ export default function RightDashboard() {
     if (OwnerID) {
       getCustomer();
     }
-  }, [clientname, sessionData, OwnerID, Owners, dispatch]);
+  }, [sessionData, OwnerID, dispatch]);
+  /* eslint-disable react-hooks/exhaustive-deps */
 
   const handleCustomerClick = (selectedOption) => {
     const variable = selectedOption.value;
@@ -420,6 +483,7 @@ export default function RightDashboard() {
   };
 
   //API Contact
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     const getContact = () => {
       const Def_CUSTOMER = sessionData?.V_CUS || null;
@@ -455,7 +519,8 @@ export default function RightDashboard() {
     if (OwnerID) {
       getContact();
     }
-  }, [clientname, Owners, sessionData, OwnerID, dispatch]);
+  }, [sessionData, OwnerID, dispatch]);
+  /* eslint-disable react-hooks/exhaustive-deps */
 
   const handleClickPeopleSearch = () => {
     const option = document.getElementById("people_input_Select").value;
@@ -524,66 +589,100 @@ export default function RightDashboard() {
     LFAmenities: "",
   });
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
-    if (
+    const shouldRun =
       Count2 === 1 &&
       locationFilters.levels &&
       locationFilters.levels.length > 1 &&
-      locationFilters.levels[0].options
-    ) {
-      const fetchLocationData = async (levelId) => {
-        try {
-          const response = await axios.post(`${baseURL}schedule/getLevelType`, {
-            clientname: clientname,
-            label_id: levelId,
-          });
+      locationFilters.levels[0].options;
 
-          const res = await axios.post(`${baseURL}master/getAmenityList`, {
-            clientname: clientname,
-            OWNER_ID: String(OwnerID),
-          });
+    if (!shouldRun) return;
 
-          const Amenitydata = [
-            { id: "", value: "", label: "---Select---" },
-            ...res.data.DATA.map((e) => ({
-              id: e[0],
-              value: e[0],
-              label: e[1],
-            })),
-          ];
+    const fetchAmenityList = async () => {
+      try {
+        const res = await axios.post(`${baseURL}master/getAmenityList`, {
+          clientname,
+          OWNER_ID: String(OwnerID),
+        });
 
-          const data = [
-            { id: "0", value: "0", label: "---Select---" },
-            ...response.data.DATA.map((e) => ({
-              id: e[0],
-              value: e[0],
-              label: e[1],
-            })),
-          ];
+        const amenityArray = Array.isArray(res?.data?.DATA)
+          ? res.data.DATA
+          : [];
+        const Amenitydata = [
+          { id: "", value: "", label: "---Select---" },
+          ...amenityArray.map((e) => ({
+            id: e[0],
+            value: e[0],
+            label: e[1],
+          })),
+        ];
 
-          // Update the options for the level
-          setlocationFilters((prevFilters) => ({
-            ...prevFilters,
-            levels: prevFilters.levels.map((level) =>
-              level.id === levelId
-                ? { ...level, options: data, selectedValue: null }
-                : level
-            ),
-            LFAmenities: prevFilters.LFAmenities.map((amenity) => ({
-              ...amenity,
-              options: Amenitydata,
-              selectedValue: null,
-            })),
-          }));
-        } catch (error) {
-          console.error(`Error fetching data for level ${levelId}:`, error);
-        }
-      };
+        return Amenitydata;
+      } catch (error) {
+        console.error("❌ Error fetching amenities:", error);
+        return [
+          { id: "", value: "", label: "---Select---" }, // fallback
+        ];
+      }
+    };
 
-      const levelIds = locationFilters.levels.map((level) => level.id);
+    const fetchLevelData = async (levelId) => {
+      try {
+        const response = await axios.post(`${baseURL}schedule/getLevelType`, {
+          clientname,
+          label_id: levelId,
+        });
 
-      // Fetch data for each level
-      Promise.all(levelIds.map(fetchLocationData)).then(() => {
+        const levelArray = Array.isArray(response?.data?.DATA)
+          ? response.data.DATA
+          : [];
+
+        const data = [
+          { id: "0", value: "0", label: "---Select---" },
+          ...levelArray.map((e) => ({
+            id: e[0],
+            value: e[0],
+            label: e[1],
+          })),
+        ];
+
+        return { levelId, data };
+      } catch (error) {
+        console.error(`❌ Error fetching data for level ${levelId}:`, error);
+        return {
+          levelId,
+          data: [{ id: "0", value: "0", label: "---Select---" }],
+        };
+      }
+    };
+
+    const run = async () => {
+      try {
+        const [Amenitydata, levelResults] = await Promise.all([
+          fetchAmenityList(),
+          Promise.all(
+            locationFilters.levels.map((level) => fetchLevelData(level.id))
+          ),
+        ]);
+
+        // Update all levels and amenities once
+        setlocationFilters((prevFilters) => ({
+          ...prevFilters,
+          levels: prevFilters.levels.map((level) => {
+            const found = levelResults.find((res) => res.levelId === level.id);
+            return found
+              ? { ...level, options: found.data, selectedValue: null }
+              : level;
+          }),
+          LFAmenities: prevFilters.LFAmenities.map((amenity) => ({
+            ...amenity,
+            options: Amenitydata,
+            selectedValue: null,
+          })),
+        }));
+
+        // Sync local LF values
         setLFvalues(() => ({
           levels: locationFilters.levels.map((level) => ({
             id: level.id,
@@ -595,10 +694,16 @@ export default function RightDashboard() {
           LFHandicap: locationFilters.LFHandicap,
           LFAmenities: locationFilters.LFAmenities,
         }));
-      });
-      setCount2(0);
-    }
-  }, [Count2, locationFilters, clientname, OwnerID]);
+
+        setCount2(0);
+      } catch (error) {
+        console.error("❌ Error in combined fetch:", error);
+      }
+    };
+
+    run();
+  }, [Count2]);
+  /* eslint-disable react-hooks/exhaustive-deps */
 
   const handleSelectChange = (selectedOption, levelId) => {
     setlocationFilters((prevFilters) => ({
@@ -734,15 +839,18 @@ export default function RightDashboard() {
     }
   };
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     if (Loctype && Count === 1) {
       intialdata();
       setCount(0);
     }
-  }, [Loctype, Count, selectedLocationType, locationData]);
+  }, [Loctype, Count]);
+  /* eslint-disable react-hooks/exhaustive-deps */
 
   //Location
   //420
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     const fetchLocationData = () => {
       const loctype_kir =
@@ -788,9 +896,11 @@ export default function RightDashboard() {
           console.error("Error fetching location data:", error);
         });
     };
-
-    fetchLocationData();
-  }, [selectedLocationType, clientname, OwnerID]);
+    if (OwnerID) {
+      fetchLocationData();
+    }
+  }, [selectedLocationType, OwnerID]);
+  /* eslint-disable react-hooks/exhaustive-deps */
   //421
   const intialdata = async () => {
     if (locationData && locationData.length >= 2) {
@@ -893,7 +1003,6 @@ export default function RightDashboard() {
       );
 
       const objectsToFetch = locationData.slice(0, currentIndex + 2);
-      console.log(objectsToFetch);
       const fetchPromises = objectsToFetch.map((location, index) => {
         const range = `0,${currentIndex + 1}`;
         return fetchLocationData(
@@ -914,7 +1023,6 @@ export default function RightDashboard() {
               );
               if (responseIndex !== -1) {
                 const response = responses[responseIndex];
-                console.log(response, "if condition");
                 return {
                   ...location,
                   options: response.data,
@@ -1175,7 +1283,6 @@ export default function RightDashboard() {
     RandomInterval: "Day(s)",
     RandomDaysSelected: [],
   });
-  const [GeneratedDates, setGeneratedDates] = useState([]);
   const [selectedIntervalState, setSelectedIntervalState] = useState({
     ...intervalState,
   });
@@ -1603,7 +1710,7 @@ export default function RightDashboard() {
                                                 onChange={handleInputChange}
                                               />
                                               <label
-                                                className="custom-control-label"
+                                                className="custom-control-label ms-1"
                                                 htmlFor={`check${day}`}
                                               >
                                                 {day}
@@ -1777,7 +1884,7 @@ export default function RightDashboard() {
                                       <label
                                         id="onTheLabel"
                                         htmlFor="onThe"
-                                        className="ml-2"
+                                        className="ml-2 ms-2"
                                       >
                                         On the
                                       </label>
@@ -1785,7 +1892,7 @@ export default function RightDashboard() {
                                       <div className="dropdown-wrapper ml-2 d-flex dropdown-month">
                                         <select
                                           name="monthlyOccurrence"
-                                          className="custom-select"
+                                          className="custom-select ml-2"
                                           aria-label="Select occurrence of the month"
                                           value={
                                             intervalState.monthlyOccurrence
@@ -1985,11 +2092,12 @@ export default function RightDashboard() {
                             <input
                               className="checkBox m-2"
                               type="checkbox"
-                              defaultChecked
+                              checked={showConflicts}
+                              onChange={(e) =>
+                                setShowConflicts(e.target.checked)
+                              }
                               aria-label="Conflicts"
-                              style={{
-                                height: "20px",
-                              }}
+                              style={{ height: "20px" }}
                             />
                             <div className="conflict ml-2">Show Conflicts</div>
                           </div>
@@ -2059,13 +2167,13 @@ export default function RightDashboard() {
                       </Col>
                       <Col md={4} sm={6} xs={12} className="col-3">
                         <div className="seletedFeild">
-                          <label>Selected Field</label>
+                          <label>search key word</label>
                           <div className="selectedSearchField">
                             <input
                               type="text"
                               id="people_input_Search"
                               aria-label="people  Search input"
-                              placeholder="search key word"
+                              placeholder="Enter search key word"
                               className="form-control"
                             />
                             <img
@@ -2231,8 +2339,13 @@ export default function RightDashboard() {
                 <div className="accordion-body">
                   <div className="calender-setup">
                     <Row>
-                      <Col xs={12} className="mb-3 mr-3">
-                        <div className="location-radio-btn d-flex flex-wrap">
+                      <Col
+                        xs={12}
+                        md={3}
+                        sm={6}
+                        className=" col-3 mr-3 d-flex justify-content-center align-items-center"
+                      >
+                        <div className="location-radio-btn d-flex flex-wrap ">
                           <p className="list mr-3 mb-2">Location Type :</p>
                           {radiobtn
                             .filter((item) => item.enable === 1)
@@ -2260,51 +2373,7 @@ export default function RightDashboard() {
                             ))}
                         </div>
                       </Col>
-                    </Row>
-                    <Row>
-                      <Col md={3} sm={6} xs={12} className="col-3 mb-3">
-                        <div className="content">
-                          <div className="title">Choose field to Search</div>
-                          <div className="dropdown-wrapper">
-                            <select
-                              name="days"
-                              className="custom-select"
-                              id="location_input_Select"
-                              aria-label="location Select input"
-                              onChange={(e) => handelLocationSearchDropDown(e)}
-                            >
-                              {locationData.length !== 0 && (
-                                <option value="0">Defalt</option>
-                              )}
-                              {locationData.map((location) => (
-                                <option key={location.id} value={location.id}>
-                                  {location.value}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-                      </Col>
-                      <Col xs={12} sm={4} className="col-4 mb-3">
-                        <div className="seletedFeild">
-                          <label>Selected Field</label>
-                          <div className="selectedSearchField">
-                            <input
-                              type="text"
-                              id="location_input_Search"
-                              aria-label="location Search input"
-                              placeholder="search key word"
-                              className="form-control"
-                            />
-                            <img
-                              src={SearchIcon}
-                              alt="Search Icon"
-                              className="search-icon"
-                              onClick={handleClickLocationSearch}
-                            />
-                          </div>
-                        </div>
-                      </Col>
+                      <Col xs={12} sm={4}></Col>
                       <Col xs={12} sm={4} className="col-4">
                         <div className="edit-add p-4">
                           <div className="edit">
@@ -2484,6 +2553,96 @@ export default function RightDashboard() {
                         </Modal.Footer>
                       </Modal>
                     </Row>
+                    <Row>
+                      <Col md={3} sm={6} xs={12} className="col-3 mb-3">
+                        <div className="content">
+                          <div className="title">Choose field to Search</div>
+                          <div className="dropdown-wrapper">
+                            <select
+                              name="days"
+                              className="custom-select"
+                              id="location_input_Select"
+                              aria-label="location Select input"
+                              onChange={(e) => handelLocationSearchDropDown(e)}
+                            >
+                              {locationData.length !== 0 && (
+                                <option value="0">Defalt</option>
+                              )}
+                              {locationData.map((location) => (
+                                <option key={location.id} value={location.id}>
+                                  {location.value}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      </Col>
+                      <Col xs={12} sm={4} className="col-4 mb-3">
+                        <div className="seletedFeild">
+                          <label>search key word</label>
+                          <div className="selectedSearchField">
+                            <input
+                              type="text"
+                              id="location_input_Search"
+                              aria-label="location Search input"
+                              placeholder="Enter search key word"
+                              className="form-control"
+                            />
+                            <img
+                              src={SearchIcon}
+                              alt="Search Icon"
+                              className="search-icon"
+                              onClick={handleClickLocationSearch}
+                            />
+                          </div>
+                        </div>
+                      </Col>
+                      <Col xs={12} sm={4} className="col-4">
+                        <div className="content">
+                          <div className="title">Search scope</div>
+                          <div className="dropdown-wrapper">
+                            <select
+                              name="days"
+                              className="custom-select w-75 "
+                              id="location_input_Select"
+                              aria-label="location Select input"
+                              onChange={(e) => handelSearchDropDown(e)}
+                            >
+                              {locationData.length !== 0 && (
+                                <option value="0">Defalt</option>
+                              )}
+                              {locationData.map((location) => (
+                                <option key={location.id} value={location.id}>
+                                  {location.value}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                        {/* <div className="edit-add p-4">
+                          <div className="edit">
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                cursor: "pointer",
+                              }}
+                              onClick={handleLocationFilterClick}
+                              className="handleLocationFilter"
+                            >
+                              <img
+                                src={Filter}
+                                alt="Filter"
+                                style={{ marginRight: "5px" }}
+                              />
+                              <p style={{ marginBottom: "0" }}>
+                                Location Filter
+                              </p>
+                            </div>
+                          </div>
+                        </div> */}
+                      </Col>
+                    </Row>
                     <div className="selectedField-header">
                       <p>Selected Fields</p>
                     </div>
@@ -2524,35 +2683,20 @@ export default function RightDashboard() {
         <div className="search-footer d-flex justify-content-end">
           <div className="button">
             <button className=" btn btn-clear">Clear/Reset</button>
-            <button className="btn-schedule btn" onClick={handleScheduleClick}>
+            <button className="btn-schedule btn" onClick={handleSearchClick}>
+              Search
+            </button>
+            <button
+              className="btn-schedule btn"
+              onClick={handleScheduleClick}
+              disabled={!showConflicts}
+              style={{
+                opacity: showConflicts ? 1 : 0.5,
+                cursor: showConflicts ? "pointer" : "not-allowed",
+              }}
+            >
               Schedule
             </button>
-            <Modal
-              show={isScheduleSummaryVisible}
-              onHide={() => setScheduleSummaryVisible(false)}
-              backdrop="static"
-              keyboard={true}
-              aria-labelledby="schedule-summary-title"
-            >
-              <Modal.Header closeButton>
-                <Modal.Title id="schedule-summary-title">
-                  Scheduled Summary
-                </Modal.Title>
-              </Modal.Header>
-              <Modal.Body>
-                <pre style={{ whiteSpace: "pre-wrap" }}>
-                  {formattedScheduleSummary}
-                </pre>
-              </Modal.Body>
-              <Modal.Footer>
-                <Button
-                  variant="secondary"
-                  onClick={() => setScheduleSummaryVisible(false)}
-                >
-                  Close
-                </Button>
-              </Modal.Footer>
-            </Modal>
             <button className="btn-search btn">Search</button>
           </div>
         </div>
