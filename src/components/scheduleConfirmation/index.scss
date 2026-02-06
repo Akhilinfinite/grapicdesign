@@ -1,0 +1,373 @@
+/* ============================================================
+   MAIN PAGE STYLES (unchanged from your version)
+   ============================================================*/
+
+.scheduleConfirmationContainer {
+  padding: 1rem 1rem 3rem 1rem;
+  font-family: Lato, sans-serif;
+  color: #1e1e1c;
+  overflow-x: hidden;
+  background: #fff;
+
+  .headerRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #585b58;
+    padding-bottom: 0.5rem;
+
+
+    .backBtn {
+    background: #0d139d;
+    padding: 8px 18px;
+    color: #fff;
+    border-radius: 20px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+
+      &:hover {
+        background-color: #0a0f7c;
+      }
+  }
+    .button {
+    border: none;
+    display: inline-flex;
+    height: 30px;
+    padding: 2px 20px;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    color: var(--FM_white, #fff);
+    text-align: center;
+    font-family: Lato;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+    .pageTitle {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #000;
+    }
+  }
+
+  .detailsHeaderRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+
+    .detailsTitle {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #000;
+    }
+
+    .checkboxGroup {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .checkboxLabel {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      color: #000;
+
+      .checkboxInput {
+        width: 20px;
+        height: 20px;
+        border: 1px solid #000;
+        accent-color: #0d139d;
+
+        &:focus-visible {
+          outline: 3px solid #fa783c;
+          outline-offset: 2px;
+        }
+      }
+    }
+  }
+
+  .scheduleDetails {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+    flex-direction: row;
+
+    // .leftSection,
+    // .rightSection {
+    //   flex: 1;
+    //   min-width: 320px;
+    // }
+    .leftSection {
+      width: 33.33%;
+    }
+    .rightSection {
+      width: 64.66%;
+    }
+
+    .detailsBox {
+      border: 1px solid #0d139d;
+      border-radius: 3px;
+      background: #f4f6f8;
+      padding: 1rem;
+      height: 470px;
+      overflow-y: auto;
+
+      div {
+        margin-bottom: 0.75rem;
+
+        h4 {
+          font-size: 0.9rem;
+          font-weight: 500;
+          color: #585b58;
+        }
+
+        p {
+          font-size: 0.9rem;
+          font-weight: 600;
+          color: #1e1e1c;
+          margin: 0.25rem 0 0 0;
+        }
+      }
+
+      .fileSection {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+
+        .fileLink {
+          display: inline-flex;
+          align-items: center;
+          text-decoration: none;
+          color: #1e1e1c;
+          font-weight: 500;
+
+          img {
+            margin-right: 5px;
+          }
+
+          &:focus-visible {
+            outline: 3px solid #fa783c;
+            outline-offset: 2px;
+          }
+        }
+
+        .fileName {
+          font-weight: 500;
+          color: #0d139d;
+          text-decoration: underline;
+
+          &:focus-visible {
+            outline: 3px solid #fa783c;
+            outline-offset: 2px;
+          }
+        }
+      }
+    }
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .detailsHeaderRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .scheduleDetails {
+    flex-direction: column;
+  }
+}
+
+/* ============================================================
+   TABLE SECTION (unchanged)
+   ============================================================*/
+
+.scheduleTableSection {
+  margin-top: 2rem;
+  width: 100%;
+
+  .table-responsive {
+    overflow-x: auto;
+  }
+
+  /* --- Continue Buttons warning --- */
+
+  .continue-warning {
+    margin: 1rem 0;
+    padding: 10px 14px;
+    background: #fff4e5;
+    border-left: 4px solid #ff9800;
+    border-radius: 6px;
+    color: #8a5a00;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  /* ============================================================
+   ACTION BUTTON BAR (moved out of table)
+   ============================================================ */
+
+  .scheduleActionBar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+
+    .additionBtn {
+      border: 1px solid black !important;
+      border-radius: 12px !important;
+      padding: 6px 16px;
+      background-color: white !important;
+      font-family: Lato;
+      font-size: 16px !important;
+      font-weight: 600 !important;
+      color: black !important;
+    }
+
+    .printBtn {
+      width: 130px;
+      height: 35px;
+      font-size: 16px !important;
+      font-weight: 600 !important;
+      background-color: #fa783c !important;
+      color: #fff !important;
+      border-radius: 12px !important;
+    }
+
+    .blueBtn {
+      padding: 6px 16px !important;
+      background-color: #0d139d !important;
+      border-radius: 12px !important;
+      color: #ffffff !important;
+      font-size: 16px !important;
+      font-weight: 600 !important;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.searchResultsCheck1 {
+  width: 20px !important;
+  height: 20px !important;
+  border: 2px solid #0d139d !important;
+}
+
+.form-check-input:checked {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+
+/* ============================================================
+   🔵 POPUP MODAL — ADDED AS PER YOUR REQUIREMENT
+   ============================================================*/
+/* Main modal wrapper – controls width & height */
+.notesModalWrapper {
+  width: 66% !important;
+  max-width: 75% !important;
+  height: 90vh !important;
+
+  .modal-content {
+    height: 90vh !important;
+    display: flex;
+    flex-direction: column;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  /* ============================
+     HEADER (Fixed + Center Title)
+  ============================= */
+  .modal-header {
+    padding: 0.75rem;
+    border-bottom: 1px solid #ddd;
+    background: #fff;
+    z-index: 10;
+
+    display: flex;
+    justify-content: center; /* Center title */
+    position: relative; /* Allow absolute close button */
+  }
+
+  /* Close button stays on right */
+  .modal-header .btn-close {
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+  }
+
+  /* Title centered always */
+  #notesModalTitle {
+    margin: 0 auto;
+    font-size: 1.4rem;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  /* ============================
+        BODY (Scrollable)
+  ============================= */
+  .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    background: #fff;
+    margin-top: 0 !important; /* remove unwanted top space */
+  }
+
+  /* ============================
+       FOOTER (Fixed Bottom)
+  ============================= */
+  .notesModalFooter {
+    padding: 1rem;
+    border-top: 1px solid #ddd;
+    background: #fff;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    z-index: 10;
+  }
+
+  /* Buttons */
+  .cancelBtn,
+  .saveBtn {
+    border-radius: 10px !important;
+    padding: 0.45rem 1.4rem !important;
+    font-weight: 600 !important;
+  }
+
+  .saveBtn {
+    background-color: #0d139d !important;
+    color: #fff !important;
+  }
+
+  .cancelBtn {
+    background-color: #fa783c !important;
+    color: #fff !important;
+  }
+}
+
+/* ============================
+      Mobile Responsive
+============================= */
+@media (max-width: 768px) {
+  .notesModalWrapper {
+    width: 95% !important;
+    max-width: 95% !important;
+  }
+}

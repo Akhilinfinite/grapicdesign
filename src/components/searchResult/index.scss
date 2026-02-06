@@ -1,0 +1,444 @@
+.searchResultContainer {
+  padding: 1rem;
+  margin: 0 3.5rem;
+  font-family: Lato, sans-serif;
+  color: #1e1e1c;
+}
+
+/* ---------------- HEADER ---------------- */
+
+.sr-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 15px;
+
+  h2 {
+    font-size: 26px;
+    font-weight: 600;
+  }
+}
+
+.sr-divider {
+  margin: 8px 0 15px;
+  border: 1px solid #ccc;
+}
+
+.sr-header-buttons {
+  display: flex;
+  gap: 10px;
+
+  .button {
+    border: none;
+    display: inline-flex;
+    height: 30px;
+    padding: 2px 20px;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    color: var(--FM_white, #fff);
+    text-align: center;
+    font-family: Lato;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .modifyBtn {
+    background: #fa783c;
+    padding: 8px 18px;
+    color: #fff;
+    border-radius: 20px;
+    border: none;
+    font-weight: 600;
+  }
+
+  .backBtn {
+    background: #0d139d;
+    padding: 8px 18px;
+    color: #fff;
+    border-radius: 20px;
+    border: none;
+    font-weight: 600;
+  }
+}
+
+/* ---------------- SUB HEADER ---------------- */
+
+.sr-subheader {
+  display: flex;
+  justify-content: flex-start;
+  gap: 40px;
+  margin-bottom: 20px;
+
+  p {
+    font-size: 15px;
+  }
+}
+
+/* ---------------- TABLE ---------------- */
+
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.scheduleTable1 {
+  width: 100%;
+  border-collapse: collapse;
+
+  thead {
+    background: #fff;
+    border: 2px solid #0d139d;
+    background: #f2f2f2;
+
+    th {
+      padding: 12px 8px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #212529;
+      text-align: left;
+
+      &:last-child {
+        border-right: none;
+      }
+      span {
+        padding-left: 1rem;
+        vertical-align: middle;
+      }
+    }
+  }
+
+  tbody {
+    tr {
+      background: #fafafa;
+
+      &:nth-child(odd) {
+        background: #f2f2f2;
+      }
+
+      td {
+        padding: 10px 12px;
+        font-size: 14px;
+        border-bottom: 1px solid #e0e0e0;
+      }
+    }
+  }
+}
+
+.searchResultsCheck1 {
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 4px !important;
+  vertical-align: middle;
+  border: 2px solid var(--FM_Blue, #0d139d) !important;
+}
+
+/* ---------------- PAGINATION ---------------- */
+
+.paginationContainer {
+  margin-top: 15px;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  font-size: 16px;
+
+  button {
+    width: 44px;
+    height: 30px;
+    font-weight: 700;
+    border-radius: 6px;
+    border: 1px solid #0d139d;
+    background: #fff;
+    color: #0d139d;
+
+    &:disabled {
+      opacity: 0.4;
+    }
+  }
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 8px;
+  }
+}
+
+/* ------- SUMMARY (outside table) ------- */
+.summaryRows {
+  margin: 18px 0 8px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.summarySection {
+  width: 100%;
+  border-collapse: collapse;
+  display: flex;
+  background: #fff;
+  justify-content: flex-end;
+  flex-direction: column;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  border-radius: 6px;
+  overflow: hidden;
+
+  .summaryRow {
+    padding: 10px 14px;
+    font-size: 14px;
+    border-bottom: 1px solid #e9e9e9;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    background: #fff;
+    .summaryLabel {
+      font-weight: 600;
+      text-align: left;
+      width: 240px;
+      color: #333;
+    }
+
+    .summaryValue {
+      font-weight: 700;
+      color: #0d139d;
+      text-align: right;
+      width: 120px;
+    }
+  }
+}
+
+/* --- Continue Buttons warning --- */
+
+.continue-warning {
+  margin: 1rem 0;
+  padding: 10px 14px;
+  background: #fff4e5;
+  border-left: 4px solid #ff9800;
+  border-radius: 6px;
+  color: #8a5a00;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* --- Footer Buttons (aligned right) --- */
+.sr-footer-buttons {
+  margin-top: 3rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  align-items: center;
+
+  .btn {
+    padding: 8px 8px;
+    border-radius: 20px;
+    font-weight: 600;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+  }
+
+  .additionBtn {
+    border: 1px solid black !important;
+    border-radius: 12px !important;
+    padding: 6px;
+    background-color: white !important;
+    font-family: Lato;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    color: black !important;
+  }
+
+  .billingBtn {
+    background: #fa783c;
+  }
+
+  .continueBtn {
+    background: #0d139d;
+  }
+}
+
+.notesModalWrapper {
+  width: 66% !important;
+  max-width: 75% !important;
+  height: 90vh !important;
+
+  .modal-content {
+    height: 90vh !important;
+    display: flex;
+    flex-direction: column;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  /* ============================
+     HEADER (Fixed + Center Title)
+  ============================= */
+  .modal-header {
+    padding: 1rem;
+    border-bottom: 1px solid #ddd;
+    background: #fff;
+    z-index: 10;
+
+    display: flex;
+    justify-content: center; /* Center title */
+    position: relative; /* Allow absolute close button */
+  }
+
+  /* Close button stays on right */
+  .modal-header .btn-close {
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+  }
+
+  /* Title centered always */
+  #notesModalTitle {
+    margin: 0 auto;
+    font-size: 1.4rem;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  /* ============================
+        BODY (Scrollable)
+  ============================= */
+  .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    background: #fff;
+    margin-top: 0 !important; /* remove unwanted top space */
+  }
+
+  /* ============================
+       FOOTER (Fixed Bottom)
+  ============================= */
+  .notesModalFooter {
+    padding: 1rem;
+    border-top: 1px solid #ddd;
+    background: #fff;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    z-index: 10;
+  }
+
+  /* Buttons */
+  .cancelBtn,
+  .saveBtn {
+    border-radius: 10px !important;
+    padding: 0.45rem 1.4rem !important;
+    font-weight: 600 !important;
+  }
+
+  .saveBtn {
+    background-color: #0d139d !important;
+    color: #fff !important;
+  }
+
+  .cancelBtn {
+    background-color: #fa783c !important;
+    color: #fff !important;
+  }
+}
+
+/* ============================
+      Mobile Responsive
+============================= */
+@media (max-width: 768px) {
+  .notesModalWrapper {
+    width: 95% !important;
+    max-width: 95% !important;
+  }
+}
+
+/* ---------------- MOBILE RESPONSIVE ---------------- */
+
+@media (max-width: 768px) {
+  .sr-subheader {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .summaryTable {
+    width: 100%;
+  }
+
+  .sr-footer-buttons {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .scheduleTable thead {
+    display: none;
+  }
+
+  .scheduleTable,
+  .scheduleTable tbody,
+  .scheduleTable tr,
+  .scheduleTable td {
+    display: block;
+    width: 100%;
+  }
+
+  .scheduleTable tr {
+    background: #fff;
+    margin-bottom: 10px;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+  }
+
+  .scheduleTable td {
+    display: flex;
+    justify-content: space-between;
+
+    &:before {
+      content: attr(data-label);
+      font-weight: bold;
+      color: #0d139d;
+      margin-right: 12px;
+    }
+  }
+}
+
+/* ============================================================
+   SCHEDULE HEADER (Customer / Location / Time / Hours)
+   ============================================================ */
+
+.scheduleHeader {
+  padding: 10px 0;
+  border-bottom: 1px solid #e6e6e6;
+}
+
+.scheduleHeaderRow {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  color: #000;
+}
+
+.headerItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.headerItem .label {
+  font-weight: 700;
+}
+
+.headerItem .value {
+  font-weight: 400;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .scheduleHeaderRow {
+    gap: 16px;
+    font-size: 13px;
+  }
+}

@@ -5,17 +5,33 @@ import Settings from "../../asserts/images/Icons/settings.svg";
 import Notification from "../../asserts/images/Icons/notification.svg";
 import Help from "../../asserts/images/Icons/help-circle.svg";
 import User from "../../asserts/images/Icons/user.svg";
+import Logout from "../../asserts/images/Icons/logout.png";
+
+import { logout } from "../../redux/slices/authSlice";
+import { useSelector, useDispatch } from "react-redux";
 
 export default function Navbar() {
+  const dispatch = useDispatch();
+
+  // ✅ Get username from Redux (or localStorage fallback)
+  const username =
+    useSelector((state) => state.client.username) ||
+    localStorage.getItem("username") ||
+    "User";
+  const handleLogout = () => {
+    dispatch(logout());
+  };
   return (
-    <div className="mainNav">
+    <div className="mainNav" id="main">
       <div className="leftNav">
         <div className="logo">
-          <img
-            src={SFMLOGO}
-            alt="logo"
-            style={{ width: "230px", height: "40px" }}
-          />
+          <h1>
+            <img
+              src={SFMLOGO}
+              alt="ScheduleFM Logo"
+              style={{ width: "230px", height: "40px" }}
+            />
+          </h1>
         </div>
         <div className="logoText">Search and Schedule</div>
       </div>
@@ -23,27 +39,35 @@ export default function Navbar() {
         <div className="menu">
           <div className="submenu">
             <div className="icon">
-              <img src={Settings} alt="logo" />
+              <img src={Settings} alt="Settings" />
             </div>
             <div className="text">Settings</div>
           </div>
           <div className="submenu">
             <div className="icon">
-              <img src={Notification} alt="logo" />
+              <img src={Notification} alt="Notification" />
             </div>
             <div className="text">Notifications</div>
           </div>
           <div className="submenu">
             <div className="icon">
-              <img src={Help} alt="logo" />
+              <img src={Help} alt="Help" />
             </div>
             <div className="text">Help</div>
           </div>
           <div className="submenu">
-            <div className="icon">
-              <img src={User} alt="logo" />
+            <div className="icon" onClick={handleLogout}>
+              <img src={Logout} alt="Logout" />
             </div>
-            <div className="text">HI Vinod Kumar</div>
+            <div className="text" onClick={handleLogout}>
+              Logout
+            </div>
+          </div>
+          <div className="submenu">
+            <div className="icon">
+              <img src={User} alt="User" />
+            </div>
+            <div className="text">{username}</div>
           </div>
         </div>
       </div>

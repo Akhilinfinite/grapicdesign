@@ -1,0 +1,375 @@
+/* ===========================================================
+   0️⃣ SHARED STYLES (common for page + modal)
+   =========================================================== */
+
+.event-form {
+  width: 100%;
+  margin: 0 auto;
+  font-family: Lato;
+
+  /* Availability Notice */
+  .event-form__availability {
+    font-size: 14px;
+    margin-bottom: 1.5rem;
+  }
+
+  /* Main form body */
+  .event-form-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  /* ------------------------------
+     GLOBAL ROW SYSTEM (works for page + modal)
+     ------------------------------ */
+  .row {
+    display: flex;
+    gap: 1.5rem;
+    width: 100%;
+
+    &.three-col > .form-group {
+      flex: 1; /* 🔥 Ensures 3 equal columns */
+    }
+
+    &.two-col > .form-group {
+      flex: 1;
+    }
+  }
+  .workorder-section {
+    padding-top: 0.5rem;
+
+    .section-title {
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+
+    .helper-text {
+      font-size: 0.85rem;
+      color: #666;
+      margin-left: 0.5rem;
+    }
+
+    input[disabled],
+    textarea[disabled] {
+      background-color: #f5f5f5;
+      cursor: not-allowed;
+    }
+  }
+
+  /* ------------------------------
+     FORM GROUP
+     ------------------------------ */
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+
+    label {
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    input,
+    select,
+    textarea {
+      height: 34px;
+      padding: 6px 12px;
+      border: 1px solid #7a7a7a;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    input {
+      max-width: 232px;
+    }
+
+    textarea {
+      height: 72px !important;
+      resize: none;
+    }
+
+    input[type="file"] {
+      height: auto;
+      padding: 4px;
+      font-size: 14px;
+    }
+  }
+
+  /* ------------------------------
+     INLINE FUNCTION SELECT
+     ------------------------------ */
+  .function-inline {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    .add-type-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+
+      img {
+        width: 32px;
+        height: 32px;
+      }
+    }
+  }
+
+  /* ------------------------------
+     CHECKBOX GRID
+     ------------------------------ */
+  .checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.2rem 2rem;
+    width: 100%;
+
+    label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      color: #333;
+      word-break: break-word;
+    }
+
+    input[type="checkbox"] {
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border: 2px solid #0d139d;
+      border-radius: 3px;
+      position: relative;
+      cursor: pointer;
+      flex-shrink: 0;
+
+      &:checked {
+        background: #0d139d;
+        border-color: #0d139d;
+      }
+
+      &:checked::after {
+        content: "";
+        position: absolute;
+        left: 5px;
+        top: 2px;
+        width: 4px;
+        height: 9px;
+        border: solid #fff;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+      }
+
+      &:focus-visible {
+        outline: 3px solid #80bdff;
+        outline-offset: 2px;
+      }
+    }
+  }
+}
+
+/* ===========================================================
+   1️⃣ PAGE VERSION
+   =========================================================== */
+
+.event-form.page-version {
+  max-width: 900px;
+  padding: 1.5rem 1rem;
+
+  .row {
+    gap: 3rem;
+  }
+
+  @media (max-width: 1024px) {
+    .checkbox-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .row {
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .checkbox-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+/* ===========================================================
+   2️⃣ MODAL VERSION
+   =========================================================== */
+
+.event-form.modal-version {
+  padding: 0 1rem;
+
+  .row {
+    gap: 1.5rem;
+  }
+
+  @media (max-width: 768px) {
+    .row {
+      flex-direction: column;
+    }
+
+    .checkbox-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+/* ===========================================================
+   3️⃣ GLOBAL OVERRIDE — BELOW 480px ONLY ONE CHECKBOX PER ROW
+   =========================================================== */
+@media (max-width: 1100px) {
+  .event-form {
+    .checkbox-grid {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
+  }
+}
+@media (max-width: 768px) {
+  .row {
+    flex-direction: column;
+    gap: 1.2rem;
+  }
+
+  .checkbox-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .event-form {
+    .row {
+      flex-direction: column !important;
+    }
+
+    .checkbox-grid {
+      grid-template-columns: 1fr !important;
+      gap: 0.8rem !important;
+    }
+
+    label {
+      font-size: 12px !important;
+    }
+  }
+}
+
+/* ===========================================================
+   LAYOUT SECTION (Additional Notes → Layout Setup)
+   =========================================================== */
+
+.layout-section {
+  margin-top: 1.5rem;
+  padding: 1.2rem 0.75rem 0;
+  border-top: 1px solid #d6d6d6;
+  border-radius: 4px;
+
+  /* tighter spacing between layout rows */
+  .row {
+    margin-bottom: 0.75rem;
+  }
+
+  .row.three-col {
+    align-items: flex-start;
+  }
+
+  .row.three-col .form-group label {
+    min-height: 34px; /* 🔥 KEY FIX */
+    display: flex;
+    align-items: flex-end;
+  }
+
+  /* ----------------------------------
+     RADIO GROUP (Layout Setup / Catering)
+     ---------------------------------- */
+  .layout-radio {
+    display: flex;
+    gap: 1.2rem;
+    align-items: center;
+    margin-top: 6px;
+
+    label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: 400;
+    }
+
+    input[type="radio"] {
+      accent-color: #0d139d;
+      cursor: pointer;
+    }
+  }
+
+  /* ----------------------------------
+     CHAIRS / TABLES / EQUIPMENT ROWS
+     1 : 2 column ratio
+     ---------------------------------- */
+  .layout-row {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .layout-col-1 {
+    flex: 1; /* 1 part */
+    max-width: 260px; /* prevents stretching */
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .layout-col-2 {
+    flex: 2; /* 2 parts */
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ----------------------------------
+     INPUTS / TEXTAREAS (Layout only)
+     ---------------------------------- */
+  input,
+  select {
+    max-width: 232px;
+  }
+
+  textarea {
+    height: 60px !important; /* visually balanced */
+    resize: vertical;
+  }
+
+  textarea:focus,
+  input:focus,
+  select:focus {
+    border-color: #0d139d;
+    outline: none;
+  }
+
+  /* ----------------------------------
+     RESPONSIVE
+     ---------------------------------- */
+  @media (max-width: 768px) {
+    .layout-row {
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .layout-col-1,
+    .layout-col-2 {
+      max-width: 100%;
+    }
+  }
+}
