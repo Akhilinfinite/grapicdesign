@@ -24,6 +24,7 @@ export const fetchOwnerData = createAsyncThunk(
       Def_CUSTOMER: e[columns.indexOf("DEF_CUSTOMER_ID")],
       Def_REQUESTOR: e[columns.indexOf("DEF_REQUESTOR_ID")],
     }));
+    // console.log("Fetched Owner Data:", data);
 
     return data;
   }
@@ -45,7 +46,7 @@ const ownerSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchOwnerData.pending, (state) => {
-        state.loading = true;
+        state.loading = false;
         state.error = null;
       })
       .addCase(fetchOwnerData.fulfilled, (state, action) => {

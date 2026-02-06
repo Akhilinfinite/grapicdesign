@@ -14,11 +14,11 @@ export const login = createAsyncThunk(
         frmPassword: password,
         clientname: clientname,
       });
-      console.log("Login API response:", apiUrl, {
-        frmUserID: username,
-        frmPassword: password,
-        clientname: clientname,
-      }, response.data);
+      // console.log("Login API response:", apiUrl, {
+      //   frmUserID: username,
+      //   frmPassword: password,
+      //   clientname: clientname,
+      // }, response.data);
       if (response.data.RESULT === 1) {
         return response.data;
       } else {

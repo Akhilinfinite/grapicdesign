@@ -21,6 +21,7 @@ import LandingPage from "./components/landingPage";
 import ScheduleConfirmation from "./components/scheduleConfirmation";
 import ScheduleResult from "./components/searchResult";
 import ScheduleRequest from "./components/scheduleRequest";
+import ScrollToTop from "./ScrollToTop";
 
 const allowed = ["dps", "untcom", "charlotte"];
 
@@ -109,7 +110,7 @@ function App() {
           element={
             sessionData ? (
               <AppLayout>
-                <ScheduleRequest/>
+                <ScheduleRequest />
               </AppLayout>
             ) : (
               <Navigate to={`/${apiType}/login`} replace />
@@ -129,6 +130,7 @@ function App() {
   return (
     <div className="App">
       <Router>
+        <ScrollToTop />
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/:apiType/*" element={<TenantWrapper />} />

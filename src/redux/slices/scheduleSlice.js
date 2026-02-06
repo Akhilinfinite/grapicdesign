@@ -8,6 +8,7 @@ const scheduleSlice = createSlice({
 
     // ✅ STORE CONFLICT FLAG
     showConflict: false,
+    searchPayload: null,
 
     loading: false,
     error: null,
@@ -19,15 +20,18 @@ const scheduleSlice = createSlice({
       state.headingDetails = action.payload?.RSHEADINGDETAILS || null;
     },
 
-    // ✅ NEW REDUCER
     setShowConflict: (state, action) => {
       state.showConflict = action.payload; // true / false
+    },
+    setSearchPayload: (state, action) => {
+      state.searchPayload = action.payload;
     },
 
     clearSearchResults: (state) => {
       state.searchResults = null;
       state.headingDetails = null;
       state.showConflict = false;
+      state.searchPayload = null;
       state.error = null;
     },
   },
@@ -36,6 +40,7 @@ const scheduleSlice = createSlice({
 export const {
   setSearchResults,
   setShowConflict,
+  setSearchPayload,
   clearSearchResults,
 } = scheduleSlice.actions;
 

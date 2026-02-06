@@ -8,6 +8,8 @@ import intervalSlice from "../slices/intervalSlice";
 import eventNotesReducer from "../slices/eventNotesSlice";
 import billingItemsSlice from "../slices/billingItemsSlice";
 import scheduleReducer from "../slices/scheduleSlice";
+import locationReducer from "../slices/locationSlice";
+import scheduleInitReducer from "../slices/scheduleInitSlice";
 
 const store = configureStore({
   reducer: {
@@ -19,6 +21,8 @@ const store = configureStore({
     eventNotes: eventNotesReducer,
     billingItems: billingItemsSlice,
     schedule: scheduleReducer,
+    location: locationReducer,
+    scheduleInit: scheduleInitReducer,
   },
 });
 

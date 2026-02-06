@@ -83,7 +83,7 @@
   overflow-x: auto;
 }
 
-.scheduleTable {
+.scheduleTable1 {
   width: 100%;
   border-collapse: collapse;
 
@@ -206,7 +206,6 @@
   }
 }
 
-
 /* --- Continue Buttons warning --- */
 
 .continue-warning {
@@ -222,14 +221,14 @@
 
 /* --- Footer Buttons (aligned right) --- */
 .sr-footer-buttons {
-  margin-top: 12px;
+  margin-top: 3rem;
   display: flex;
   justify-content: flex-end;
   gap: 12px;
   align-items: center;
 
   .btn {
-    padding: 8px 18px;
+    padding: 8px 8px;
     border-radius: 20px;
     font-weight: 600;
     color: #fff;
@@ -400,5 +399,46 @@
       color: #0d139d;
       margin-right: 12px;
     }
+  }
+}
+
+/* ============================================================
+   SCHEDULE HEADER (Customer / Location / Time / Hours)
+   ============================================================ */
+
+.scheduleHeader {
+  padding: 10px 0;
+  border-bottom: 1px solid #e6e6e6;
+}
+
+.scheduleHeaderRow {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  color: #000;
+}
+
+.headerItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.headerItem .label {
+  font-weight: 700;
+}
+
+.headerItem .value {
+  font-weight: 400;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .scheduleHeaderRow {
+    gap: 16px;
+    font-size: 13px;
   }
 }

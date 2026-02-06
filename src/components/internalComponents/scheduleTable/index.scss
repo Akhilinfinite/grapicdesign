@@ -1,0 +1,249 @@
+/* ============================================================
+   TABLE WRAPPER
+   ============================================================ */
+.table-responsive {
+  overflow-x: auto;
+}
+
+.scheduleTable > :not(caption) > * > * {
+  padding: 0.5rem 0.5rem;
+  border-bottom-width: 1px;
+}
+
+/* ============================================================
+   TABLE BASE
+   ============================================================ */
+.scheduleTable {
+  width: 100%;
+  border-collapse: collapse;
+  color: #1e1e1c;
+  font-size: 0.92rem; 
+
+  /* =======================
+     TABLE HEADER
+     ======================= */
+  thead {
+    background: #fff;
+    border: 2px solid #0d139d;
+    border-bottom: 3px solid #0d139d;
+
+    th {
+      padding: 0.5rem;
+      font-size: 0.85rem;
+      font-weight: 700;
+      white-space: nowrap;
+      color: #0d139d;
+      vertical-align: middle;
+      text-align: left !important;
+
+      img {
+        width: 12px;
+        height: 12px;
+        margin-left: 5px;
+        vertical-align: middle;
+      }
+    }
+
+    /* Charge header with settings icon */
+    th.chargeHeader {
+      position: relative;
+      padding-right: 2rem;
+      cursor: pointer;
+
+      .tableSettingBtn {
+        position: absolute;
+        right: 6px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: transparent;
+        border: none;
+        padding: 0;
+
+        img {
+          width: 18px;
+          height: 18px;
+        }
+      }
+    }
+  }
+
+  /* =======================
+     TABLE BODY
+     ======================= */
+  tbody {
+    tr {
+      background: #fafafa;
+      border-bottom: 1px solid #e0e0e0;
+
+      &:hover {
+        background: #f1f3f6;
+      }
+
+      &:nth-child(even) {
+        background: #ffffff;
+      }
+
+      td {
+        vertical-align: middle;
+        font-size: 0.7rem !important;
+        color: #1e1e1c;
+        padding: 8px;
+      }
+
+      /* Estimated row */
+      .estimated_Charge {
+        text-align: end;
+        font-weight: 600;
+      }
+
+      /* Default checkbox styling */
+      input[type="checkbox"] {
+        width: 14px;
+        height: 14px;
+        accent-color: #0d139d;
+
+        &:focus-visible {
+          outline: 3px solid #fa783c;
+          outline-offset: 2px;
+        }
+      }
+    }
+  }
+}
+
+/* ============================================================
+   🔹 SKIP DATE + CHECKBOX COLUMN (NEW – ADDED)
+   ============================================================ */
+.skipDateCol {
+  width: 90px;
+  text-align: center;
+}
+
+/* Header layout for checkbox + label */
+.skipHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+}
+
+/* Smaller checkbox specifically for skip/select */
+.skipCheckbox {
+  width: 16px !important;
+  height: 16px !important;
+  accent-color: #0d139d;
+}
+
+/* Ensure body column aligns center */
+.scheduleTable tbody td.skipDateCol {
+  text-align: center;
+}
+
+/* ============================================================
+   EXISTING SHARED CHECKBOX STYLE (KEPT)
+   ============================================================ */
+.searchResultsCheck1 {
+  width: 20px !important;
+  height: 20px !important;
+  border: 2px solid #0d139d !important;
+}
+
+.form-check-input:checked {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+/* --- Footer Buttons (aligned right) --- */
+// .sr-footer-buttons {
+//   margin-top: 3rem;
+//   display: flex;
+//   justify-content: flex-end;
+//   gap: 12px;
+//   align-items: center;
+
+//   .btn {
+//     padding: 8px 8px;
+//     border-radius: 20px;
+//     font-weight: 600;
+//     color: #fff;
+//     border: none;
+//     cursor: pointer;
+//   }
+
+//   .additionBtn {
+//     border: 1px solid black !important;
+//     border-radius: 12px !important;
+//     padding: 6px;
+//     background-color: white !important;
+//     font-family: Lato;
+//     font-size: 16px !important;
+//     font-weight: 600 !important;
+//     color: black !important;
+//   }
+
+//   .billingBtn {
+//     background: #fa783c;
+//   }
+
+//   .continueBtn {
+//     background: #0d139d;
+//   }
+// }
+.scheduleActionBar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+
+  .additionBtn {
+    border: 1px solid black !important;
+    border-radius: 12px !important;
+    padding: 6px 16px;
+    background-color: white !important;
+    font-family: Lato;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    color: black !important;
+  }
+
+  .printBtn {
+    width: 130px;
+    height: 35px;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    background-color: #fa783c !important;
+    color: #fff !important;
+    border-radius: 12px !important;
+  }
+
+  .blueBtn {
+    padding: 6px 16px !important;
+    background-color: #0d139d !important;
+    border-radius: 12px !important;
+    color: #ffffff !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+  }
+
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 768px) {
+  .scheduleTable {
+    font-size: 0.82rem;
+
+    thead th {
+      font-size: 0.85rem;
+    }
+  }
+  .sr-footer-buttons {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}

@@ -215,19 +215,48 @@ function generateMonthlyDates({
 }
 
 // Random Dates
+// function generateRandomDates({ randomDates, startTime, endTime }) {
+//   const results = randomDates
+//     .map((dateStr) => {
+//       // Normalize date string to YYYY-MM-DD
+//       const [year, month, day] = dateStr.split("-").map((v) => v.padStart(2, "0"));
+//       const normalizedDate = `${year}-${month}-${day}`;
+
+//       const startISO = new Date(`${normalizedDate}T${startTime}:00`);
+//       const endISO = new Date(`${normalizedDate}T${endTime}:00`).toISOString();
+//       console.log("Random Date Processed:", { normalizedDate, startISO, endISO });
+
+//       return {
+//         start: startISO,
+//         end: endISO,
+//       };
+//     })
+//     .filter(Boolean)
+//     .sort((a, b) => new Date(a.start) - new Date(b.start));
+
+//   return results;
+// }
+
 function generateRandomDates({ randomDates, startTime, endTime }) {
+  if (!Array.isArray(randomDates)) return [];
+
+  const sTime24 = convertTo24Hour(startTime);
+  const eTime24 = convertTo24Hour(endTime);
+
   const results = randomDates
     .map((dateStr) => {
-      // Normalize date string to YYYY-MM-DD
-      const [year, month, day] = dateStr.split("-").map((v) => v.padStart(2, "0"));
-      const normalizedDate = `${year}-${month}-${day}`;
+      if (!dateStr) return null;
 
-      const startISO = new Date(`${normalizedDate}T${startTime}:00`).toISOString();
-      const endISO = new Date(`${normalizedDate}T${endTime}:00`).toISOString();
+      // Normalize YYYY-M-D → YYYY-MM-DD
+      const [y, m, d] = dateStr.split("-");
+      const normalizedDate = `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+
+      const startRaw = `${normalizedDate} ${sTime24}`;
+      const endRaw = `${normalizedDate} ${eTime24}`;
 
       return {
-        start: startISO,
-        end: endISO,
+        start: formatDateForstart({ start: startRaw }),
+        end: formatDateForend({ end: endRaw }),
       };
     })
     .filter(Boolean)
@@ -235,5 +264,4 @@ function generateRandomDates({ randomDates, startTime, endTime }) {
 
   return results;
 }
-
 

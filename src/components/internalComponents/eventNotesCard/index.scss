@@ -17,7 +17,7 @@
   .event-form-body {
     display: flex;
     flex-direction: column;
-    gap: 1.8rem;
+    gap: 1rem;
   }
 
   /* ------------------------------
@@ -25,7 +25,7 @@
      ------------------------------ */
   .row {
     display: flex;
-    gap: 2rem;
+    gap: 1.5rem;
     width: 100%;
 
     &.three-col > .form-group {
@@ -34,6 +34,26 @@
 
     &.two-col > .form-group {
       flex: 1;
+    }
+  }
+  .workorder-section {
+    padding-top: 0.5rem;
+
+    .section-title {
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+
+    .helper-text {
+      font-size: 0.85rem;
+      color: #666;
+      margin-left: 0.5rem;
+    }
+
+    input[disabled],
+    textarea[disabled] {
+      background-color: #f5f5f5;
+      cursor: not-allowed;
     }
   }
 
@@ -192,7 +212,7 @@
   padding: 0 1rem;
 
   .row {
-    gap: 2rem;
+    gap: 1.5rem;
   }
 
   @media (max-width: 768px) {
@@ -240,6 +260,116 @@
 
     label {
       font-size: 12px !important;
+    }
+  }
+}
+
+/* ===========================================================
+   LAYOUT SECTION (Additional Notes → Layout Setup)
+   =========================================================== */
+
+.layout-section {
+  margin-top: 1.5rem;
+  padding: 1.2rem 0.75rem 0;
+  border-top: 1px solid #d6d6d6;
+  border-radius: 4px;
+
+  /* tighter spacing between layout rows */
+  .row {
+    margin-bottom: 0.75rem;
+  }
+
+  .row.three-col {
+    align-items: flex-start;
+  }
+
+  .row.three-col .form-group label {
+    min-height: 34px; /* 🔥 KEY FIX */
+    display: flex;
+    align-items: flex-end;
+  }
+
+  /* ----------------------------------
+     RADIO GROUP (Layout Setup / Catering)
+     ---------------------------------- */
+  .layout-radio {
+    display: flex;
+    gap: 1.2rem;
+    align-items: center;
+    margin-top: 6px;
+
+    label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: 400;
+    }
+
+    input[type="radio"] {
+      accent-color: #0d139d;
+      cursor: pointer;
+    }
+  }
+
+  /* ----------------------------------
+     CHAIRS / TABLES / EQUIPMENT ROWS
+     1 : 2 column ratio
+     ---------------------------------- */
+  .layout-row {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .layout-col-1 {
+    flex: 1; /* 1 part */
+    max-width: 260px; /* prevents stretching */
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .layout-col-2 {
+    flex: 2; /* 2 parts */
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ----------------------------------
+     INPUTS / TEXTAREAS (Layout only)
+     ---------------------------------- */
+  input,
+  select {
+    max-width: 232px;
+  }
+
+  textarea {
+    height: 60px !important; /* visually balanced */
+    resize: vertical;
+  }
+
+  textarea:focus,
+  input:focus,
+  select:focus {
+    border-color: #0d139d;
+    outline: none;
+  }
+
+  /* ----------------------------------
+     RESPONSIVE
+     ---------------------------------- */
+  @media (max-width: 768px) {
+    .layout-row {
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .layout-col-1,
+    .layout-col-2 {
+      max-width: 100%;
     }
   }
 }

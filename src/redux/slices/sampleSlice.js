@@ -1,9 +1,16 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
+import { hydrateEventNotesFromDefaults } from "./eventNotesSlice";
+
+const normalizeDefault = (value) => {
+  if (value == null) return false;
+  const v = String(value).toLowerCase();
+  return v === "1" || v === "on" || v === "yes" || v === "true";
+};
 
 export const fetchDefaultValues = createAsyncThunk(
   "defaults/fetchDefaultValues",
-  async (_, { getState }) => {
+  async (_, { getState, dispatch }) => {
     const clientname = getState().client.clientname;
     const ownerID = getState().owner.ownerID;
 
@@ -16,7 +23,17 @@ export const fetchDefaultValues = createAsyncThunk(
       { clientname: clientname, owner_id: String(ownerID) }
     );
 
-    return response.data.DATA;
+    const rows = response.data.DATA;
+
+    // 🔑 Normalize + hydrate eventNotes immediately
+    const map = {};
+    rows.forEach((row) => {
+      map[row[3]] = normalizeDefault(row[4]);
+    });
+
+    dispatch(hydrateEventNotesFromDefaults(map));
+
+    return rows;
   }
 );
 

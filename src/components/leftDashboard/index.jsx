@@ -1,11 +1,20 @@
 import React from "react";
 import "./index.scss";
+import { useNavigate } from "react-router-dom";
 import Dashboard from "../../asserts/images/Icons/dashboard.svg";
 import Schedule from "../../asserts/images/Icons/Schedule.svg";
 import Graphics from "../../asserts/images/Icons/graphics-view.svg";
 import Report from "../../asserts/images/Icons/report.svg";
+import { useSelector } from "react-redux";
 
 export default function LeftDashboard() {
+  const reduxClient = useSelector((state) => state.client.clientname);
+  const clientname = reduxClient || localStorage.getItem("clientname");
+  const navigate = useNavigate();
+  const navigateToSchedule = () => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+    navigate(`/${clientname}/SearchSchedule`);
+  };
   return (
     <div className="mainLeftdashboard">
       <div className="navbar">
@@ -19,7 +28,9 @@ export default function LeftDashboard() {
           <div className="icon">
             <img src={Schedule} alt="Schedule" />
           </div>
-          <div className="iconText">Schedule</div>
+          <div className="iconText" onClick={navigateToSchedule}>
+            Schedule
+          </div>
         </div>
         <div className="navList p">
           <div className="icon">

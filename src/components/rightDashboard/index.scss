@@ -90,9 +90,12 @@
           border-radius: 0;
           overflow-anchor: none;
           cursor: pointer;
-          transition: color 0.15s ease-in-out,
-            background-color 0.15s ease-in-out, border-color 0.15s ease-in-out,
-            box-shadow 0.15s ease-in-out, border-radius 0.15s ease;
+          transition:
+            color 0.15s ease-in-out,
+            background-color 0.15s ease-in-out,
+            border-color 0.15s ease-in-out,
+            box-shadow 0.15s ease-in-out,
+            border-radius 0.15s ease;
 
           .section-1 {
             display: flex;
@@ -147,9 +150,12 @@
           -webkit-text-size-adjust: 100%;
           font-family: Lato;
           -webkit-tap-highlight-color: transparent;
-          transition: color 0.15s ease-in-out,
-            background-color 0.15s ease-in-out, border-color 0.15s ease-in-out,
-            box-shadow 0.15s ease-in-out, border-radius 0.15s ease;
+          transition:
+            color 0.15s ease-in-out,
+            background-color 0.15s ease-in-out,
+            border-color 0.15s ease-in-out,
+            box-shadow 0.15s ease-in-out,
+            border-radius 0.15s ease;
           .accordion-body {
             padding: 1rem 1.25rem;
             width: 100%;
@@ -221,6 +227,26 @@
     color: #212529;
     margin: 1.25em -0.75em 0em -0.75em !important;
     font-family: Lato;
+  }
+  .schedule_error {
+    margin: 1rem 0;
+    padding: 10px 14px;
+    background: #fff4e5;
+    border-left: 4px solid #ff9800;
+    border-radius: 6px;
+    color: #8a5a00;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  .schedule_note {
+    margin: 1rem 0;
+    padding: 10px 14px;
+    background: #e8f2ff; /* soft blue */
+    border-left: 4px solid #1976d2; /* info blue */
+    border-radius: 6px;
+    color: #0d3c61; /* high contrast */
+    font-size: 14px;
+    line-height: 1.4;
   }
 }
 
@@ -492,10 +518,10 @@
 .form-control {
   margin-right: 0.5rem !important;
 }
-.dropdown-month{
+.dropdown-month {
   width: 60%;
 }
-.div-month{
+.div-month {
   width: 100% !important;
 }
 .daysDiv {

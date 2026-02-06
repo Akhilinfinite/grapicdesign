@@ -1,35 +1,27 @@
 import "./index.scss";
-import { useState, useEffect, useRef } from "react";
-import { Modal, Button } from "react-bootstrap";
-import EventNotesCard from "../internalComponents/eventNotesCard";
+import { useEffect } from "react";
 
 import attachmentIcon from "../../asserts/images/Icons/attachment-check.svg";
-import arrowUp from "../../asserts/images/Icons/arrow-up.svg";
-import settingsIcon from "../../asserts/images/Icons/settings.svg";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import {
-  updateEventField,
-  updateEmailOption,
-  updateFooterOption,
-} from "../../redux/slices/eventNotesSlice";
-import BillingCard from "../internalComponents/billingCard";
+import ScheduleTable from "../internalComponents/scheduleTable";
 
 export default function ScheduleConfirmation() {
-  const [showNotesModal, setShowNotesModal] = useState(false);
-  const [showBillingModal, setShowBillingModal] = useState(false);
-
   // CORRECT DATA SOURCE FROM REDUX
   const searchResults = useSelector((state) => state.schedule.searchResults);
   const headingDetails = useSelector((state) => state.schedule.headingDetails);
 
   const notes = useSelector((state) => state.eventNotes);
-  const notesCardRef = useRef(null);
   const navigate = useNavigate();
   const reduxClient = useSelector((state) => state.client.clientname);
   const clientname = reduxClient || localStorage.getItem("clientname");
 
-  const dispatch = useDispatch();
+  // const dispatch = useDispatch();
+
+    const handleBackToSearch = () => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+    navigate(`/${clientname}/SearchSchedule`);
+  };
 
   // ---------------- Redirect if missing ----------------
   const noData = !searchResults || !searchResults.DATA;
@@ -52,91 +44,24 @@ export default function ScheduleConfirmation() {
   -------------------------------------- */
   const tableRows = searchResults?.DATA || [];
 
-  /* -------------------------------------
-        SAVE NOTES
-  -------------------------------------- */
-  const handleNotesSave = () => {
-    if (!notesCardRef.current) return;
-
-    const data = notesCardRef.current.saveNotes();
-    console.log("Saved Notes Data:", data);
-
-    const simpleFields = [
-      "functionType",
-      "eventTitle",
-      "publicNotes",
-      "privateNotes",
-      "internalNotes",
-      "attendees",
-      "image",
-      "documentType",
-      "uploadDocument",
-    ];
-
-    simpleFields.forEach((field) => {
-      if (data[field] !== undefined) {
-        dispatch(updateEventField({ field, value: data[field] }));
-      }
-    });
-
-    Object.entries(data.reminders || {}).forEach(([field, value]) => {
-      const emailFieldMap = {
-        sendReminder: "sendReminder",
-        sendCustomer: "sendEventNoticeCustomer",
-        sendAdmin: "sendEventNoticeAdmin",
-        sendCustodian: "sendEventNoticeCustodian",
-        sendChangeNotice: "sendChangeDeleteNotice",
-        sendEmail: "copyYourself",
-        copyYourself: "copyYourself",
-      };
-
-      if (emailFieldMap[field]) {
-        dispatch(updateEmailOption({ field: emailFieldMap[field], value }));
-      }
-    });
-
-    Object.entries(data.footerOptions || {}).forEach(([field, value]) => {
-      const footerFieldMap = {
-        showPublic: "showPublic",
-        showMaster: "showMaster",
-        appendExisting: "appendToExisting",
-        generateWorkOrder: "generateWorkOrder",
-      };
-
-      if (footerFieldMap[field]) {
-        dispatch(updateFooterOption({ field: footerFieldMap[field], value }));
-      }
-    });
-
-    setShowNotesModal(false);
-  };
-
-  const handleNotesCancel = () => {
-    notesCardRef.current?.cancelNotes();
-    setShowNotesModal(false);
-  };
-
-  const totalCharges = tableRows.reduce((sum, row) => {
-    const charge = row?.[8];
-    return charge != null ? sum + parseFloat(charge) : sum;
-  }, 0);
+  const continueDisabled = !notes.functionType?.id;
 
   const hasBookedConflict = tableRows.some(
-    (row) => row?.[4]?.trim() === "Booked"
+    (row) => String(row?.[4] ?? "").trim() === "Booked"
   );
   return (
     <div className="scheduleConfirmationContainer">
       {/* Header */}
       <div className="headerRow">
         <h2 className="pageTitle">Schedule Confirmation</h2>
-        <button type="button" className="backButton">
+        <button type="button" className="backBtn button" onClick={handleBackToSearch}>
           Back to Search
         </button>
       </div>
 
       {/* Sub Header */}
       <div className="detailsHeaderRow">
-        <h3 className="detailsTitle">Request Number &gt; - Schedule Details</h3>
+        <h3 className="detailsTitle">Request Number - &gt; Schedule Details</h3>
 
         <div className="checkboxGroup">
           <label className="checkboxLabel">
@@ -248,230 +173,23 @@ export default function ScheduleConfirmation() {
 
       {/* Table Section */}
       <div className="scheduleTableSection">
-        <div className="table-responsive">
-          <table className="table table-striped scheduleTable">
-            <thead className="tableHeader">
-              <tr>
-                <th>
-                  <input type="checkbox" className="searchResultsCheck1" />
-                  Skip Date <img src={arrowUp} alt="" className="sortIcon" />
-                </th>
+        <ScheduleTable
+          rows={tableRows}
+          baseOverrideCharge={45}
+          hasBookedConflict={hasBookedConflict}
+        />
 
-                <th>
-                  Date <img src={arrowUp} alt="" className="sortIcon" />
-                </th>
-
-                <th>
-                  Available? <img src={arrowUp} alt="" className="sortIcon" />
-                </th>
-
-                <th>
-                  Conflict <img src={arrowUp} alt="" className="sortIcon" />
-                </th>
-
-                <th>
-                  Conflict Customer{" "}
-                  <img src={arrowUp} alt="" className="sortIcon" />
-                </th>
-
-                <th>
-                  Conflict Function{" "}
-                  <img src={arrowUp} alt="" className="sortIcon" />
-                </th>
-
-                {/* NEW COLUMN */}
-                <th>
-                  Conflict Hours{" "}
-                  <img src={arrowUp} alt="" className="sortIcon" />
-                </th>
-
-                <th>
-                  Override <img src={arrowUp} alt="" className="sortIcon" />
-                </th>
-
-                <th className="chargeHeader">
-                  Charge
-                  <img src={arrowUp} alt="" className="sortIcon" />
-                  <button className="tableSettingBtn">
-                    <img src={settingsIcon} className="settingsIcon" alt="" />
-                  </button>
-                </th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {tableRows.map((row, idx) => {
-                const [
-                  ,
-                  ,
-                  DATEDAY,
-                  AVAILABLE,
-                  CONFLICT,
-                  CONFLICTCUSTOMER,
-                  CONFLICTFUNCTION,
-                  CONFLICTHOURS,
-                  CHARGES,
-                ] = row;
-
-                const available = AVAILABLE?.trim();
-                const conflict = CONFLICT?.trim();
-
-                const isAvailable = available === "Yes";
-                const isConflict = conflict !== "None";
-
-                return (
-                  <tr key={idx}>
-                    {/* Skip Date */}
-                    <td>
-                      <input type="checkbox" className="searchResultsCheck1" />
-                    </td>
-
-                    {/* Date */}
-                    <td>{DATEDAY || "N/A"}</td>
-
-                    {/* Available */}
-                    <td className={isAvailable ? "text-success fw-bold" : ""}>
-                      {available || "N/A"}
-                    </td>
-
-                    {/* Conflict */}
-                    <td className={isConflict ? "text-danger fw-bold" : ""}>
-                      {conflict || "None"}
-                    </td>
-
-                    {/* Conflict Customer */}
-                    <td>{CONFLICTCUSTOMER?.trim() || "---"}</td>
-
-                    {/* Conflict Function */}
-                    <td>{CONFLICTFUNCTION?.trim() || "---"}</td>
-
-                    {/* Conflict Hours */}
-                    <td>{CONFLICTHOURS?.trim() || "---"}</td>
-
-                    {/* Override */}
-                    <td>---</td>
- 
-                    {/* Charge */}
-                    <td>
-                      {CHARGES != null
-                        ? `$ ${parseFloat(CHARGES).toFixed(2)}`
-                        : "---"}
-                    </td>
-                  </tr>
-                );
-              })}
-
-              {/* Summary Row */}
-              <tr>
-                <td colSpan="8" className="estimated_Charge">
-                  Estimated Facility Charge
-                </td>
-                <td>{`$ ${totalCharges.toFixed(2)}`}</td>
-              </tr>
-
-              {/* Button Row */}
-              <tr className="buttonSection">
-                <td colSpan="5"></td>
-
-                <td>
-                  <button
-                    className="btn additionBtn"
-                    style={
-                      hasBookedConflict
-                        ? { opacity: 0.5, cursor: "not-allowed" }
-                        : {}
-                    }
-                    onClick={() => setShowBillingModal(true)}
-                  >
-                    Billing Items
-                  </button>
-                </td>
-
-                <td>
-                  <button
-                    className="btn additionBtn"
-                    onClick={() => setShowNotesModal(true)}
-                    style={
-                      hasBookedConflict
-                        ? { opacity: 0.5, cursor: "not-allowed" }
-                        : {}
-                    }
-                  >
-                    Addition/Notes
-                  </button>
-                </td>
-
-                <td>
-                  <button className="btn printBtn">Print</button>
-                </td>
-
-                <td>
-                  <button
-                    className="btn blueBtn"
-                    style={
-                      hasBookedConflict
-                        ? { opacity: 0.5, cursor: "not-allowed" }
-                        : {}
-                    }
-                  >
-                    Save Request
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        {continueDisabled && (
+          <div className="continue-warning">
+            {!notes.functionType?.id && (
+              <p>
+                • Function is required. Open Addition/Notes and select a
+                function.
+              </p>
+            )}
+          </div>
+        )}
       </div>
-
-      {/* NOTES MODAL */}
-      <Modal
-        show={showNotesModal}
-        onHide={() => setShowNotesModal(false)}
-        centered
-        dialogClassName="notesModalWrapper"
-        backdrop="static"
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>Addition Notes</Modal.Title>
-        </Modal.Header>
-
-        <Modal.Body>
-          <EventNotesCard ref={notesCardRef} isModal={true} />
-        </Modal.Body>
-
-        <Modal.Footer className="notesModalFooter">
-          <Button className="cancelBtn" onClick={handleNotesCancel}>
-            Cancel
-          </Button>
-
-          <Button className="saveBtn" onClick={handleNotesSave}>
-            Save
-          </Button>
-        </Modal.Footer>
-      </Modal>
-
-      {/* BILLING MODAL */}
-      <Modal
-        show={showBillingModal}
-        onHide={() => setShowBillingModal(false)}
-        centered
-        dialogClassName="notesModalWrapper"
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>Billing Items</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <BillingCard isModal={true} />
-        </Modal.Body>
-        <Modal.Footer className="notesModalFooter">
-          <Button
-            className="cancelBtn"
-            onClick={() => setShowBillingModal(false)}
-          >
-            Close
-          </Button>
-        </Modal.Footer>
-      </Modal>
     </div>
   );
 }

@@ -27,16 +27,37 @@ import InfiniteDropdown from "./components/InfiniteDropdown";
 import CustomDateTimePicker from "./components/customDateTimeInput";
 import { fetchDefaultValues } from "../../redux/slices/sampleSlice.js";
 import { fetchOwnerData, setownerID } from "../../redux/slices/ownerSlice";
+import { setUsername } from "../../redux/slices/clientSlice.js";
+import { resetScheduleInit } from "../../redux/slices/scheduleInitSlice";
+
+import {
+  markOwnerDefaultsApplied,
+  markSchedulerLoaded,
+  markCustomerLoaded,
+  markContactLoaded,
+  markLocationLabelsLoaded,
+  markDefaultsLoaded,
+} from "../../redux/slices/scheduleInitSlice";
 import {
   setEndDateF,
-  setIntervalStateF,
-  setLocationDataF,
-  setOwnerF,
+  setGeneratedDatesF,
+  setIntervalConfigF,
   setSelectedContactF,
   setSelectedCustomerF,
   setSelectedSchedulerF,
   setStartDateF,
+  setSchedulerOptionsF, // ✅ ADD
+  setCustomerOptionsF, // ✅ ADD
+  setContactOptionsF, // ✅ ADD
 } from "../../redux/slices/intervalSlice.js";
+import {
+  setSelectedLocationType,
+  setLocationData,
+  selectLocationOption,
+  setSearchScope,
+  setLoctype,
+} from "../../redux/slices/locationSlice";
+
 import {
   getDayNumber,
   getMonthPartNumber,
@@ -47,20 +68,17 @@ import { generateDates } from "../../api/getEventDates.js";
 
 import { useSelector, useDispatch } from "react-redux";
 import CustomCalendar from "./components/custumCalender/index.jsx";
-import { setUsername } from "../../redux/slices/clientSlice.js";
 import { useNavigate } from "react-router-dom";
 import {
   setSearchResults,
   setShowConflict,
+  setSearchPayload,
 } from "../../redux/slices/scheduleSlice";
 
 export default function RightDashboard() {
   const dispatch = useDispatch();
-  const [GeneratedDates, setGeneratedDates] = useState([]);
   const navigate = useNavigate();
   const [showConflicts, setShowConflicts] = useState(true);
-  const [Owners, setOwners] = useState([]);
-  const [OwnerID, setOwnerID] = useState();
   const sessionData = useSelector((state) => state.auth.sessionData);
   const data = useSelector((state) => state.sample.data);
   const loading = useSelector((state) => state.sample.loading);
@@ -68,6 +86,38 @@ export default function RightDashboard() {
   const owner = useSelector((state) => state.owner.owner);
   const ownerID = useSelector((state) => state.owner.ownerID);
   const ownerLoad = useSelector((state) => state.owner.loading);
+  const intervalRedux = useSelector((state) => state.interval);
+  const {
+    schedulerOptions,
+    selectedScheduler,
+    customerOptions,
+    selectedCustomer,
+    contactOptions,
+    selectedContact,
+  } = useSelector((state) => state.interval);
+  const {
+    locationData,
+    selectedLocationType,
+    searchScope,
+    Loctype,
+    selectedLocationDetails,
+  } = useSelector((state) => state.location);
+  const skipLocationInit = useSelector(
+    (state) => state.location.skipLocationInit,
+  );
+  const generatedDates = useSelector((state) => state.interval.generatedDates);
+  const {
+    ownerDefaultsApplied,
+    schedulerLoaded,
+    customerLoaded,
+    contactLoaded,
+    locationLabelsLoaded,
+    defaultsLoaded,
+  } = useSelector((state) => state.scheduleInit);
+  const isLegacyOwner = String(ownerID) === "1";
+  const startDate = useSelector((state) => state.interval.startDate);
+  const endDate = useSelector((state) => state.interval.endDate);
+
   const [isOpen1, setIsOpen1] = useState(true);
   const [isOpen2, setIsOpen2] = useState(true);
   const [isOpen3, setIsOpen3] = useState(true);
@@ -87,107 +137,131 @@ export default function RightDashboard() {
   };
 
   const buildDateLists = () => {
-    if (!GeneratedDates || GeneratedDates.length === 0) {
+    if (!generatedDates || generatedDates.length === 0) {
       return { startList: "", endList: "" };
     }
 
-    const startList = GeneratedDates.map((item) =>
-      formatToApiDate(item.start)
-    ).join(",");
+    const startList = generatedDates
+      .map((item) => formatToApiDate(item.start))
+      .join(",");
 
-    const endList = GeneratedDates.map((item) =>
-      formatToApiDate(item.end)
-    ).join(",");
+    const endList = generatedDates
+      .map((item) => formatToApiDate(item.end))
+      .join(",");
 
     return { startList, endList };
   };
-  const getLastSelectedLocation = () => {
-    if (!Array.isArray(locationData)) return { loclist: "", lfastopt: "" };
 
-    let result = null;
+  const [scheduleError, setScheduleError] = useState("");
 
-    locationData.forEach((item) => {
-      const sel = item.selectedOption;
+  const getSelectedLoclist = () => {
+    if (!Array.isArray(locationData) || locationData.length === 0) return "";
 
-      // Case 1: single select object
-      if (sel && !Array.isArray(sel) && sel.id) {
-        result = { loclist: sel.id, lfastopt: item.id };
-      }
+    // Find the deepest selected location
+    const lastSelected = [...locationData]
+      .reverse()
+      .find(
+        (loc) =>
+          Array.isArray(loc.selectedOption) && loc.selectedOption.length > 0,
+      );
 
-      // Case 2: multi-select (array)
-      if (Array.isArray(sel) && sel.length > 0 && sel[0].id) {
-        result = { loclist: sel[0].id, lfastopt: item.id };
-      }
-    });
-
-    return result || { loclist: "", lfastopt: "" };
+    return lastSelected ? lastSelected.selectedOption[0].value : "";
   };
 
-  const [searchScope, setSearchScope] = useState("");
   const handleSearchClick = async () => {
     const { startList, endList } = buildDateLists();
-    const { loclist, lfastopt } = getLastSelectedLocation();
-    dispatch(setShowConflict(showConflicts));
+    // const loclist = selectedLocationDetails.locationId || "";
+    const loclist = getSelectedLoclist();
 
-    axios
-      .post(`${baseURL}schedule/searchSchedules/`, {
-        clientname: clientname?.toUpperCase() || "",
-        start_dateList: startList,
-        end_dateList: endList,
-        loclist: loclist || "",
-        owner: String(OwnerID),
-        loctype_kir:
-          selectedLocationType === "indoor"
-            ? "0"
-            : selectedLocationType === "outdoor"
+    // 🔒 Search scope validation
+    if (!searchScope) {
+      setScheduleError("Search scope has to be selected.");
+      return;
+    }
+    // ✅ Clear error before API call
+    setScheduleError("");
+    const payload = {
+      clientname: clientname?.toUpperCase() || "",
+      start_dateList: startList,
+      end_dateList: endList,
+      loclist: loclist || "",
+      owner: String(ownerID),
+      loctype_kir:
+        selectedLocationType === "indoor"
+          ? "0"
+          : selectedLocationType === "outdoor"
             ? "1"
             : selectedLocationType === "equip"
-            ? "2"
-            : "3",
-        lfastopt: String(Number(lfastopt) + 2),
-        schedule: "no",
-        customer_id: SelectedCustomer?.[0]?.id || "",
-        function_id: "0",
-        showconflict: showConflicts ? "1" : "0",
-      })
-      .then(function (response) {
-        dispatch(setSearchResults(response.data));
-        console.log("Search Response:", response.data);
-        navigate(`/${clientname}/ScheduleResult`);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
+              ? "2"
+              : "3",
+      lfastopt: String(searchScope),
+      schedule: "no",
+      customer_id: selectedCustomer?.[0]?.id || "",
+
+      function_id: "0",
+      showconflict: showConflicts ? "1" : "0",
+    };
+
+    dispatch(setShowConflict(showConflicts));
+    dispatch(setSearchPayload(payload));
+    setScheduleError("");
+
+    try {
+      const response = await axios.post(
+        `${baseURL}schedule/searchSchedules/`,
+        payload,
+      );
+      if (response.data?.success === false) {
+        if (response.data?.detail?.includes("2100")) {
+          setScheduleError(
+            "Too many dates selected. Please reduce the date range and try again.",
+          );
+        } else {
+          setScheduleError(
+            response.data?.detail ||
+              response.data?.message ||
+              "Unable to process search. Please refine your criteria.",
+          );
+        }
+        return; // 🚫 STOP navigation
+      }
+
+      // ✅ SUCCESS PATH ONLY
+      dispatch(setSearchResults(response.data));
+      navigate(`/${clientname}/ScheduleResult`);
+    } catch (error) {
+      console.error("Search API failed:", error);
+    }
   };
 
   const handleScheduleClick = async () => {
     if (!showConflicts) return;
 
     const { startList, endList } = buildDateLists();
-    const { loclist, lfastopt } = getLastSelectedLocation();
+    const loclist = getSelectedLoclist();
     axios
       .post(`${baseURL}schedule/searchSchedules/`, {
         clientname: clientname?.toUpperCase() || "",
         start_dateList: startList,
         end_dateList: endList,
         loclist: loclist || "",
-        owner: String(OwnerID),
+        owner: String(ownerID),
         loctype_kir:
           selectedLocationType === "indoor"
             ? "0"
             : selectedLocationType === "outdoor"
-            ? "1"
-            : selectedLocationType === "equip"
-            ? "2"
-            : "3",
-        lfastopt: String(lfastopt),
+              ? "1"
+              : selectedLocationType === "equip"
+                ? "2"
+                : "3",
+        lfastopt: String(searchScope),
         schedule: "yes",
-        customer_id: SelectedCustomer?.[0]?.id || "",
+        customer_id: selectedCustomer?.[0]?.id || "",
+
         function_id: "0",
         showconflict: showConflicts ? "1" : "0",
       })
       .then(function (response) {
-        console.log("Schedule Response:", response.data);
         dispatch(setSearchResults(response.data));
         navigate(`/${clientname}/ScheduleConfirmation`);
       })
@@ -196,28 +270,19 @@ export default function RightDashboard() {
       });
   };
 
-  const [Scheduler, setScheduler] = useState([]);
-  const [SelectedScheduler, setSelectedScheduler] = useState([]);
-  const [Customer, setCustomer] = useState([]);
-  const [SelectedCustomer, setSelectedCustomer] = useState([]);
-  const [Contact, setContact] = useState([]);
-  const [SelectedContact, setSelectedContact] = useState([]);
-
   const [radiobtn, setRadiobtn] = useState([]);
-
-  const [StartTime, setStartTime] = useState("");
-  const [EndTime, setEndTime] = useState("");
   const [intervalTime, setIntervalTime] = useState();
+
+  // useEffect(() => {
+  //   dispatch(setStartDateF(String(StartTime)));
+  // }, [StartTime, dispatch]);
+  // useEffect(() => {
+  //   dispatch(setEndDateF(String(EndTime)));
+  // }, [EndTime, dispatch]);
   useEffect(() => {
-    dispatch(setStartDateF(String(StartTime)));
-  }, [StartTime, dispatch]);
-  useEffect(() => {
-    dispatch(setEndDateF(String(EndTime)));
-  }, [EndTime, dispatch]);
-  useEffect(() => {
-    if (clientname) {
-      dispatch(fetchOwnerData());
-    }
+    if (!clientname) return;
+
+    dispatch(fetchOwnerData());
   }, [clientname, dispatch]);
 
   useEffect(() => {
@@ -247,7 +312,7 @@ export default function RightDashboard() {
           if (isNaN(hours) || isNaN(minutes) || isNaN(seconds)) {
             console.error(
               "convertToUTC received invalid time format:",
-              timeStr
+              timeStr,
             );
             return null;
           }
@@ -258,10 +323,10 @@ export default function RightDashboard() {
             now.getDate(),
             hours,
             minutes,
-            seconds
+            seconds,
           );
           const utcDate = new Date(
-            localDate.getTime() - localDate.getTimezoneOffset() * 60000
+            localDate.getTime() - localDate.getTimezoneOffset() * 60000,
           );
 
           return utcDate.toISOString();
@@ -275,39 +340,65 @@ export default function RightDashboard() {
           const startTime = convertToUTC(startTimeRaw);
           const endTime = convertToUTC(endTimeRaw);
           if (startTime && endTime) {
-            setStartTime(startTime);
-            setEndTime(endTime);
             dispatch(setStartDateF(startTime));
             dispatch(setEndDateF(endTime));
             setIntervalTime(selectedOwner.EVENTSLOTTIME);
-            setGeneratedDates([
-              {
-                start: startTime,
-                end: endTime,
-              },
-            ]);
+            dispatch(
+              setGeneratedDatesF([
+                {
+                  start: startTime,
+                  end: endTime,
+                },
+              ]),
+            );
           }
         }
       }
     };
-    if (!ownerLoad && Array.isArray(owner) && owner.length > 0) {
-      setOwners(owner);
+    if (
+      ownerDefaultsApplied ||
+      ownerLoad ||
+      !Array.isArray(owner) ||
+      owner.length === 0 ||
+      !ownerID
+    ) {
+      return;
+    } else {
       const selectedOwner = owner.find((o) => o.id === ownerID);
       setDefaultData(selectedOwner);
-      setOwnerID(ownerID);
+      dispatch(markOwnerDefaultsApplied());
     }
-  }, [owner, dispatch, ownerID, ownerLoad]);
+  }, [owner, ownerID, ownerLoad, ownerDefaultsApplied, dispatch]);
+
+  const handleOwnerChange = (selectedOption) => {
+    if (!selectedOption) return;
+
+    const newOwnerId = selectedOption.id;
+
+    // 1️⃣ Set owner
+    dispatch(setownerID(newOwnerId));
+
+    // 2️⃣ Reset all init flags
+    dispatch(resetScheduleInit());
+
+    // 3️⃣ Clear dependent dropdown data
+    dispatch(setSchedulerOptionsF([]));
+    dispatch(setSelectedSchedulerF([]));
+
+    dispatch(setCustomerOptionsF([]));
+    dispatch(setSelectedCustomerF([]));
+
+    dispatch(setContactOptionsF([]));
+    dispatch(setSelectedContactF([]));
+
+    dispatch(setLocationData([]));
+  };
 
   useEffect(() => {
-    if (OwnerID) {
-      dispatch(fetchDefaultValues());
-    }
-  }, [dispatch, OwnerID]);
-  const handleOwnerChange = (selectedOption) => {
-    if (selectedOption.length > 0) {
-      dispatch(setownerID(selectedOption?.[0]?.id));
-    }
-  };
+    if (!ownerID || defaultsLoaded) return;
+    dispatch(fetchDefaultValues());
+    dispatch(markDefaultsLoaded());
+  }, [dispatch, ownerID]);
 
   /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
@@ -347,7 +438,7 @@ export default function RightDashboard() {
       }));
       const filteredData = filteredData1.filter(
         (item) =>
-          item.VARNAME.startsWith("disp_") && (item.VARVALUE === "Yes" || "No")
+          item.VARNAME.startsWith("disp_") && (item.VARVALUE === "Yes" || "No"),
       );
       const optimisedData = filteredData.map((item, index) => ({
         id: index + 1,
@@ -357,7 +448,7 @@ export default function RightDashboard() {
 
       labelData.forEach((labelItem) => {
         const matchingItem = optimisedData.find(
-          (optItem) => optItem.lable === labelItem.value
+          (optItem) => optItem.lable === labelItem.value,
         );
         if (matchingItem) {
           labelItem.enable = matchingItem.value;
@@ -368,158 +459,195 @@ export default function RightDashboard() {
   }, [loading]);
   /* eslint-disable react-hooks/exhaustive-deps */
   //People
+
+  //Scheduler API Implementation
   /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
-    const getScheduler = () => {
+    if (!ownerID || schedulerLoaded) return;
+
+    // 🟡 LEGACY OWNER (ID = 1)
+    if (isLegacyOwner) {
       const username = sessionData?.UNAME || null;
 
-      // Prepare both requests with different parameters
       const request1 = axios.post(`${baseURL}schedule/getRequestors/`, {
-        clientname: clientname,
-        owner_id: String(OwnerID), // first parameter set
+        clientname,
+        owner_id: String(ownerID),
       });
 
       const request2 = axios.post(`${baseURL}schedule/getRequestors/`, {
-        clientname: clientname,
-        username: username,
+        clientname,
+        username,
       });
 
-      // Run both calls in parallel
       Promise.all([request1, request2])
-        .then(([response1, response2]) => {
-          // --- Handle first API response ---
-          const data = response1.data.DATA.map((e) => ({
+        .then(([res1, res2]) => {
+          const options = res1.data.DATA.map((e) => ({
             id: e[0],
             value: e[0],
             label: e[1],
           }));
-          const selectedScheduler = response2.data.DATA.map((e) => ({
-            id: e[0],
-            value: e[0],
-            label: e[1],
-          }));
-          const own = Owners.filter((e) => e.id === OwnerID);
-          dispatch(setOwnerF(own));
 
-          setSelectedScheduler(selectedScheduler);
-          setScheduler(data);
-          dispatch(setSelectedSchedulerF(selectedScheduler));
+          const selected = res2.data.DATA.map((e) => ({
+            id: e[0],
+            value: e[0],
+            label: e[1],
+          }));
+
+          dispatch(setSchedulerOptionsF(options));
+          dispatch(setSelectedSchedulerF(selected));
+          dispatch(markSchedulerLoaded());
         })
-        .catch((error) => {
-          console.error("Error in parallel getRequestors:", error);
-        });
-    };
-    if (OwnerID) {
-      getScheduler();
+        .catch(console.error);
+
+      return;
     }
-  }, [sessionData, OwnerID, dispatch]);
-  /* eslint-disable react-hooks/exhaustive-deps */
+
+    // 🟢 NEW OWNER FLOW
+    if (!Array.isArray(owner) || owner.length === 0) return;
+
+    const selectedOwner = owner.find((o) => String(o.id) === String(ownerID));
+    if (!selectedOwner) return;
+
+    const defRequestorId = selectedOwner.Def_REQUESTOR;
+
+    axios
+      .post(`${baseURL}schedule/getRequestors/`, {
+        clientname,
+        owner_id: String(ownerID),
+      })
+      .then((response) => {
+        const options = response.data.DATA.map((e) => ({
+          id: e[0],
+          value: e[0],
+          label: e[1],
+        }));
+
+        const selected = defRequestorId
+          ? options.filter((o) => String(o.id) === String(defRequestorId))
+          : [];
+
+        dispatch(setSchedulerOptionsF(options));
+        dispatch(setSelectedSchedulerF(selected));
+        dispatch(markSchedulerLoaded());
+      })
+      .catch(console.error);
+  }, [ownerID, owner, schedulerLoaded, sessionData, dispatch]);
 
   //customer API Implementation
+
   /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
-    const getCustomer = () => {
-      axios
-        .post(`${baseURL}schedule/getCustomers/`, {
-          clientname: clientname,
-          owner_id: String(OwnerID),
-        })
-        .then(function (response) {
-          const data = response.data.DATA.map((e) => ({
-            id: e[0],
-            value: e[0],
-            label: e[1],
-          }));
-          const Def_CUSTOMER = sessionData?.V_CUS || null;
-          if (Def_CUSTOMER) {
-            const selected = data.filter((e) => e.id === Def_CUSTOMER);
-            dispatch(setSelectedCustomerF(selected));
-            setSelectedCustomer(selected);
-          } else {
-            console.warn("No matching owner found!");
-          }
-          setCustomer(data);
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-    };
-    if (OwnerID) {
-      getCustomer();
-    }
-  }, [sessionData, OwnerID, dispatch]);
+    if (!ownerID || customerLoaded) return;
+
+    axios
+      .post(`${baseURL}schedule/getCustomers/`, {
+        clientname,
+        owner_id: String(ownerID),
+      })
+      .then((response) => {
+        const options = response.data.DATA.map((e) => ({
+          id: e[0],
+          value: e[0],
+          label: e[1],
+        }));
+
+        // 🟡 LEGACY
+        if (isLegacyOwner) {
+          const defCustomerId = sessionData?.V_CUS;
+          const selected = defCustomerId
+            ? options.filter((c) => String(c.id) === String(defCustomerId))
+            : [];
+
+          dispatch(setCustomerOptionsF(options));
+          dispatch(setSelectedCustomerF(selected));
+          dispatch(markCustomerLoaded());
+          return;
+        }
+
+        // 🟢 NEW
+        if (!Array.isArray(owner) || owner.length === 0) return;
+        const selectedOwner = owner.find(
+          (o) => String(o.id) === String(ownerID),
+        );
+        if (!selectedOwner) return;
+
+        const selected = selectedOwner.Def_CUSTOMER
+          ? options.filter(
+              (c) => String(c.id) === String(selectedOwner.Def_CUSTOMER),
+            )
+          : [];
+
+        dispatch(setCustomerOptionsF(options));
+        dispatch(setSelectedCustomerF(selected));
+        dispatch(markCustomerLoaded());
+      })
+      .catch(console.error);
+  }, [ownerID, owner, customerLoaded, sessionData, dispatch]);
   /* eslint-disable react-hooks/exhaustive-deps */
 
   const handleCustomerClick = (selectedOption) => {
-    const variable = selectedOption.value;
-    let data1 = Customer.filter((e) => e.value === variable);
-    if (!data1.length) {
-      data1 = SelectedCustomer.filter((e) => e.value === variable);
-      dispatch(setSelectedCustomerF(data1));
-    }
-    setSelectedCustomer([selectedOption]);
-    setSelectedContact([]);
+    dispatch(setSelectedCustomerF([selectedOption]));
+    dispatch(setSelectedContactF([]));
+
     axios
       .post(`${baseURL}schedule/getContacts/`, {
-        clientname: clientname,
-        customer_id: data1[0].value,
+        clientname,
+        customer_id: selectedOption.id,
         CUSTOMER_STATUS: 1,
       })
-      .then(function (response) {
+      .then((response) => {
         const data = response.data.DATA.map((e) => ({
           id: e[0],
           value: e[0],
           label: e[1],
           primaryContact: e[2],
         }));
+
         const selected = data.filter((e) => e.primaryContact === 1);
-        setSelectedContact(selected);
+
+        dispatch(setContactOptionsF(data));
         dispatch(setSelectedContactF(selected));
-        setContact(data);
-      })
-      .catch(function (error) {
-        console.log(error);
       });
   };
 
   //API Contact
   /* eslint-disable react-hooks/exhaustive-deps */
-  useEffect(() => {
-    const getContact = () => {
-      const Def_CUSTOMER = sessionData?.V_CUS || null;
-      axios
-        .post(`${baseURL}schedule/getContacts/`, {
-          clientname: clientname,
-          owner_id: String(OwnerID),
-          customer_id: Def_CUSTOMER,
-        })
-        .then(function (response) {
-          const data = response.data.DATA.map((e) => ({
-            id: e[0],
-            value: e[0],
-            label: e[1],
-            primaryContact: e[2],
-            NAME_FIRST: e[8] || "",
-            NAME_LAST: e[9] || "",
-          }));
-          const selected = data.find((e) => e.primaryContact === 1);
-          const username = selected
-            ? `${selected.NAME_FIRST} ${selected.NAME_LAST}`.trim()
-            : "";
 
-          dispatch(setUsername(username));
-          setSelectedContact(selected);
-          dispatch(setSelectedContactF(selected));
-          setContact(data);
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-    };
-    if (OwnerID) {
-      getContact();
-    }
-  }, [sessionData, OwnerID, dispatch]);
+  useEffect(() => {
+    if (!ownerID || contactLoaded) return;
+    if (!selectedCustomer || selectedCustomer.length === 0) return;
+
+    const customerId = selectedCustomer[0].id;
+
+    axios
+      .post(`${baseURL}schedule/getContacts/`, {
+        clientname,
+        owner_id: String(ownerID),
+        customer_id: customerId,
+      })
+      .then((response) => {
+        const options = response.data.DATA.map((e) => ({
+          id: e[0],
+          value: e[0],
+          label: e[1],
+          primaryContact: e[2],
+          NAME_FIRST: e[8] || "",
+          NAME_LAST: e[9] || "",
+        }));
+
+        const primary = options.find((o) => o.primaryContact === 1);
+        const username = primary
+          ? `${primary.NAME_FIRST} ${primary.NAME_LAST}`.trim()
+          : "";
+
+        dispatch(setContactOptionsF(options));
+        dispatch(setSelectedContactF(primary ? [primary] : []));
+        dispatch(setUsername(username));
+        dispatch(markContactLoaded());
+      })
+      .catch(console.error);
+  }, [ownerID, selectedCustomer, contactLoaded, dispatch]);
+
   /* eslint-disable react-hooks/exhaustive-deps */
 
   const handleClickPeopleSearch = () => {
@@ -547,8 +675,8 @@ export default function RightDashboard() {
               value: e[0],
               label: e[1],
             }));
-            setContact(data);
-            setSelectedContact([]);
+
+            dispatch(setContactOptionsF(data));
             dispatch(setSelectedContactF([]));
           })
           .catch(function (error) {
@@ -559,20 +687,15 @@ export default function RightDashboard() {
         break;
     }
   };
-
   const handleLocationTypeChange = (e) => {
     const selectedValue = e.target.value;
-    setSelectedLocationType(selectedValue);
-    setLoctype("0,0,0,0,0,0,0");
+    dispatch(setSelectedLocationType(selectedValue));
   };
 
-  const [Loctype, setLoctype] = useState("0,0,0,0,0,0,0");
   const [Count, setCount] = useState(0);
   const [Count2, setCount2] = useState(0);
 
-  const [locationData, setLocationData] = useState([]);
   const [intialDataLoad, setintialDataLoad] = useState(0);
-  const [selectedLocationType, setSelectedLocationType] = useState("indoor");
 
   const [locationFilters, setlocationFilters] = useState({
     levels: [],
@@ -603,7 +726,7 @@ export default function RightDashboard() {
       try {
         const res = await axios.post(`${baseURL}master/getAmenityList`, {
           clientname,
-          OWNER_ID: String(OwnerID),
+          OWNER_ID: String(ownerID),
         });
 
         const amenityArray = Array.isArray(res?.data?.DATA)
@@ -662,7 +785,7 @@ export default function RightDashboard() {
         const [Amenitydata, levelResults] = await Promise.all([
           fetchAmenityList(),
           Promise.all(
-            locationFilters.levels.map((level) => fetchLevelData(level.id))
+            locationFilters.levels.map((level) => fetchLevelData(level.id)),
           ),
         ]);
 
@@ -711,11 +834,47 @@ export default function RightDashboard() {
       levels: prevFilters.levels.map((level) =>
         level.id === levelId
           ? { ...level, selectedValue: selectedOption }
-          : level
+          : level,
       ),
     }));
   };
-
+  //423
+  const fetchLocationData = async (
+    variable,
+    clabel,
+    h_value,
+    quickloc,
+    label_id,
+  ) => {
+    try {
+      const lblcount = locationData.length;
+      const response = await axios.post(`${baseURL}schedule/LocationLookup/`, {
+        clientname: clientname,
+        owner: ownerID,
+        h_value: h_value,
+        clabel: clabel,
+        h_cvalue: variable,
+        loctype: Loctype,
+        labelid: label_id ? label_id : clabel.toString(),
+        quickloc: quickloc,
+        lblcount: lblcount,
+        deflab: 0,
+        PAGE: sessionData?.PAGE,
+        REQID: sessionData?.REQID,
+      });
+      const data = response.data.slice(2).map((e) => ({
+        id: e.KEY,
+        value: e.KEY,
+        label: e.VALUE,
+      }));
+      const selectedKey = response.data[1].VALUE;
+      const selected = data.find((item) => item.value === selectedKey);
+      return { data, selected };
+    } catch (error) {
+      console.log(error);
+      return { data: [], selected: null };
+    }
+  };
   const [isLocationFilterModalVisible, setLocationFilterModalVisibility] =
     useState(false);
 
@@ -757,7 +916,7 @@ export default function RightDashboard() {
       })),
     });
 
-    setLoctype("0,0,0,0,0,0,0");
+    dispatch(setLoctype("0,0,0,0,0,0,0"));
     setCount(0);
   };
   const handleCloseLocationFilterModal = () => {
@@ -806,7 +965,7 @@ export default function RightDashboard() {
       for (const level of locationFilters.levels) {
         const ctype_value = level.selectedValue?.value || "0";
         const levelIndex = locationFilters.levels.findIndex(
-          (l) => l.id === level.id
+          (l) => l.id === level.id,
         );
         const ctype = `type${levelIndex + 1}`;
         const loctype =
@@ -817,7 +976,7 @@ export default function RightDashboard() {
         const res = await CriteriaLookup(ctype_value, ctype, loctype);
         results.push(res);
       }
-      setLoctype(results[results.length - 1].data[2]);
+      dispatch(setLoctype(results[results.length - 1].data[2]));
       setCount(1);
 
       setLFvalues({
@@ -841,12 +1000,45 @@ export default function RightDashboard() {
 
   /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
-    if (Loctype && Count === 1) {
+    if (Count === 1) {
+      if (skipLocationInit) return;
       intialdata();
       setCount(0);
     }
-  }, [Loctype, Count]);
+  }, [Count]);
   /* eslint-disable react-hooks/exhaustive-deps */
+
+  useEffect(() => {
+    if (!skipLocationInit) return;
+
+    // Find the deepest selected location
+    const lastSelectedIndex = locationData
+      .map((loc, index) => (loc.selectedOption?.length ? index : -1))
+      .filter((i) => i !== -1)
+      .pop();
+
+    if (lastSelectedIndex === undefined) return;
+
+    const selectedLoc = locationData[lastSelectedIndex];
+    const selectedValue = selectedLoc.selectedOption[0];
+
+    // Trigger cascade manually
+    fetchLocationData(
+      selectedValue.value,
+      lastSelectedIndex + 2,
+      `0,${lastSelectedIndex + 1}`,
+      lastSelectedIndex + 2,
+      locationData[lastSelectedIndex + 1]?.id,
+    ).then((response) => {
+      const updated = locationData.map((loc, index) =>
+        index === lastSelectedIndex + 1
+          ? { ...loc, options: response.data, selectedOption: [] }
+          : loc,
+      );
+
+      dispatch(setLocationData(updated));
+    });
+  }, [skipLocationInit]);
 
   //Location
   //420
@@ -857,15 +1049,15 @@ export default function RightDashboard() {
         selectedLocationType === "indoor"
           ? 0
           : selectedLocationType === "outdoor"
-          ? 1
-          : selectedLocationType === "equip"
-          ? 2
-          : 3;
+            ? 1
+            : selectedLocationType === "equip"
+              ? 2
+              : 3;
 
       axios
         .post(`${baseURL}schedule/getLabels/`, {
           clientname: clientname,
-          owner_id: String(OwnerID),
+          owner_id: String(ownerID),
           loctype_kir: loctype_kir,
         })
         .then((response) => {
@@ -873,7 +1065,7 @@ export default function RightDashboard() {
             id: e[0],
             value: e[1],
             options: [],
-            selectedOption: null,
+            selectedOption: [],
             dropdownSelected: false,
           }));
 
@@ -883,23 +1075,22 @@ export default function RightDashboard() {
             options: [],
             selectedValue: [],
           }));
-
-          setLocationData(data);
+          dispatch(setLocationData(data));
           setlocationFilters((prevFilters) => ({
             ...prevFilters,
             levels: data1,
           }));
           setintialDataLoad(1);
           setCount2(1);
+          dispatch(markLocationLabelsLoaded());
         })
         .catch((error) => {
           console.error("Error fetching location data:", error);
         });
     };
-    if (OwnerID) {
-      fetchLocationData();
-    }
-  }, [selectedLocationType, OwnerID]);
+    if (!ownerID || locationLabelsLoaded) return;
+    fetchLocationData();
+  }, [selectedLocationType, ownerID]);
   /* eslint-disable react-hooks/exhaustive-deps */
   //421
   const intialdata = async () => {
@@ -909,7 +1100,7 @@ export default function RightDashboard() {
         1,
         "0,1",
         1,
-        locationData[0].id
+        locationData[0].id,
       );
 
       const selectedValueId =
@@ -924,83 +1115,79 @@ export default function RightDashboard() {
         2,
         "0,2",
         2,
-        locationData[1].id
+        locationData[1].id,
       );
-      dispatch(
-        setLocationDataF([
-          {
-            label: locationData[0].value,
-            selectedValue:
-              firstObjRes.data.length > 0 ? firstObjRes.data[0] : null,
-          },
-        ])
-      );
-      setLocationData((prevLocationData) =>
-        prevLocationData.map((location, index) => {
-          if (index === 0) {
-            return {
-              ...location,
-              options: firstObjRes.data,
-              selectedOption:
-                firstObjRes.data.length > 0 ? firstObjRes.data[0] : null,
-            };
-          }
-          if (index === 1) {
-            return {
-              ...location,
-              options: secondObjRes.data,
-              selectedOption: [],
-            };
-          }
-          if (index !== 1 && index !== 0) {
-            return {
-              ...location,
-              options: [],
-              selectedOption: null,
-            };
-          }
-          return { ...location };
-        })
-      );
+      const updatedLocationData = locationData.map((location, index) => {
+        if (index === 0) {
+          return {
+            ...location,
+            options: firstObjRes.data,
+            selectedOption:
+              firstObjRes.data.length > 0 ? firstObjRes.data[0] : [],
+          };
+        }
+        if (index === 1) {
+          return {
+            ...location,
+            options: secondObjRes.data,
+            selectedOption: [],
+          };
+        }
+        if (index !== 1 && index !== 0) {
+          return {
+            ...location,
+            options: [],
+            selectedOption: [],
+          };
+        }
+        return { ...location };
+      });
+      dispatch(setLocationData(updatedLocationData));
     }
   };
   useEffect(() => {
-    if (locationData && locationData.length > 0 && intialDataLoad === 1) {
+    if (intialDataLoad === 1 && locationData.length > 0) {
       intialdata();
       setintialDataLoad(0);
     }
-  }, [locationData]);
+  }, [locationData, intialDataLoad]);
 
   //422
   const handleOptionSelect = (locationId, selectedOption) => {
     const variable = selectedOption.value;
-    const locationOne = locationData.find((loc) => loc.id === 1);
-    if (
-      !locationOne ||
-      !locationOne.options ||
-      locationOne.options.length === 0
-    ) {
+    const currentIndex = locationData.findIndex((loc) => loc.id === locationId);
+
+    const needsCascadeRebuild =
+      currentIndex > 0 &&
+      locationData
+        .slice(0, currentIndex)
+        .some(
+          (loc) =>
+            !loc.options ||
+            !loc.selectedOption ||
+            loc.selectedOption.length === 0,
+        );
+    if (needsCascadeRebuild) {
       const currentIndex = locationData.findIndex(
-        (loc) => loc.id === locationId
+        (loc) => loc.id === locationId,
       );
       if (currentIndex === -1) return;
-      setLocationData((prevLocationData) =>
-        prevLocationData.map((location, index) => {
-          if (location.id === locationId) {
-            return {
-              ...location,
-              selectedOption: [selectedOption], // Set selected option for the current location
-            };
-          } else if (index > currentIndex) {
-            return {
-              ...location,
-              options: [], // Clear options for all locations after the current selection
-              selectedOption: [], // Clear selected options for all locations after the current selection
-            };
-          }
-          return location;
-        })
-      );
+      const updatedLocationData = locationData.map((location, index) => {
+        if (location.id === locationId) {
+          return {
+            ...location,
+            selectedOption: [selectedOption], // Set selected option for the current location
+          };
+        } else if (index > currentIndex) {
+          return {
+            ...location,
+            options: [], // Clear options for all locations after the current selection
+            selectedOption: [], // Clear selected options for all locations after the current selection
+          };
+        }
+        return location;
+      });
+      dispatch(setLocationData(updatedLocationData));
 
       const objectsToFetch = locationData.slice(0, currentIndex + 2);
       const fetchPromises = objectsToFetch.map((location, index) => {
@@ -1010,128 +1197,131 @@ export default function RightDashboard() {
           index + 1,
           range,
           index + 1,
-          location.id
+          location.id,
         );
       });
 
       Promise.all(fetchPromises)
         .then((responses) => {
-          setLocationData((prevLocationData) =>
-            prevLocationData.map((location) => {
-              const responseIndex = objectsToFetch.findIndex(
-                (obj) => obj.id === location.id
-              );
-              if (responseIndex !== -1) {
-                const response = responses[responseIndex];
-                return {
-                  ...location,
-                  options: response.data,
-                  selectedOption: response.selected ?? null,
-                };
-              }
-              return location;
-            })
-          );
+          const rebuiltLocationData = locationData.map((location) => {
+            const responseIndex = objectsToFetch.findIndex(
+              (obj) => obj.id === location.id,
+            );
+
+            if (responseIndex !== -1) {
+              const response = responses[responseIndex];
+
+              return {
+                ...location,
+                options: response.data,
+                selectedOption: response.selected ? [response.selected] : [],
+              };
+            }
+
+            return location;
+          });
+
+          dispatch(setLocationData(rebuiltLocationData));
         })
+        .catch((error) => {
+          console.error("Error in Promise.all:", error);
+        })
+
         .catch((error) => {
           console.error("Error in Promise.all:", error);
         });
     } else {
       const currentIndex = locationData.findIndex(
-        (loc) => loc.id === locationId
+        (loc) => loc.id === locationId,
       );
       if (currentIndex === -1) return;
 
-      setLocationData((prevLocationData) =>
-        prevLocationData.map((location, index) => {
-          if (location.id === locationId) {
-            return {
-              ...location,
-              selectedOption: [selectedOption],
-            };
-          } else if (location.id > locationId) {
-            return {
-              ...location,
-              options: [], // clear options for all future locations
-              selectedOption: [], // clear selected options for all future locations
-            };
-          }
-          return location;
-        })
-      );
+      // 🔹 STEP 1: Clear all future dropdowns BEFORE API call
+      const clearedLocationData = locationData.map((location, index) => {
+        if (location.id === locationId) {
+          return {
+            ...location,
+            selectedOption: [selectedOption],
+          };
+        }
 
+        if (index > currentIndex) {
+          return {
+            ...location,
+            options: [],
+            selectedOption: [],
+          };
+        }
+
+        return location;
+      });
+
+      dispatch(setLocationData(clearedLocationData));
+
+      // 🔹 STEP 2: Fetch next dropdown options
       if (currentIndex + 1 < locationData.length) {
         const nextLocationId = locationData[currentIndex + 1].id;
         const range = `0,${currentIndex + 1}`;
 
         fetchLocationData(
-          variable,
+          selectedOption.value,
           currentIndex + 2,
           range,
           currentIndex + 2,
-          nextLocationId
+          nextLocationId,
         )
           .then((response) => {
-            setLocationData((prevLocationData) =>
-              prevLocationData.map((location) =>
-                location.id === nextLocationId
-                  ? {
-                      ...location,
-                      options: response.data,
-                      selectedOption: [], // Ensure selected option is empty
-                    }
-                  : location
-              )
+            const updatedLocationData = clearedLocationData.map((location) =>
+              location.id === nextLocationId
+                ? {
+                    ...location,
+                    options: response.data,
+                    selectedOption: [], // must remain empty
+                  }
+                : location,
             );
+
+            dispatch(setLocationData(updatedLocationData));
           })
           .catch((error) => {
             console.error(
               `Error fetching data for location ${currentIndex + 1}:`,
-              error
+              error,
             );
           });
       }
     }
-
-    const selectedLocation = locationData.find((loc) => loc.id === locationId);
-    if (!selectedLocation) return;
-    dispatch(
-      setLocationDataF([
-        {
-          label: selectedLocation.value,
-          selectedValue: selectedOption,
-        },
-      ])
-    );
   };
 
   const handelLocationSearchDropDown = (e) => {
     const option = e.target.value;
 
-    setLocationData((prevLocationData) =>
-      prevLocationData.map((location) => ({
-        ...location,
-        dropdownSelected: location.id.toString() === option,
-      }))
-    );
+    const updatedLocationData = locationData.map((location) => ({
+      ...location,
+      dropdownSelected: location.id.toString() === option,
+    }));
+
+    dispatch(setLocationData(updatedLocationData));
+
     handleLocationOption(option);
   };
 
   const handleLocationOption = (option) => {
-    setLocationData((prevLocationData) =>
-      prevLocationData.map((location) => ({
-        ...location,
-        options: [],
-        selectedOption: null,
-      }))
-    );
+    const updatedLocationData = locationData.map((location) => ({
+      ...location,
+      options: [],
+      selectedOption: [],
+    }));
+
+    dispatch(setLocationData(updatedLocationData));
+
     if (option === "0" || option === "1") {
       intialdata();
     } else {
       const selectElement = document.getElementById("location_input_Select");
       const optionId = selectElement.value;
       const index = locationData.findIndex(
-        (loc) => loc.id === Number(optionId)
+        (loc) => loc.id === Number(optionId),
       );
       const vlabel = index + 1;
       const label = selectElement.options[selectElement.selectedIndex].text;
@@ -1142,30 +1332,30 @@ export default function RightDashboard() {
   const fetchLocationDataDefault = (
     vlabel,
     labelText,
-    additionalParams = {}
+    additionalParams = {},
   ) => {
     const loctype_kir =
       selectedLocationType === "indoor"
         ? 0
         : selectedLocationType === "outdoor"
-        ? 1
-        : selectedLocationType === "equip"
-        ? 2
-        : 3;
+          ? 1
+          : selectedLocationType === "equip"
+            ? 2
+            : 3;
 
-    setLocationData((prevLocationData) =>
-      prevLocationData.map((location) => ({
-        ...location,
-        options: [],
-        selectedOption: [],
-      }))
-    );
+    const clearedLocationData = locationData.map((location) => ({
+      ...location,
+      options: [],
+      selectedOption: [],
+    }));
+
+    dispatch(setLocationData(clearedLocationData));
 
     axios
       .post(`${baseURL}schedule/quickLocationLookup/`, {
         clientname: clientname,
         vlabel: vlabel,
-        owner: String(OwnerID),
+        owner: String(ownerID),
         loctype_kir: loctype_kir,
         label_text: labelText,
         is_DefLocation: 0,
@@ -1182,76 +1372,47 @@ export default function RightDashboard() {
           value: e.KEY,
           label: e.VALUE,
         }));
-        const id = locationData[vlabel - 1].id;
-        setLocationData((prevLocationData) =>
-          prevLocationData.map((location) =>
-            location.id === id
-              ? { ...location, options: fetchedData }
-              : location
-          )
+
+        const id = clearedLocationData[vlabel - 1].id;
+
+        const updatedLocationData = clearedLocationData.map((location) =>
+          location.id === id
+            ? {
+                ...location,
+                options: fetchedData,
+                selectedOption: [], // keep clean
+              }
+            : location,
         );
+
+        dispatch(setLocationData(updatedLocationData));
       })
+
       .catch((error) => console.error(error));
   };
 
   const handleClickLocationSearch = () => {
     const option = document.getElementById("location_input_Select").value;
     const data = document.getElementById("location_input_Search").value;
-    setLocationData((prevLocationData) =>
-      prevLocationData.map((location) => ({
-        ...location,
-        options: [],
-        selectedOption: null,
-      }))
-    );
+    const clearedLocationData = locationData.map((location) => ({
+      ...location,
+      options: [],
+      selectedOption: [],
+    }));
+
+    dispatch(setLocationData(clearedLocationData));
+
     if (option === "0" || option === "1") {
       intialdata();
     } else {
       const selectElement = document.getElementById("location_input_Select");
       const optionId = selectElement.value;
       const index = locationData.findIndex(
-        (loc) => loc.id === Number(optionId)
+        (loc) => loc.id === Number(optionId),
       );
       const vlabel = index + 1;
       const label = selectElement.options[selectElement.selectedIndex].text;
       fetchLocationDataDefault(vlabel, label, { loc_name: data });
-    }
-  };
-  //423
-  const fetchLocationData = async (
-    variable,
-    clabel,
-    h_value,
-    quickloc,
-    label_id
-  ) => {
-    try {
-      const lblcount = locationData.length;
-      const response = await axios.post(`${baseURL}schedule/LocationLookup/`, {
-        clientname: clientname,
-        owner: ownerID,
-        h_value: h_value,
-        clabel: clabel,
-        h_cvalue: variable,
-        loctype: Loctype,
-        labelid: label_id ? label_id : clabel.toString(),
-        quickloc: quickloc,
-        lblcount: lblcount,
-        deflab: 0,
-        PAGE: sessionData?.PAGE,
-        REQID: sessionData?.REQID,
-      });
-      const data = response.data.slice(2).map((e) => ({
-        id: e.KEY,
-        value: e.KEY,
-        label: e.VALUE,
-      }));
-      const selectedKey = response.data[1].VALUE;
-      const selected = data.find((item) => item.value === selectedKey);
-      return { data, selected };
-    } catch (error) {
-      console.log(error);
-      return { data: [], selected: null };
     }
   };
 
@@ -1267,7 +1428,15 @@ export default function RightDashboard() {
 
   const [isIntervalTypeModalVisible, setIntervalTypeModalVisible] =
     useState(false);
-  const [intervalType, setIntervalType] = useState("");
+  const DAY_LABEL_MAP = {
+    Mon: "Monday",
+    Tue: "Tuesday",
+    Wed: "Wednesday",
+    Thu: "Thursday",
+    Fri: "Friday",
+    Sat: "Saturday",
+    Sun: "Sunday",
+  };
   const [intervalState, setIntervalState] = useState({
     intervalType: "",
     repeatEvery: "",
@@ -1283,14 +1452,62 @@ export default function RightDashboard() {
     RandomInterval: "Day(s)",
     RandomDaysSelected: [],
   });
-  const [selectedIntervalState, setSelectedIntervalState] = useState({
-    ...intervalState,
-  });
+  const intervalNote = (() => {
+    const cfg = intervalRedux.intervalConfig;
+    if (!cfg || !cfg.intervalType) return "";
+
+    switch (cfg.intervalType) {
+      case "Weekly": {
+        const days =
+          cfg.RandomDaysSelected?.map((day) => DAY_LABEL_MAP[day] || day).join(
+            ", ",
+          ) || "";
+
+        return `Weekly interval: every ${cfg.repeatEvery} week(s) for ${cfg.repeatDuration} week(s) on ${days}`;
+      }
+      case "Monthly": {
+        if (cfg.monthlyOption === "onThe") {
+          const fullDay =
+            DAY_LABEL_MAP[cfg.monthlyWeekDay] || cfg.monthlyWeekDay;
+
+          return `Monthly interval: every ${cfg.repeatEvery} month(s) on the ${cfg.monthlyOccurrence} ${fullDay}`;
+        }
+        return "Monthly interval selected.";
+      }
+      case "Random":
+        return `Random interval: ${cfg.selectedDates?.length || 0} date(s) selected.`;
+
+      case "Single":
+        return "Single day selected.";
+
+      default:
+        return "";
+    }
+  })();
+
   const [isStartDateReadonly, setStartDateReadonly] = useState(false);
   const [isEndDateReadonly, setEndDateReadonly] = useState(false);
+
   useEffect(() => {
-    dispatch(setIntervalStateF(GeneratedDates));
-  }, [GeneratedDates, dispatch]);
+    if (!intervalRedux.intervalConfig) return;
+
+    setIntervalState({
+      intervalType: intervalRedux.intervalConfig.intervalType || "",
+      repeatEvery: intervalRedux.intervalConfig.repeatEvery ?? "",
+      repeatDuration: intervalRedux.intervalConfig.repeatDuration ?? "",
+      endDate: intervalRedux.intervalConfig.endDate ?? "",
+      weeklyOnDay: intervalRedux.intervalConfig.weeklyOnDay ?? "",
+      weeklyOnTheOccurrence:
+        intervalRedux.intervalConfig.weeklyOnTheOccurrence ?? "",
+      weeklyOnTheDay: intervalRedux.intervalConfig.weeklyOnTheDay ?? "",
+      monthlyOnDay: intervalRedux.intervalConfig.monthlyOnDay ?? "",
+      monthlyOccurrence: intervalRedux.intervalConfig.monthlyOccurrence ?? "",
+      monthlyWeekDay: intervalRedux.intervalConfig.monthlyWeekDay ?? "",
+      selectedDates: intervalRedux.intervalConfig.selectedDates ?? [],
+      RandomInterval: intervalRedux.intervalConfig.RandomInterval ?? "Day(s)",
+      RandomDaysSelected: intervalRedux.intervalConfig.RandomDaysSelected ?? [],
+    });
+  }, [intervalRedux.intervalConfig]);
 
   // Function to update selected dates
   const updateSelectedDates = (newDates) => {
@@ -1309,39 +1526,45 @@ export default function RightDashboard() {
   };
 
   const handleSave = async () => {
-    const { intervalType } = intervalState;
+    const type = intervalState.intervalType;
+
+    if (!startDate || !endDate) {
+      console.warn("⛔ StartTime or EndTime missing:", startDate, endDate);
+      return;
+    }
 
     try {
       let requestBody = {};
       let response = [];
 
-      switch (intervalType) {
+      switch (type) {
         case "Weekly": {
           const daysArray = (intervalState.RandomDaysSelected || []).map(
-            getDayNumber
+            getDayNumber,
           );
 
           requestBody = {
             type: "weekly",
-            startDate: formatDateMMDDYYYY(StartTime),
-            endDate: formatDateMMDDYYYY(EndTime),
-            startTime: formatTimeHHMM(StartTime),
-            endTime: formatTimeHHMM(EndTime),
+            startDate: formatDateMMDDYYYY(startDate),
+            endDate: formatDateMMDDYYYY(endDate),
+            startTime: formatTimeHHMM(startDate),
+            endTime: formatTimeHHMM(endDate),
             days: daysArray,
             durationWeeks: intervalState.repeatDuration,
             everyXWeeks: intervalState.repeatEvery,
           };
 
           response = generateDates(requestBody);
+          console.log("Weekly generation response:", response);
           break;
         }
 
         case "Monthly": {
           const baseParams = {
             type: "monthly",
-            startDate: formatDateMMDDYYYY(StartTime),
-            startTime: formatTimeHHMM(StartTime),
-            endTime: formatTimeHHMM(EndTime),
+            startDate: formatDateMMDDYYYY(startDate),
+            startTime: formatTimeHHMM(startDate),
+            endTime: formatTimeHHMM(endDate),
             repeatEvery: intervalState.repeatEvery,
           };
 
@@ -1368,89 +1591,92 @@ export default function RightDashboard() {
           requestBody = {
             type: "random",
             randomDates: intervalState.selectedDates || [],
-            startTime: formatTimeHHMM(StartTime),
-            endTime: formatTimeHHMM(EndTime),
+            startTime: formatTimeHHMM(startDate),
+            endTime: formatTimeHHMM(endDate),
           };
-
           response = generateDates(requestBody);
           break;
         }
 
         default:
-          console.warn("⚠️ Unknown interval type:", intervalType);
+          console.warn("⚠️ Unknown interval type:", intervalState.intervalType);
           return;
       }
 
       if (Array.isArray(response) && response.length > 0) {
         response.sort((a, b) => new Date(a.start) - new Date(b.start));
-        setGeneratedDates(response);
-
+        // setGeneratedDates(response);
         const firstDate = response[0];
         const lastDate = response[response.length - 1];
 
-        setStartTime(firstDate.start);
-        setEndTime(lastDate.end);
         dispatch(setStartDateF(firstDate.start));
         dispatch(setEndDateF(lastDate.end));
+        // Commit FINAL config
+        dispatch(setIntervalConfigF(intervalState));
+
+        // Commit generated dates
+        dispatch(setGeneratedDatesF(response));
 
         // Weekly & Monthly: start editable, end readonly; Random: both readonly
-        if (intervalType === "Weekly" || intervalType === "Monthly") {
+        if (type === "Weekly" || type === "Monthly") {
           setStartDateReadonly(false);
           setEndDateReadonly(true);
-        } else if (intervalType === "Random") {
+        } else if (type === "Random") {
           setStartDateReadonly(true);
           setEndDateReadonly(true);
         }
       } else {
-        console.warn("⚠️ No valid dates generated for type:", intervalType);
+        console.warn("⚠️ No valid dates generated for type:", type);
       }
-
-      setIntervalTypeModalVisible(false);
     } catch (error) {
       console.error("❌ Error while generating event dates:", error);
+    } finally {
+      setIntervalTypeModalVisible(false); // 🔐 ALWAYS CLOSE
     }
   };
 
-  useEffect(() => {
-    if (intervalState.intervalType === "Single") {
-      try {
-        const today = new Date();
-        const todayStr = formatDateMMDDYYYY(today);
+  // useEffect(() => {
+  //   if (intervalState.intervalType === "Single") {
+  //     try {
+  //       const today = new Date();
+  //       const todayStr = formatDateMMDDYYYY(today);
 
-        const singleRequest = {
-          type: "single",
-          startDate: todayStr,
-          endDate: todayStr,
-          startTime: formatTimeHHMM(StartTime),
-          endTime: formatTimeHHMM(EndTime),
-        };
+  //       const singleRequest = {
+  //         type: "single",
+  //         startDate: todayStr,
+  //         endDate: todayStr,
+  //         startTime: formatTimeHHMM(startDate),
+  //         endTime: formatTimeHHMM(endDate),
+  //       };
 
-        const response = generateDates(singleRequest);
+  //       const response = generateDates(singleRequest);
 
-        if (Array.isArray(response) && response.length > 0) {
-          const firstDate = response[0];
-          const lastDate = response[response.length - 1];
+  //       if (Array.isArray(response) && response.length > 0) {
+  //         const firstDate = response[0];
+  //         const lastDate = response[response.length - 1];
 
-          // Update states
-          setGeneratedDates(response);
-          setStartTime(firstDate.start);
-          setEndTime(lastDate.end);
-          dispatch(setStartDateF(firstDate.start));
-          dispatch(setEndDateF(lastDate.end));
+  //         // Update states
+  //         // setGeneratedDates(response);
+  //         dispatch(setGeneratedDatesF(response))
+  //         dispatch(setStartDateF(firstDate.start));
+  //         dispatch(setEndDateF(lastDate.end));
 
-          // Single interval: both fields editable
-          setStartDateReadonly(false);
-          setEndDateReadonly(false);
-        } else {
-          console.warn("⚠️ No dates generated for Single interval");
-        }
-      } catch (error) {
-        console.error("❌ Error generating Single interval dates:", error);
-      }
-    }
-  }, [intervalState.intervalType, handleSave]);
+  //         // Single interval: both fields editable
+  //         setStartDateReadonly(false);
+  //         setEndDateReadonly(false);
+  //       } else {
+  //         console.warn("⚠️ No dates generated for Single interval");
+  //       }
+  //     } catch (error) {
+  //       console.error("❌ Error generating Single interval dates:", error);
+  //     }
+  //   }
+  // }, [intervalState.intervalType]);
+
   const handleClose = () => {
-    setIntervalState({ ...selectedIntervalState });
+    if (intervalRedux.intervalConfig) {
+      setIntervalState(intervalRedux.intervalConfig);
+    }
     setIntervalTypeModalVisible(false);
   };
 
@@ -1477,6 +1703,7 @@ export default function RightDashboard() {
       weeklyOnTheDay: "",
       monthlyOnDay: "",
       selectedDates: [],
+      monthlyOption: "onThe",
       monthlyOccurrence: "",
       monthlyWeekDay: "",
       RandomInterval: "Day(s)",
@@ -1484,14 +1711,28 @@ export default function RightDashboard() {
     };
 
     setIntervalState(newState);
-    setSelectedIntervalState(newState);
-    setIntervalType(selectedValue);
 
     // ✅ If Single, call handleSave() directly (no modal)
     if (selectedValue !== "Single") {
       setIntervalTypeModalVisible(true);
     }
   };
+
+  useEffect(() => {
+    if (
+      intervalState.intervalType === "Weekly" ||
+      intervalState.intervalType === "Monthly"
+    ) {
+      setStartDateReadonly(false);
+      setEndDateReadonly(true);
+    } else if (intervalState.intervalType === "Random") {
+      setStartDateReadonly(true);
+      setEndDateReadonly(true);
+    } else {
+      setStartDateReadonly(false);
+      setEndDateReadonly(false);
+    }
+  }, [intervalState.intervalType]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -1530,90 +1771,99 @@ export default function RightDashboard() {
   };
 
   return (
-    <div className="mainRightDashboard">
-      <div className="topRightdashboard">
-        <div className="scheduleSearch-header">
-          <div className="search">Search</div>
-          <div className="scheduleSearch-buttons">
-            <div className="button">
-              <button className="btnmodify">Modify/Cancel</button>
-              <button className="btnrequest">Show Request</button>
+    <div className='mainRightDashboard'>
+      <div className='topRightdashboard'>
+        <div className='scheduleSearch-header'>
+          <div className='search'>Search</div>
+          <div className='scheduleSearch-buttons'>
+            <div className='button'>
+              <button type='button' className='btnmodify'>
+                Modify/Cancel
+              </button>
+              <button type='button' className='btnrequest'>
+                Show Request
+              </button>
             </div>
           </div>
         </div>
       </div>
-      <div className="scheduleSearch">
-        <div className="scheduleSearch-body">
-          <div className="accordion-item">
-            <button className="accordion-item-btn" onClick={handleClick1}>
-              <div className="section-1">
-                <div className="title-icon">
-                  <div className="icon-t">
-                    <img src={Calender} alt="Calender" />
+      <div className='scheduleSearch'>
+        <div className='scheduleSearch-body'>
+          <div className='accordion-item'>
+            <button
+              type='button'
+              className='accordion-item-btn'
+              onClick={handleClick1}
+            >
+              <div className='section-1'>
+                <div className='title-icon'>
+                  <div className='icon-t'>
+                    <img src={Calender} alt='Calender' />
                   </div>
-                  <div className="title">Date and Time</div>
+                  <div className='title'>Date and Time</div>
                 </div>
-                <div className="button">
+                <div className='button'>
                   {isOpen1 ? (
-                    <img src={Up} alt="icon" />
+                    <img src={Up} alt='icon' />
                   ) : (
-                    <img src={Down} alt="icon" />
+                    <img src={Down} alt='icon' />
                   )}
                 </div>
               </div>
             </button>
             {isOpen1 && (
-              <div className="section-2">
-                <div className="accordion-body">
-                  <div className="datetime-setup">
+              <div className='section-2'>
+                <div className='accordion-body'>
+                  <div className='datetime-setup'>
                     <Row>
-                      <Col md={3} sm={6} xs={12} className="col-3">
-                        <div className="startTime-container mb-3">
-                          <div className="heading">Start Date and Time</div>
-                          <div className="time">
+                      <Col md={3} sm={6} xs={12} className='col-3'>
+                        <div className='startTime-container mb-3'>
+                          <div className='heading'>Start Date and Time</div>
+                          <div className='time'>
                             <CustomDateTimePicker
-                              id="startDateTimePicker"
-                              value={StartTime}
-                              onChange={setStartTime}
+                              id='startDateTimePicker'
+                              value={startDate}
+                              onChange={(val) => dispatch(setStartDateF(val))}
                               interval={intervalTime}
                               readOnly={isStartDateReadonly}
                             />
                           </div>
                         </div>
                       </Col>
-                      <Col md={3} sm={6} xs={12} className="col-3">
-                        <div className="endTime-container mb-3">
-                          <div className="heading" style={{ fontSize: "1em" }}>
+                      <Col md={3} sm={6} xs={12} className='col-3'>
+                        <div className='endTime-container mb-3'>
+                          <div className='heading' style={{ fontSize: "1em" }}>
                             End Date and Time
                           </div>
-                          <div className="time">
+                          <div className='time'>
                             <CustomDateTimePicker
-                              id="endDateTimePicker"
-                              value={EndTime}
-                              onChange={setEndTime}
+                              id='endDateTimePicker'
+                              value={endDate}
+                              onChange={(val) => dispatch(setEndDateF(val))}
                               interval={intervalTime}
                               readOnly={isEndDateReadonly}
                             />
                           </div>
                         </div>
                       </Col>
-                      <Col md={3} sm={6} xs={12} className="col-3">
-                        <div className="interval-container mb-3">
-                          <div className="heading">Interval Type</div>
+                      <Col md={3} sm={6} xs={12} className='col-3'>
+                        <div className='interval-container mb-3'>
+                          <div className='heading'>Interval Type</div>
                           <div
                             style={{ display: "flex", flexDirection: "row" }}
                           >
-                            <div className="dropdown dropdown-wrapper search keyword">
+                            <div className='dropdown dropdown-wrapper search keyword'>
                               <select
-                                name="intervalType"
-                                className="custom-select"
-                                aria-label="interval Type"
+                                name='intervalType'
+                                className='custom-select'
+                                aria-label='interval Type'
+                                value={intervalState.intervalType || "Single"}
                                 onChange={handleIntervalTypeChange}
                               >
-                                <option value="Single">Single Day</option>
-                                <option value="Weekly">Weekly</option>
-                                <option value="Monthly">Monthly</option>
-                                <option value="Random">Random</option>
+                                <option value='Single'>Single Day</option>
+                                <option value='Weekly'>Weekly</option>
+                                <option value='Monthly'>Monthly</option>
+                                <option value='Random'>Random</option>
                               </select>
                             </div>
                             <div
@@ -1625,67 +1875,67 @@ export default function RightDashboard() {
                             >
                               <img
                                 src={Edit}
-                                alt="edit"
+                                alt='edit'
                                 width={35}
                                 height={35}
                               />
                             </div>
                             {/* Weekly Interval Modal */}
-                            {intervalType === "Weekly" && (
+                            {intervalState.intervalType === "Weekly" && (
                               <Modal
                                 show={isIntervalTypeModalVisible}
                                 onHide={closeIntervalTypeModal}
                                 backdrop={false}
                                 keyboard={true}
-                                role="dialog"
-                                aria-labelledby="weekly-modal-title"
+                                role='dialog'
+                                aria-labelledby='weekly-modal-title'
                               >
                                 <Modal.Header closeButton>
-                                  <Modal.Title id="weekly-modal-title">
+                                  <Modal.Title id='weekly-modal-title'>
                                     Weekly Interval Type
                                   </Modal.Title>
                                 </Modal.Header>
                                 <Modal.Body>
-                                  <div className="row intervalType-row1">
-                                    <div className="col-sm-10 mb-2 d-flex align-items-center">
+                                  <div className='row intervalType-row1'>
+                                    <div className='col-sm-10 mb-2 d-flex align-items-center'>
                                       <label
-                                        htmlFor="repeatEvery"
-                                        className="mr-2"
+                                        htmlFor='repeatEvery'
+                                        className='mr-2'
                                       >
                                         Every
                                       </label>
                                       <input
-                                        id="repeatEvery"
-                                        type="number"
-                                        className="form-control repeat-every-value"
-                                        aria-label="Repeat every week"
+                                        id='repeatEvery'
+                                        type='number'
+                                        className='form-control repeat-every-value'
+                                        aria-label='Repeat every week'
                                         style={{ width: "20%" }}
-                                        name="repeatEvery"
+                                        name='repeatEvery'
                                         value={intervalState.repeatEvery}
                                         onChange={handleInputChange}
                                       />
-                                      <span className="ml-2">Weeks for</span>
+                                      <span className='ml-2'>Weeks for</span>
                                       <input
-                                        type="number"
-                                        className="form-control repeat-every-value"
-                                        aria-label="Weeks duration"
+                                        type='number'
+                                        className='form-control repeat-every-value'
+                                        aria-label='Weeks duration'
                                         style={{ width: "20%" }}
-                                        name="repeatDuration"
+                                        name='repeatDuration'
                                         value={intervalState.repeatDuration}
                                         onChange={handleInputChange}
                                       />
-                                      <span className="ml-2">Weeks</span>
+                                      <span className='ml-2'>Weeks</span>
                                     </div>
                                   </div>
 
                                   {/* Day Selection with WCAG Fixes */}
-                                  <div className="row intervalType-row2 mt-3">
-                                    <div className="col-sm-12">
+                                  <div className='row intervalType-row2 mt-3'>
+                                    <div className='col-sm-12'>
                                       <fieldset>
-                                        <legend className="sr-only">
-                                          Select Random Days
+                                        <legend className='sr-only'>
+                                          Select Days
                                         </legend>
-                                        <div className="d-flex justify-content-between">
+                                        <div className='d-flex justify-content-between'>
                                           {[
                                             "Mon",
                                             "Tue",
@@ -1697,20 +1947,20 @@ export default function RightDashboard() {
                                           ].map((day) => (
                                             <div
                                               key={day}
-                                              className="custom-control custom-checkbox"
+                                              className='custom-control custom-checkbox'
                                             >
                                               <input
-                                                type="checkbox"
-                                                className="custom-control-input"
+                                                type='checkbox'
+                                                className='custom-control-input'
                                                 id={`check${day}`}
                                                 name={day}
                                                 checked={intervalState.RandomDaysSelected.includes(
-                                                  day
+                                                  day,
                                                 )}
                                                 onChange={handleInputChange}
                                               />
                                               <label
-                                                className="custom-control-label ms-1"
+                                                className='custom-control-label ms-1'
                                                 htmlFor={`check${day}`}
                                               >
                                                 {day}
@@ -1746,13 +1996,15 @@ export default function RightDashboard() {
                                 </Modal.Body>
                                 <Modal.Footer>
                                   <Button
-                                    className="intervalCloseBtn"
+                                    type='button'
+                                    className='intervalCloseBtn'
                                     onClick={handleClose}
                                   >
                                     Close
                                   </Button>
                                   <Button
-                                    variant="primary"
+                                    type='button'
+                                    variant='primary'
                                     onClick={handleSave}
                                   >
                                     Save
@@ -1761,38 +2013,38 @@ export default function RightDashboard() {
                               </Modal>
                             )}
                             {/* Monthly Interval Modal */}
-                            {intervalType === "Monthly" && (
+                            {intervalState.intervalType === "Monthly" && (
                               <Modal
                                 show={isIntervalTypeModalVisible}
                                 onHide={closeIntervalTypeModal}
                                 backdrop={false}
                                 keyboard={true}
-                                role="dialog"
-                                aria-labelledby="monthly-modal-title"
+                                role='dialog'
+                                aria-labelledby='monthly-modal-title'
                               >
                                 <Modal.Header closeButton>
-                                  <Modal.Title id="monthly-modal-title">
+                                  <Modal.Title id='monthly-modal-title'>
                                     Monthly Interval Type
                                   </Modal.Title>
                                 </Modal.Header>
 
                                 <Modal.Body>
                                   {/* Repeat Every Section */}
-                                  <div className="row intervalType-row1">
-                                    <div className="col-sm-6 d-flex align-items-center div-month">
+                                  <div className='row intervalType-row1'>
+                                    <div className='col-sm-6 d-flex align-items-center div-month'>
                                       <label
-                                        htmlFor="monthlyRepeatEvery"
-                                        className="mr-2"
+                                        htmlFor='monthlyRepeatEvery'
+                                        className='mr-2'
                                       >
                                         Repeat for
                                       </label>
                                       <input
-                                        id="monthlyRepeatEvery"
-                                        type="number"
-                                        className="form-control repeat-every-value"
-                                        aria-label="Repeat every months"
+                                        id='monthlyRepeatEvery'
+                                        type='number'
+                                        className='form-control repeat-every-value'
+                                        aria-label='Repeat every months'
                                         style={{ width: "30%" }}
-                                        name="repeatEvery"
+                                        name='repeatEvery'
                                         value={intervalState.repeatEvery}
                                         onChange={handleInputChange}
                                       />
@@ -1801,8 +2053,8 @@ export default function RightDashboard() {
                                   </div>
 
                                   {/* Monthly Options - On Day or On The */}
-                                  <fieldset className="row intervalType-row2 mt-3">
-                                    <legend className="sr-only">
+                                  <fieldset className='row intervalType-row2 mt-3'>
+                                    <legend className='sr-only'>
                                       Select Monthly Option
                                     </legend>
 
@@ -1857,13 +2109,13 @@ export default function RightDashboard() {
                                     </div> */}
 
                                     {/* On The Option */}
-                                    <div className="d-flex align-items-center">
+                                    <div className='d-flex align-items-center'>
                                       <input
-                                        type="radio"
-                                        id="onThe"
-                                        name="monthlyOption"
-                                        className="onday-radio"
-                                        aria-labelledby="onTheLabel"
+                                        type='radio'
+                                        id='onThe'
+                                        name='monthlyOption'
+                                        className='onday-radio'
+                                        aria-labelledby='onTheLabel'
                                         style={{
                                           height: "20px",
                                           width: "20px",
@@ -1882,18 +2134,18 @@ export default function RightDashboard() {
                                         }
                                       />
                                       <label
-                                        id="onTheLabel"
-                                        htmlFor="onThe"
-                                        className="ml-2 ms-2"
+                                        id='onTheLabel'
+                                        htmlFor='onThe'
+                                        className='ml-2 ms-2'
                                       >
                                         On the
                                       </label>
 
-                                      <div className="dropdown-wrapper ml-2 d-flex dropdown-month">
+                                      <div className='dropdown-wrapper ml-2 d-flex dropdown-month'>
                                         <select
-                                          name="monthlyOccurrence"
-                                          className="custom-select ml-2"
-                                          aria-label="Select occurrence of the month"
+                                          name='monthlyOccurrence'
+                                          className='custom-select ml-2'
+                                          aria-label='Select occurrence of the month'
                                           value={
                                             intervalState.monthlyOccurrence
                                           }
@@ -1903,18 +2155,18 @@ export default function RightDashboard() {
                                             "onThe"
                                           } // 🔐 disable when not active
                                         >
-                                          <option value="">Select value</option>
-                                          <option value="First">First</option>
-                                          <option value="Second">Second</option>
-                                          <option value="Third">Third</option>
-                                          <option value="Fourth">Fourth</option>
-                                          <option value="Last">Last</option>
+                                          <option value=''>Select value</option>
+                                          <option value='First'>First</option>
+                                          <option value='Second'>Second</option>
+                                          <option value='Third'>Third</option>
+                                          <option value='Fourth'>Fourth</option>
+                                          <option value='Last'>Last</option>
                                         </select>
 
                                         <select
-                                          name="monthlyWeekDay"
-                                          className="custom-select ml-2 mr-2"
-                                          aria-label="Select day of the week"
+                                          name='monthlyWeekDay'
+                                          className='custom-select ml-2 mr-2'
+                                          aria-label='Select day of the week'
                                           value={intervalState.monthlyWeekDay}
                                           onChange={handleInputChange}
                                           disabled={
@@ -1922,14 +2174,14 @@ export default function RightDashboard() {
                                             "onThe"
                                           } // 🔐 disable when not active
                                         >
-                                          <option value="">Select value</option>
-                                          <option value="Mon">Monday</option>
-                                          <option value="Tue">Tuesday</option>
-                                          <option value="Wed">Wednesday</option>
-                                          <option value="Thu">Thursday</option>
-                                          <option value="Fri">Friday</option>
-                                          <option value="Sat">Saturday</option>
-                                          <option value="Sun">Sunday</option>
+                                          <option value=''>Select value</option>
+                                          <option value='Mon'>Monday</option>
+                                          <option value='Tue'>Tuesday</option>
+                                          <option value='Wed'>Wednesday</option>
+                                          <option value='Thu'>Thursday</option>
+                                          <option value='Fri'>Friday</option>
+                                          <option value='Sat'>Saturday</option>
+                                          <option value='Sun'>Sunday</option>
                                         </select>
                                       </div>
                                     </div>
@@ -1960,8 +2212,8 @@ export default function RightDashboard() {
                                   </div> */}
 
                                   {/* Summary Section */}
-                                  <div className="row intervalType-row4 mt-3">
-                                    <div className="col text-center">
+                                  <div className='row intervalType-row4 mt-3'>
+                                    <div className='col text-center'>
                                       <p>
                                         Occurs every month on the
                                         {intervalState.monthlyOccurrence ? (
@@ -1978,7 +2230,9 @@ export default function RightDashboard() {
                                           <></>
                                         )}
                                         <strong>
-                                          {intervalState.monthlyWeekDay}
+                                          {DAY_LABEL_MAP[
+                                            intervalState.monthlyWeekDay
+                                          ] || intervalState.monthlyWeekDay}
                                         </strong>
                                         {intervalState.monthlyWeekDay ? (
                                           <> &nbsp;</>
@@ -1986,7 +2240,7 @@ export default function RightDashboard() {
                                           <></>
                                         )}{" "}
                                         starting<br></br>
-                                        <span>{StartTime}</span>
+                                        <span>{startDate}</span>
                                       </p>
                                     </div>
                                   </div>
@@ -1994,13 +2248,15 @@ export default function RightDashboard() {
 
                                 <Modal.Footer>
                                   <Button
-                                    className="intervalCloseBtn"
+                                    type='button'
+                                    className='intervalCloseBtn'
                                     onClick={handleClose}
                                   >
                                     Close
                                   </Button>
                                   <Button
-                                    variant="primary"
+                                    type='button'
+                                    variant='primary'
                                     onClick={handleSave}
                                   >
                                     Save
@@ -2009,55 +2265,56 @@ export default function RightDashboard() {
                               </Modal>
                             )}
                             {/* Random Interval Modal */}
-                            {intervalType === "Random" && (
+                            {intervalState.intervalType === "Random" && (
                               <Modal
                                 show={isIntervalTypeModalVisible}
                                 onHide={closeIntervalTypeModal}
                                 backdrop={false}
                                 keyboard={true}
-                                role="dialog"
-                                aria-labelledby="Random-modal-title"
+                                role='dialog'
+                                aria-labelledby='Random-modal-title'
                               >
                                 <Modal.Header closeButton>
-                                  <Modal.Title id="Random-modal-title">
+                                  <Modal.Title id='Random-modal-title'>
                                     Random Interval Type
                                   </Modal.Title>
                                 </Modal.Header>
 
-                                <Modal.Body className="pt-3">
-                                  <div className="container">
-                                    <h5 className="text-center">
+                                <Modal.Body className='pt-3'>
+                                  <div className='container'>
+                                    <h5 className='text-center'>
                                       Random Date Selection
                                     </h5>
-                                    <div className="d-flex mt-3">
+                                    <div className='d-flex mt-3'>
                                       <div style={{ width: "60%" }}>
                                         <CustomCalendar
                                           selectedDates={
                                             intervalState.selectedDates
                                           }
                                           setSelectedDates={updateSelectedDates}
-                                          aria-label="Custom Calendar for selecting dates"
+                                          aria-label='Custom Calendar for selecting dates'
                                         />
                                       </div>
                                       <div
-                                        className="ms-3 border p-3 rounded shadow-sm d-flex flex-column"
+                                        className='ms-3 border p-3 rounded shadow-sm d-flex flex-column'
                                         style={{ width: "40%" }}
                                       >
-                                        <h6 className="text-center">
+                                        <h6 className='text-center'>
                                           Selected Dates
                                         </h6>
                                         <textarea
-                                          className="form-control flex-grow-1"
+                                          className='form-control flex-grow-1'
                                           style={{ maxHeight: "12em" }}
-                                          rows="10"
+                                          rows='10'
                                           readOnly
-                                          aria-label="Selected dates list"
+                                          aria-label='Selected dates list'
                                           value={intervalState.selectedDates.join(
-                                            "\n"
+                                            "\n",
                                           )}
                                         />
                                         <button
-                                          className="btn btn-danger mt-2 w-100"
+                                          type='button'
+                                          className='btn btn-danger mt-2 w-100'
                                           onClick={handleClearDates}
                                         >
                                           Clear Dates
@@ -2069,13 +2326,15 @@ export default function RightDashboard() {
 
                                 <Modal.Footer>
                                   <Button
-                                    className="intervalCloseBtn"
+                                    type='button'
+                                    className='intervalCloseBtn'
                                     onClick={handleClose}
                                   >
                                     Close
                                   </Button>
                                   <Button
-                                    variant="primary"
+                                    type='button'
+                                    variant='primary'
                                     onClick={handleSave}
                                   >
                                     Save
@@ -2086,110 +2345,121 @@ export default function RightDashboard() {
                           </div>
                         </div>
                       </Col>
-                      <Col md={3} sm={6} xs={12} className="col-3">
-                        <div className="showConflict mt-4">
-                          <div className="d-flex align-items-center">
+                      <Col md={3} sm={6} xs={12} className='col-3'>
+                        <div className='showConflict mt-4'>
+                          <div className='d-flex align-items-center'>
                             <input
-                              className="checkBox m-2"
-                              type="checkbox"
+                              className='checkBox m-2'
+                              type='checkbox'
                               checked={showConflicts}
                               onChange={(e) =>
                                 setShowConflicts(e.target.checked)
                               }
-                              aria-label="Conflicts"
+                              aria-label='Conflicts'
                               style={{ height: "20px" }}
                             />
-                            <div className="conflict ml-2">Show Conflicts</div>
+                            <div className='conflict ml-2'>Show Conflicts</div>
                           </div>
                         </div>
                       </Col>
                     </Row>
+                    {intervalNote && (
+                      <Row className='mt-2'>
+                        <Col xs={12}>
+                          <div className='schedule_note'>{intervalNote}</div>
+                        </Col>
+                      </Row>
+                    )}
                   </div>
                 </div>
               </div>
             )}
           </div>
         </div>
-        <div className="scheduleSearch-body">
-          <div className="accordion-item">
-            <button className="accordion-item-btn" onClick={handleClick2}>
-              <div className="section-1">
-                <div className="title-icon">
-                  <div className="icon-t">
-                    <img src={Profile} alt="Profile" />
+        <div className='scheduleSearch-body'>
+          <div className='accordion-item'>
+            <button
+              type='button'
+              className='accordion-item-btn'
+              onClick={handleClick2}
+            >
+              <div className='section-1'>
+                <div className='title-icon'>
+                  <div className='icon-t'>
+                    <img src={Profile} alt='Profile' />
                   </div>
-                  <div className="title">People</div>
+                  <div className='title'>People</div>
                 </div>
-                <div className="title-icon">
-                  <div className="icon-t">
-                    <img src={UserCalender} alt="UserCalender" />
+                <div className='title-icon'>
+                  <div className='icon-t'>
+                    <img src={UserCalender} alt='UserCalender' />
                   </div>
-                  <div className="title">User Calender</div>
+                  <div className='title'>User Calender</div>
                 </div>
-                <div className="title-icon">
-                  <div className="icon-t">
-                    <img src={ContactCalender} alt="Contact Calender" />
+                <div className='title-icon'>
+                  <div className='icon-t'>
+                    <img src={ContactCalender} alt='Contact Calender' />
                   </div>
-                  <div className="title">Contact Calender</div>
+                  <div className='title'>Contact Calender</div>
                 </div>
-                <div className="button">
+                <div className='button'>
                   {isOpen2 ? (
-                    <img src={Up} alt="icon" />
+                    <img src={Up} alt='icon' />
                   ) : (
-                    <img src={Down} alt="icon" />
+                    <img src={Down} alt='icon' />
                   )}
                 </div>
               </div>
             </button>
             {isOpen2 && (
-              <div className="section-2">
-                <div className="accordion-body">
-                  <div className="calender-setup">
+              <div className='section-2'>
+                <div className='accordion-body'>
+                  <div className='calender-setup'>
                     <Row>
-                      <Col md={3} sm={6} xs={12} className="col-3 mb-3">
-                        <div className="content">
-                          <div className="title">Choose field to Search</div>
-                          <div className="dropdown-wrapper">
+                      <Col md={3} sm={6} xs={12} className='col-3 mb-3'>
+                        <div className='content'>
+                          <div className='title'>Choose field to Search</div>
+                          <div className='dropdown-wrapper'>
                             <select
-                              name="days"
-                              id="people_input_Select"
-                              aria-label="people  Select input"
-                              className="custom-select"
+                              name='days'
+                              id='people_input_Select'
+                              aria-label='people  Select input'
+                              className='custom-select'
                             >
-                              <option value="">select value</option>
-                              <option value="1">Owner</option>
-                              <option value="2">Scheduler</option>
-                              <option value="3">Customer</option>
-                              <option value="4">Contact</option>
+                              <option value=''>select value</option>
+                              <option value='1'>Owner</option>
+                              <option value='2'>Scheduler</option>
+                              <option value='3'>Customer</option>
+                              <option value='4'>Contact</option>
                             </select>
                           </div>
                         </div>
                       </Col>
-                      <Col md={4} sm={6} xs={12} className="col-3">
-                        <div className="seletedFeild">
-                          <label>search key word</label>
-                          <div className="selectedSearchField">
+                      <Col md={4} sm={6} xs={12} className='col-3'>
+                        <div className='seletedFeild'>
+                          <label>Search key word</label>
+                          <div className='selectedSearchField'>
                             <input
-                              type="text"
-                              id="people_input_Search"
-                              aria-label="people  Search input"
-                              placeholder="Enter search key word"
-                              className="form-control"
+                              type='text'
+                              id='people_input_Search'
+                              aria-label='people  Search input'
+                              placeholder='Enter Search key word'
+                              className='form-control'
                             />
                             <img
                               src={SearchIcon}
-                              alt="Search Icon"
-                              className="search-icon"
+                              alt='Search Icon'
+                              className='search-icon'
                               onClick={handleClickPeopleSearch}
                             />
                           </div>
                         </div>
                       </Col>
-                      <Col md={2} sm={6} xs={12} className="col-2">
-                        <div className="edit pt-4 text-center">
+                      <Col md={2} sm={6} xs={12} className='col-2'>
+                        <div className='edit pt-4 text-center'>
                           <img
                             src={Edit}
-                            alt="edit"
+                            alt='edit'
                             style={{
                               marginRight: "10px",
                             }}
@@ -2203,11 +2473,11 @@ export default function RightDashboard() {
                           </p>
                         </div>
                       </Col>
-                      <Col md={2} sm={6} xs={12} className="col-2">
-                        <div className="add pt-4 ">
+                      <Col md={2} sm={6} xs={12} className='col-2'>
+                        <div className='add pt-4 '>
                           <img
                             src={Add}
-                            alt="Add"
+                            alt='Add'
                             style={{
                               marginRight: "10px",
                               verticalAlign: "middle",
@@ -2217,73 +2487,71 @@ export default function RightDashboard() {
                         </div>
                       </Col>
                     </Row>
-                    <div className="selectedField-header">
+                    <div className='selectedField-header'>
                       <p>Selected Fields</p>
                     </div>
-                    <div className="selectedField-dropdown">
+                    <div className='selectedField-dropdown'>
                       <Row>
-                        <Col md={3} sm={6} xs={12} className="col-3 mb-3">
-                          <div className="selectedField-value">
-                            <div className="title">Owner</div>
+                        <Col md={3} sm={6} xs={12} className='col-3 mb-3'>
+                          <div className='selectedField-value'>
+                            <div className='title'>Owner</div>
                             <InfiniteDropdown
-                              id="Owner"
-                              options={Owners}
+                              id='Owner'
+                              options={owner}
                               selectedValue={
-                                Owners.find((owner) => owner.id === OwnerID)
-                                  ? [
-                                      Owners.find(
-                                        (owner) => owner.id === OwnerID
-                                      ),
-                                    ]
+                                owner.find((o) => o.id === ownerID)
+                                  ? [owner.find((o) => o.id === ownerID)]
                                   : []
                               }
                               onChange={(selectedOption) => {
-                                handleOwnerChange([selectedOption]);
-                                dispatch(setownerID(selectedOption.id));
-                                setOwnerID(selectedOption.id);
+                                handleOwnerChange(selectedOption);
                               }}
                             />
                           </div>
                         </Col>
-                        <Col md={3} sm={6} xs={12} className="col-3 mb-3">
-                          <div className="selectedField-value">
-                            <div className="title">Scheduler</div>
-                            <div className="dropdown">
+                        <Col md={3} sm={6} xs={12} className='col-3 mb-3'>
+                          <div className='selectedField-value'>
+                            <div className='title'>Scheduler</div>
+                            <div className='dropdown'>
                               <InfiniteDropdown
-                                id="Scheduler"
-                                options={Scheduler}
-                                selectedValue={SelectedScheduler}
+                                id='Scheduler'
+                                options={schedulerOptions}
+                                selectedValue={selectedScheduler}
                                 onChange={(selectedOption) =>
-                                  setSelectedScheduler([selectedOption])
+                                  dispatch(
+                                    setSelectedSchedulerF([selectedOption]),
+                                  )
                                 }
                               />
                             </div>
                           </div>
                         </Col>
-                        <Col md={3} sm={6} xs={12} className="col-3 mb-3">
-                          <div className="selectedField-value">
-                            <div className="title">Customer</div>
-                            <div className="dropdown">
+                        <Col md={3} sm={6} xs={12} className='col-3 mb-3'>
+                          <div className='selectedField-value'>
+                            <div className='title'>Customer</div>
+                            <div className='dropdown'>
                               <InfiniteDropdown
-                                id="Customer"
-                                options={Customer}
-                                selectedValue={SelectedCustomer}
+                                id='Customer'
+                                options={customerOptions}
+                                selectedValue={selectedCustomer}
                                 onChange={handleCustomerClick}
                               />
                             </div>
                           </div>
                         </Col>
                         {/* //434 */}
-                        <Col md={3} sm={6} xs={12} className="col-3 mb-3">
-                          <div className="selectedField-value">
-                            <div className="title">Contact</div>
-                            <div className="dropdown">
+                        <Col md={3} sm={6} xs={12} className='col-3 mb-3'>
+                          <div className='selectedField-value'>
+                            <div className='title'>Contact</div>
+                            <div className='dropdown'>
                               <InfiniteDropdown
-                                id="Contact"
-                                options={Contact}
-                                selectedValue={SelectedContact}
+                                id='Contact'
+                                options={contactOptions}
+                                selectedValue={selectedContact}
                                 onChange={(selectedOption) =>
-                                  setSelectedContact([selectedOption])
+                                  dispatch(
+                                    setSelectedContactF([selectedOption]),
+                                  )
                                 }
                               />
                             </div>
@@ -2297,68 +2565,72 @@ export default function RightDashboard() {
             )}
           </div>
         </div>
-        <div className="scheduleSearch-body">
-          <div className="accordion-item">
-            <button className="accordion-item-btn" onClick={handleClick3}>
-              <div className="section-1">
-                <div className="title-icon">
-                  <div className="icon-t">
-                    <img src={Location} alt="Location" />
+        <div className='scheduleSearch-body'>
+          <div className='accordion-item'>
+            <button
+              type='button'
+              className='accordion-item-btn'
+              onClick={handleClick3}
+            >
+              <div className='section-1'>
+                <div className='title-icon'>
+                  <div className='icon-t'>
+                    <img src={Location} alt='Location' />
                   </div>
-                  <div className="title">Location</div>
+                  <div className='title'>Location</div>
                 </div>
-                <div className="title-icon">
-                  <div className="icon-t">
-                    <img src={MonthView} alt="MonthView" />
+                <div className='title-icon'>
+                  <div className='icon-t'>
+                    <img src={MonthView} alt='MonthView' />
                   </div>
-                  <div className="title">Month View</div>
+                  <div className='title'>Month View</div>
                 </div>
-                <div className="title-icon">
-                  <div className="icon-t">
-                    <img src={DayView} alt="DayView" />
+                <div className='title-icon'>
+                  <div className='icon-t'>
+                    <img src={DayView} alt='DayView' />
                   </div>
-                  <div className="title">Day View</div>
+                  <div className='title'>Day View</div>
                 </div>
-                <div className="title-icon">
-                  <div className="icon-t">
-                    <img src={TimeView} alt="TimeView" />
+                <div className='title-icon'>
+                  <div className='icon-t'>
+                    <img src={TimeView} alt='TimeView' />
                   </div>
-                  <div className="title">Time View</div>
+                  <div className='title'>Time View</div>
                 </div>
-                <div className="button">
+                <div className='button'>
                   {isOpen3 ? (
-                    <img src={Up} alt="icon" />
+                    <img src={Up} alt='icon' />
                   ) : (
-                    <img src={Down} alt="icon" />
+                    <img src={Down} alt='icon' />
                   )}
                 </div>
               </div>
             </button>
             {isOpen3 && (
-              <div className="section-2">
-                <div className="accordion-body">
-                  <div className="calender-setup">
+              <div className='section-2'>
+                <div className='accordion-body'>
+                  <div className='calender-setup'>
                     <Row>
                       <Col
                         xs={12}
                         md={3}
                         sm={6}
-                        className=" col-3 mr-3 d-flex justify-content-center align-items-center"
+                        className=' col-3 mr-3 d-flex justify-content-center align-items-center'
                       >
-                        <div className="location-radio-btn d-flex flex-wrap ">
-                          <p className="list mr-3 mb-2">Location Type :</p>
+                        <div className='location-radio-btn d-flex flex-wrap '>
+                          <p className='list mr-3 mb-2'>Location Type :</p>
                           {radiobtn
                             .filter((item) => item.enable === 1)
                             .map((item, index) => (
                               <div
                                 key={item.id}
-                                className="list mr-3 mb-2 mt-1"
+                                className='list mr-3 mb-2 mt-1'
                               >
                                 <input
-                                  type="radio"
+                                  type='radio'
                                   id={item.value}
-                                  name="locationType"
-                                  aria-label="locationType"
+                                  name='locationType'
+                                  aria-label='locationType'
                                   value={item.value}
                                   defaultChecked={index === 0} // Only check the first enabled item
                                   onChange={handleLocationTypeChange}
@@ -2374,9 +2646,9 @@ export default function RightDashboard() {
                         </div>
                       </Col>
                       <Col xs={12} sm={4}></Col>
-                      <Col xs={12} sm={4} className="col-4">
-                        <div className="edit-add p-4">
-                          <div className="edit">
+                      <Col xs={12} sm={4} className='col-4'>
+                        <div className='edit-add p-4'>
+                          <div className='edit'>
                             <div
                               style={{
                                 display: "flex",
@@ -2384,11 +2656,11 @@ export default function RightDashboard() {
                                 cursor: "pointer",
                               }}
                               onClick={handleLocationFilterClick}
-                              className="handleLocationFilter"
+                              className='handleLocationFilter'
                             >
                               <img
                                 src={Filter}
-                                alt="Filter"
+                                alt='Filter'
                                 style={{ marginRight: "5px" }}
                               />
                               <p style={{ marginBottom: "0" }}>
@@ -2402,31 +2674,31 @@ export default function RightDashboard() {
                       <Modal
                         show={isLocationFilterModalVisible}
                         onHide={handleCloseLocationFilterModal}
-                        size="lg"
-                        aria-labelledby="contained-modal-title-vcenter"
+                        size='lg'
+                        aria-labelledby='contained-modal-title-vcenter'
                         centered
                       >
                         <Modal.Header closeButton>
-                          <Modal.Title id="contained-modal-title-vcenter">
+                          <Modal.Title id='contained-modal-title-vcenter'>
                             Location Filters
                           </Modal.Title>
                         </Modal.Header>
                         <Modal.Body>
-                          <div className="row">
+                          <div className='row'>
                             {/* Dynamic Dropdowns */}
-                            <div className="col-md-6">
+                            <div className='col-md-6'>
                               {locationFilters.levels.map((level) => (
                                 <div
-                                  className="row mb-3 filtersrow"
+                                  className='row mb-3 filtersrow'
                                   key={level.id}
                                 >
-                                  <div className="col-3">
-                                    <label className="title">
+                                  <div className='col-3'>
+                                    <label className='title'>
                                       {level.label}:
                                     </label>
                                   </div>
-                                  <div className="col-9">
-                                    <div className="dropdown">
+                                  <div className='col-9'>
+                                    <div className='dropdown'>
                                       <InfiniteDropdown
                                         id={level.label}
                                         options={level.options}
@@ -2434,7 +2706,7 @@ export default function RightDashboard() {
                                         onChange={(selectedOption) =>
                                           handleSelectChange(
                                             selectedOption,
-                                            level.id
+                                            level.id,
                                           )
                                         }
                                       />
@@ -2443,16 +2715,16 @@ export default function RightDashboard() {
                                 </div>
                               ))}
                             </div>
-                            <div className="col-md-6">
-                              <div className="row mb-3 filtersrow">
-                                <div className="col-3">
-                                  <label className="title">Capacity:</label>
+                            <div className='col-md-6'>
+                              <div className='row mb-3 filtersrow'>
+                                <div className='col-3'>
+                                  <label className='title'>Capacity:</label>
                                 </div>
-                                <div className="col-9">
+                                <div className='col-9'>
                                   <input
-                                    type="number"
-                                    className="form-control"
-                                    aria-label="Capacity"
+                                    type='number'
+                                    className='form-control'
+                                    aria-label='Capacity'
                                     value={locationFilters.LFCapacity}
                                     onChange={(e) => {
                                       const value = e.target.value;
@@ -2465,16 +2737,16 @@ export default function RightDashboard() {
                                 </div>
                               </div>
 
-                              <div className="row mb-3 filtersrow">
-                                <div className="col-3">
-                                  <label className="title">Handicap:</label>
+                              <div className='row mb-3 filtersrow'>
+                                <div className='col-3'>
+                                  <label className='title'>Handicap:</label>
                                 </div>
-                                <div className="col-9">
-                                  <div className="dropdown">
+                                <div className='col-9'>
+                                  <div className='dropdown'>
                                     <select
-                                      name="handicap"
-                                      className="custom-select"
-                                      aria-label="handicap"
+                                      name='handicap'
+                                      className='custom-select'
+                                      aria-label='handicap'
                                       value={locationFilters.LFHandicap}
                                       onChange={(e) => {
                                         const value = e.target.value;
@@ -2484,22 +2756,22 @@ export default function RightDashboard() {
                                         }));
                                       }}
                                     >
-                                      <option value="">Select value</option>
-                                      <option value="0">NA</option>
-                                      <option value="1">Yes</option>
+                                      <option value=''>Select value</option>
+                                      <option value='0'>NA</option>
+                                      <option value='1'>Yes</option>
                                     </select>
                                   </div>
                                 </div>
                               </div>
 
-                              <div className="row mb-3 filtersrow">
-                                <div className="col-3">
-                                  <label className="title">Amenities:</label>
+                              <div className='row mb-3 filtersrow'>
+                                <div className='col-3'>
+                                  <label className='title'>Amenities:</label>
                                 </div>
-                                <div className="col-9">
-                                  <div className="dropdown">
+                                <div className='col-9'>
+                                  <div className='dropdown'>
                                     <InfiniteDropdown
-                                      id="Amenities"
+                                      id='Amenities'
                                       options={
                                         locationFilters.LFAmenities[0]
                                           ?.options || []
@@ -2520,7 +2792,7 @@ export default function RightDashboard() {
                                                       selectedValue:
                                                         selectedOption,
                                                     }
-                                                  : amenity
+                                                  : amenity,
                                             ),
                                         }));
                                       }}
@@ -2533,19 +2805,22 @@ export default function RightDashboard() {
                         </Modal.Body>
                         <Modal.Footer>
                           <Button
-                            className="filter-reset-btn"
+                            type='button'
+                            className='filter-reset-btn'
                             onClick={handleResetLocationFilterModal}
                           >
                             Reset
                           </Button>
                           <Button
-                            className="filter-close-btn"
+                            type='button'
+                            className='filter-close-btn'
                             onClick={handleCloseLocationFilterModal}
                           >
                             Close
                           </Button>
                           <Button
-                            className="filter-apply-btn"
+                            type='button'
+                            className='filter-apply-btn'
                             onClick={handleApplyLocationFilterModal}
                           >
                             Apply
@@ -2554,19 +2829,19 @@ export default function RightDashboard() {
                       </Modal>
                     </Row>
                     <Row>
-                      <Col md={3} sm={6} xs={12} className="col-3 mb-3">
-                        <div className="content">
-                          <div className="title">Choose field to Search</div>
-                          <div className="dropdown-wrapper">
+                      <Col md={3} sm={6} xs={12} className='col-3 mb-3'>
+                        <div className='content'>
+                          <div className='title'>Choose field to Search</div>
+                          <div className='dropdown-wrapper'>
                             <select
-                              name="days"
-                              className="custom-select"
-                              id="location_input_Select"
-                              aria-label="location Select input"
+                              name='days'
+                              className='custom-select'
+                              id='location_input_Select'
+                              aria-label='location Select input'
                               onChange={(e) => handelLocationSearchDropDown(e)}
                             >
                               {locationData.length !== 0 && (
-                                <option value="0">Defalt</option>
+                                <option value='0'>Defalt</option>
                               )}
                               {locationData.map((location) => (
                                 <option key={location.id} value={location.id}>
@@ -2577,45 +2852,53 @@ export default function RightDashboard() {
                           </div>
                         </div>
                       </Col>
-                      <Col xs={12} sm={4} className="col-4 mb-3">
-                        <div className="seletedFeild">
-                          <label>search key word</label>
-                          <div className="selectedSearchField">
+                      <Col xs={12} sm={4} className='col-4 mb-3'>
+                        <div className='seletedFeild'>
+                          <label>Search key word</label>
+                          <div className='selectedSearchField'>
                             <input
-                              type="text"
-                              id="location_input_Search"
-                              aria-label="location Search input"
-                              placeholder="Enter search key word"
-                              className="form-control"
+                              type='text'
+                              id='location_input_Search'
+                              aria-label='location Search input'
+                              placeholder='Enter Search key word'
+                              className='form-control'
                             />
                             <img
                               src={SearchIcon}
-                              alt="Search Icon"
-                              className="search-icon"
+                              alt='Search Icon'
+                              className='search-icon'
                               onClick={handleClickLocationSearch}
                             />
                           </div>
                         </div>
                       </Col>
-                      <Col xs={12} sm={4} className="col-4">
-                        <div className="content">
-                          <div className="title">Search scope</div>
-                          <div className="dropdown-wrapper">
+                      <Col xs={12} sm={4} className='col-4'>
+                        <div className='content'>
+                          <div className='title'>Search scope</div>
+                          <div className='dropdown-wrapper'>
                             <select
-                              name="days"
-                              className="custom-select w-75 "
-                              id="location_input_Select"
-                              aria-label="location Select input"
-                              onChange={(e) => handelSearchDropDown(e)}
+                              name='days'
+                              className='custom-select w-75 '
+                              id='search_scope_select'
+                              aria-label='search scope select'
+                              onChange={(e) =>
+                                dispatch(setSearchScope(e.target.value))
+                              }
                             >
                               {locationData.length !== 0 && (
-                                <option value="0">Defalt</option>
+                                <option value='0'>Defalt</option>
                               )}
-                              {locationData.map((location) => (
-                                <option key={location.id} value={location.id}>
+                              {/* Dynamic scopes with sequential values */}
+                              {locationData.map((location, index) => (
+                                <option key={location.id} value={index + 1}>
                                   {location.value}
                                 </option>
                               ))}
+                              {/* {locationData.map((location) => (
+                                <option key={location.id} value={location.id}>
+                                  {location.value}
+                                </option>
+                              ))} */}
                             </select>
                           </div>
                         </div>
@@ -2643,21 +2926,21 @@ export default function RightDashboard() {
                         </div> */}
                       </Col>
                     </Row>
-                    <div className="selectedField-header">
+                    <div className='selectedField-header'>
                       <p>Selected Fields</p>
                     </div>
-                    <div className="selectedField-dropdown">
+                    <div className='selectedField-dropdown'>
                       <Row>
                         {locationData.map((location) => (
                           <Col
                             xs={12}
                             md={3}
-                            className="col-3 mb-3"
+                            className='col-3 mb-3'
                             key={location.id}
                           >
-                            <div className="selectedField-value">
-                              <div className="title">{location.value}</div>
-                              <div className="dropdown">
+                            <div className='selectedField-value'>
+                              <div className='title'>{location.value}</div>
+                              <div className='dropdown'>
                                 <InfiniteDropdown
                                   id={location.value}
                                   options={location.options}
@@ -2679,15 +2962,27 @@ export default function RightDashboard() {
           </div>
         </div>
       </div>
-      <div className="row scheduleSearch_5">
-        <div className="search-footer d-flex justify-content-end">
-          <div className="button">
-            <button className=" btn btn-clear">Clear/Reset</button>
-            <button className="btn-schedule btn" onClick={handleSearchClick}>
+      {scheduleError && (
+        <div className='schedule_error' role='alert'>
+          {scheduleError}
+        </div>
+      )}
+      <div className='row scheduleSearch_5'>
+        <div className='search-footer d-flex justify-content-end'>
+          <div className='button'>
+            <button type='button' className=' btn btn-clear'>
+              Clear/Reset
+            </button>
+            <button
+              type='button'
+              className='btn-schedule btn'
+              onClick={handleSearchClick}
+            >
               Search
             </button>
             <button
-              className="btn-schedule btn"
+              type='button'
+              className='btn-schedule btn'
               onClick={handleScheduleClick}
               disabled={!showConflicts}
               style={{
@@ -2697,7 +2992,6 @@ export default function RightDashboard() {
             >
               Schedule
             </button>
-            <button className="btn-search btn">Search</button>
           </div>
         </div>
       </div>

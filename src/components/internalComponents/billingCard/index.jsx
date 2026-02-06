@@ -1,83 +1,135 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
-import { addBillingItem, clearBillingItems } from "../../../redux/slices/billingItemsSlice";
+import {
+  addBillingItem,
+  clearBillingItems,
+} from "../../../redux/slices/billingItemsSlice";
 import "./index.scss";
 
 export default function BillingCard({ isModal = false }) {
   const dispatch = useDispatch();
+  const clientname = useSelector((state) => state.client.clientname);
+  const ownerID = useSelector((state) => state.owner.ownerID);
   const { defaultFee, list } = useSelector((state) => state.billingItems);
 
+  /* ---------------- MASTER LISTS ---------------- */
   const [itemTypes, setItemTypes] = useState([]);
+  const [equipmentList, setEquipmentList] = useState([]);
+  const [personnelList, setPersonnelList] = useState([]);
+  const [payTypeList, setPayTypeList] = useState([]);
 
+  /* ---------------- FORM STATE ---------------- */
   const [form, setForm] = useState({
     itemType: "",
+
+    equipmentType: "",
+    personnelType: "",
+    rateType: "",
+
+    rate: 0,
+    baseRate: 0, // IMPORTANT: keeps original rate
+    hours: 1,
+
+    useFlatRate: false,
+    flatRate: 0,
+
     value: 0,
     charge: 0,
-    notes: "",
+
     changeFee: false,
     changeFeeReason: "NA",
+    notes: "",
     comments: "",
   });
 
-  // -------------------- API CALL --------------------
-  const fetchBillingItems = async () => {
-    try {
-      const response = await axios.post(
-        "http://192.168.0.65/rest/gvRestApi/master/getBillingItems",
-        {
-          clientname: "dps",
-          owner_id: 1,
-        }
-      );
+  const isEquipment = form.itemType === "Equipment";
+  const isPersonnel = form.itemType === "Personnel";
 
-      if (response?.data?.COLUMNS && response?.data?.DATA) {
-        const cols = response.data.COLUMNS;
-        const rows = response.data.DATA;
-
-        // Convert DATA → array of objects based on COLUMNS
-        const formatted = rows.map((row) => {
-          let obj = {};
-          row.forEach((value, index) => {
-            obj[cols[index]] = value;
-          });
-          return obj;
-        });
-
-        setItemTypes(formatted);
-      }
-    } catch (error) {
-      console.error("Error fetching billing items:", error);
-    }
+  /* ---------------- UTIL ---------------- */
+  const normalize = (res) => {
+    const cols = res.data.COLUMNS;
+    return res.data.DATA.map((row) =>
+      cols.reduce((o, c, i) => {
+        o[c] = row[i];
+        return o;
+      }, {})
+    );
   };
+
+  /* ---------------- API CALLS ---------------- */
+  useEffect(() => {
+    axios
+      .post("http://192.168.0.65/rest/gvRestApi/master/getBillingItems", {
+        clientname,
+        owner_id: ownerID,
+      })
+      .then((res) => setItemTypes(normalize(res)))
+      .catch(console.error);
+  }, [clientname, ownerID]);
 
   useEffect(() => {
-    fetchBillingItems();
-  }, []);
+    if (isEquipment && equipmentList.length === 0) {
+      axios
+        .post("http://192.168.0.65/rest/gvRestApi/master/getEquipmentList", {
+          clientname,
+          owner_id: ownerID,
+        })
+        .then((res) => setEquipmentList(normalize(res)))
+        .catch(console.error);
+    }
+  }, [isEquipment]);
 
-  // -------------------- FORM CHANGE HANDLER --------------------
+  useEffect(() => {
+    if (isPersonnel && personnelList.length === 0) {
+      axios
+        .post("http://192.168.0.65/rest/gvRestApi/master/getPersonnelList", {
+          clientname,
+          owner_id: ownerID,
+          dorder: "1",
+        })
+        .then((res) => setPersonnelList(normalize(res)))
+        .catch(console.error);
+    }
+
+    if (isPersonnel && payTypeList.length === 0) {
+      axios
+        .post("http://192.168.0.65/rest/gvRestApi/master/getPayTypeList", {
+          clientname,
+        })
+        .then((res) => setPayTypeList(normalize(res)))
+        .catch(console.error);
+    }
+  }, [isPersonnel]);
+
+  /* ---------------- AUTO CALC ---------------- */
+  useEffect(() => {
+    let calculated = 0;
+
+    if (form.useFlatRate) {
+      calculated = Number(form.flatRate || 0);
+    } else {
+      calculated = Number(form.rate || 0) * Number(form.hours || 0);
+    }
+
+    setForm((p) => ({
+      ...p,
+      value: calculated,
+      charge: p.changeFee ? p.charge : calculated,
+    }));
+  }, [form.rate, form.hours, form.flatRate, form.useFlatRate, form.changeFee]);
+
+  /* ---------------- HANDLER ---------------- */
   const handleChange = (e) => {
     const { name, type, value, checked } = e.target;
-    setForm((prev) => ({
-      ...prev,
+
+    setForm((p) => ({
+      ...p,
       [name]: type === "checkbox" ? checked : value,
     }));
-
-    // 🔥 Auto-fill values when ITEM_TYPE dropdown changes
-    if (name === "itemType") {
-      const selected = itemTypes.find((x) => x.ITEM_TYPE === value);
-
-      if (selected) {
-        setForm((prev) => ({
-          ...prev,
-          value: selected.DEFAULT_VALUE ?? 0,
-          charge: selected.DEFAULT_COST ?? 0,
-        }));
-      }
-    }
   };
 
-  // -------------------- ADD ITEM --------------------
+  /* ---------------- ADD ITEM ---------------- */
   const handleAddItem = () => {
     if (!form.itemType) {
       alert("Please select Item Type");
@@ -91,49 +143,162 @@ export default function BillingCard({ isModal = false }) {
         charge: Number(form.charge),
       })
     );
-
-    // Reset form
-    setForm({
-      itemType: "",
-      value: 0,
-      charge: 0,
-      notes: "",
-      changeFee: false,
-      changeFeeReason: "NA",
-      comments: "",
-    });
   };
 
+  /* ================= UI ================= */
   return (
     <div className={`billingWrapper ${isModal ? "modalMode" : ""}`}>
-      {/* ---------------- LEFT FORM ---------------- */}
+      {/* LEFT */}
       <div className="billingLeft">
-        <p>Add Billing Items</p>
+        <h3 className="sectionTitle">Add Billing Items</h3>
 
         {/* ITEM TYPE */}
         <div className="formGroup">
           <label>Item Type</label>
-          <select
-            name="itemType"
-            value={form.itemType}
-            onChange={handleChange}
-          >
+          <select name="itemType" value={form.itemType} onChange={handleChange}>
             <option value="">Select Item</option>
-            {itemTypes.map((item, idx) => (
-              <option key={idx} value={item.ITEM_TYPE}>
-                {item.ITEM_TYPE}
+            {itemTypes.map((i) => (
+              <option key={i.ITEM_TYPE} value={i.ITEM_TYPE}>
+                {i.ITEM_TYPE}
               </option>
             ))}
           </select>
         </div>
 
-        {/* VALUE + CHARGE */}
+        {/* EQUIPMENT */}
+        {isEquipment && (
+          <div className="formGroup">
+            <label>Equipment Type</label>
+            <select
+              value={form.equipmentType}
+              onChange={(e) => {
+                const selected = equipmentList.find(
+                  (x) => x.EQ_DESCRIPTION === e.target.value
+                );
+
+                setForm((p) => ({
+                  ...p,
+                  equipmentType: e.target.value,
+                  rate: selected?.EQ_RATE ?? 0,
+                  baseRate: selected?.EQ_RATE ?? 0,
+                  flatRate: selected?.FLAT_RATE ?? 0,
+                  useFlatRate: false,
+                }));
+              }}
+            >
+              {equipmentList.map((e) => (
+                <option key={e.EQ_ID} value={e.EQ_DESCRIPTION}>
+                  {e.EQ_DESCRIPTION}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* PERSONNEL */}
+        {isPersonnel && (
+          <>
+            <div className="formGroup">
+              <label>Personnel Type</label>
+              <select
+                value={form.personnelType}
+                onChange={(e) => {
+                  const selected = personnelList.find(
+                    (x) => x.PERSONNEL_DESC === e.target.value
+                  );
+
+                  setForm((p) => ({
+                    ...p,
+                    personnelType: e.target.value,
+                    rate: selected?.RATE_PERHOUR ?? 0,
+                    baseRate: selected?.RATE_PERHOUR ?? 0,
+                    flatRate: selected?.FLAT_RATE ?? 0,
+                    useFlatRate: false,
+                  }));
+                }}
+              >
+                {personnelList.map((p) => (
+                  <option key={p.PERSONNEL_ID} value={p.PERSONNEL_DESC}>
+                    {p.PERSONNEL_DESC}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="formGroup">
+              <label>Rate Type</label>
+              <select
+                value={form.rateType}
+                onChange={(e) => {
+                  const selected = payTypeList.find(
+                    (x) => x.PAY_TYPE_NAME === e.target.value
+                  );
+
+                  setForm((p) => ({
+                    ...p,
+                    rateType: e.target.value,
+                    rate: Number(p.baseRate) * (selected?.RATE_MULT ?? 1),
+                  }));
+                }}
+              >
+                {payTypeList.map((r) => (
+                  <option key={r.PAY_TYPE_ID} value={r.PAY_TYPE_NAME}>
+                    {r.PAY_TYPE_NAME}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </>
+        )}
+
+        {/* RATE / HOURS */}
+        {(isEquipment || isPersonnel) && (
+          <>
+            <div className="valueChargeRow">
+              <div>
+                <label>Rate/hr</label>
+                <input
+                  type="number"
+                  name="rate"
+                  value={form.rate}
+                  onChange={handleChange}
+                />
+              </div>
+              <div>
+                <label>Hours</label>
+                <input
+                  type="number"
+                  name="hours"
+                  value={form.hours}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+
+            {/* FLAT RATE */}
+            <div className="valueChargeRow flatRateRow">
+              <div className="flatRateCheck">
+                <input
+                  type="checkbox"
+                  name="useFlatRate"
+                  checked={form.useFlatRate}
+                  onChange={handleChange}
+                />
+                <label>Flat Rate</label>
+              </div>
+              <div className="formGroup">
+                <input type="number" value={form.flatRate} readOnly />
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* VALUE / CHARGE */}
         <div className="valueChargeRow">
           <div>
             <label>Value</label>
-            <input type="number" name="value" value={form.value} readOnly />
+            <input type="number" value={form.value} readOnly />
           </div>
-
           <div>
             <label>Charge</label>
             <input
@@ -144,12 +309,6 @@ export default function BillingCard({ isModal = false }) {
               onChange={handleChange}
             />
           </div>
-        </div>
-
-        {/* NOTES */}
-        <div className="formGroup">
-          <label>Notes</label>
-          <textarea name="notes" value={form.notes} onChange={handleChange} />
         </div>
 
         {/* CHANGE FEE */}
@@ -163,13 +322,12 @@ export default function BillingCard({ isModal = false }) {
           />
         </div>
 
-        {/* CHANGE FEE REASON */}
         <div className="formGroup">
           <label>Change Fee Reason</label>
           <select
             name="changeFeeReason"
-            value={form.changeFeeReason}
             disabled={!form.changeFee}
+            value={form.changeFeeReason}
             onChange={handleChange}
           >
             <option>NA</option>
@@ -178,18 +336,21 @@ export default function BillingCard({ isModal = false }) {
           </select>
         </div>
 
-        {/* COMMENTS */}
+        <div className="formGroup">
+          <label>Notes</label>
+          <textarea name="notes" value={form.notes} onChange={handleChange} />
+        </div>
+
         <div className="formGroup">
           <label>Comments</label>
           <textarea
             name="comments"
-            value={form.comments}
             disabled={!form.changeFee}
+            value={form.comments}
             onChange={handleChange}
           />
         </div>
 
-        {/* ADD BUTTON */}
         <div className="btnRow">
           <button className="addBtn" onClick={handleAddItem}>
             Add Item
@@ -197,43 +358,30 @@ export default function BillingCard({ isModal = false }) {
         </div>
       </div>
 
-      {/* ---------------- RIGHT TABLE ---------------- */}
+      {/* RIGHT */}
       <div className="billingRight">
         <div className="tableHeader">
           <h3>Selected Billing Items</h3>
-          <button className="clearBtn" onClick={() => dispatch(clearBillingItems())}>
+          <button
+            className="clearBtn"
+            onClick={() => dispatch(clearBillingItems())}
+          >
             Clear Items
           </button>
         </div>
 
-        <p className="note">*Default facility charge is applied after schedule created</p>
-
         <table className="billingTable">
-          <thead>
-            <tr>
-              <th>Billing Item</th>
-              <th>Item Type</th>
-              <th>Charge</th>
-              <th>Value</th>
-              <th>Change Fee Reason</th>
-            </tr>
-          </thead>
-
           <tbody>
-            {/* DEFAULT FEE ROW */}
             <tr className="defaultRow">
               <td>{defaultFee.billingItem}</td>
-              <td></td>
               <td>{defaultFee.charge}</td>
               <td>{defaultFee.value}</td>
               <td>{defaultFee.changeFeeReason}</td>
             </tr>
 
-            {/* USER ADDED ITEMS */}
-            {list.map((item, index) => (
-              <tr key={index}>
+            {list.map((item, i) => (
+              <tr key={i}>
                 <td>{item.itemType}</td>
-                <td></td>
                 <td>{item.charge}</td>
                 <td>{item.value}</td>
                 <td>{item.changeFeeReason}</td>
